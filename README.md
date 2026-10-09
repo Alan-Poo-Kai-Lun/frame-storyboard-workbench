@@ -4,6 +4,8 @@
 
 `V3.7 Beta` · `Python 3.10+` · `Windows 优先` · `本地运行` · `暂时保留权利`
 
+> **导演包的目标接收端是 AI 搅拌手（AIMixer）的 [ComfyUI MiniMax H3 导演台](https://github.com/AIMixer/ComfyUI_MiniMaxH3_Director)。** 导出的 `.mmxpack.zip` 应在该节点的「导入导演包」中打开，不是可直接拖入 ComfyUI 的通用工作流 JSON。使用前需自行安装导演台、对应工作流和模型；见 [ComfyUI 对接与兼容说明](docs/h3-director-compatibility.md)。
+
 [🚀 第一次使用：图文入门](docs/quick-start.md) · [常见问题](docs/faq.md) · [English](docs/README.en.md) · [功能与历史说明](docs/workbench-guide.md) · [更新记录](CHANGELOG.md) · [发布管理](docs/releasing.md)
 
 ![真实导演画布截图（升级前版本）](docs/assets/screenshots/director-canvas-historical.png)
@@ -66,7 +68,7 @@
 
 ## 兼容性与已知限制
 
-- H3 Director Pack **formatVersion 1**；不同导演台、节点版本需自行验证导入。
+- 目标接收端：**AI 搅拌手 / AIMixer 的 H3 导演台**；格式 `minimax-h3-director-pack` / `formatVersion: 1`。这只是包格式版本，不是插件版本。未固定实测的插件版本，不能承诺所有新版 / 分支兼容。
 - Windows 启动脚本优先；其他系统的 Python 启动方式尚需更多实机测试。
 - 本地测试通过不代表所有显卡、浏览器、模型或视频编码都能兼容。
 - 视频播放依赖浏览器支持的编码；视频记录属于片段，不自动识别镜头归属。

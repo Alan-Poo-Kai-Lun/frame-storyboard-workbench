@@ -40,5 +40,6 @@
   "web/workspace-ui.js",
   "docs/quick-start.md",
   "docs/faq.md",
-  "docs/assets/screenshots/director-canvas-historical.png"
+  "docs/assets/screenshots/director-canvas-historical.png",
+  "docs/h3-director-compatibility.md"
 ]

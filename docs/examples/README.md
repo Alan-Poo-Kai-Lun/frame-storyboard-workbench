@@ -2,6 +2,8 @@
 
 [下载导演包](cafe-demo.mmxpack.zip) · [逐步教程](../quick-start.md)
 
+**外部生成目标：AI 搅拌手（AIMixer）的 H3 导演台。** [对接与安装前提](../h3-director-compatibility.md)。此 ZIP 是导演包，不是 ComfyUI 工作流 JSON，也不包含模型或插件。
+
 这是教学用的 `.mmxpack.zip`，在工作台顶部点击「导入导演包」即可使用。导入会替换当前项目，先备份已有项目。
 
 - 1 个 15 秒片段、3 个镜头，时间分别为 0–5、5–10、10–15 秒。

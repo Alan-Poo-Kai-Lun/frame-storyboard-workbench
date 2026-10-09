@@ -8,6 +8,10 @@ A local planning workspace for assets, scripts, shot lists, H3 prompts and manua
 
 The README screenshot is a real historical canvas view supplied by the maintainer, not a current V3.7 fullscreen screenshot. The cafe example uses drawn diagrams and hand-written shots; it contains no model output or generated video. Back up your active project before importing it.
 
+## Export target
+
+Director packs target **AI Mixer / AIMixer’s [ComfyUI MiniMax H3 Director](https://github.com/AIMixer/ComfyUI_MiniMaxH3_Director)**. Import the `.mmxpack.zip` using the director node’s pack-import control, not ComfyUI’s general workflow importer. Install the plugin, its workflow and model dependencies separately. `formatVersion: 1` is the pack schema version, not the plugin version; no exact external plugin revision has been certified. See [integration and compatibility](h3-director-compatibility.md). FRAME is a separate project and does not bundle the upstream plugin or model weights.
+
 ## Run
 
 Install Python 3.10+. No third-party Python package is required.
