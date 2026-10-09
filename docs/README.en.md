@@ -4,6 +4,10 @@ A local planning workspace for assets, scripts, shot lists, H3 prompts and manua
 
 **V3.7 Beta. Publicly visible source. All rights reserved.** No open-source permission is granted at this time.
 
+[Chinese step-by-step tutorial](quick-start.md) · [Troubleshooting](faq.md) · [Importable demo pack](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/blob/main/docs/examples/cafe-demo.mmxpack.zip)
+
+The README screenshot is a real historical canvas view supplied by the maintainer, not a current V3.7 fullscreen screenshot. The cafe example uses drawn diagrams and hand-written shots; it contains no model output or generated video. Back up your active project before importing it.
+
 ## Run
 
 Install Python 3.10+. No third-party Python package is required.

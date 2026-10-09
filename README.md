@@ -4,11 +4,15 @@
 
 `V3.7 Beta` · `Python 3.10+` · `Windows 优先` · `本地运行` · `暂时保留权利`
 
-[English](docs/README.en.md) · [完整使用指南](docs/workbench-guide.md) · [更新记录](CHANGELOG.md) · [发布管理](docs/releasing.md)
+[🚀 第一次使用：图文入门](docs/quick-start.md) · [常见问题](docs/faq.md) · [English](docs/README.en.md) · [功能与历史说明](docs/workbench-guide.md) · [更新记录](CHANGELOG.md) · [发布管理](docs/releasing.md)
 
-![FRAME 工作流程示意](docs/assets/workflow.svg)
+![真实导演画布截图（升级前版本）](docs/assets/screenshots/director-canvas-historical.png)
 
-> 当前为公开源码 Beta，暂未采用开源许可证。示意图描述工作流程，并非运行截图。
+> 真实截图来自维护者先前的演示项目，展示升级前版本；V3.7 已增加全屏、平移缩放与详情栏调宽。截图里的角色与飞剑是虚构演示素材，不代表生成质量。当前为公开源码 Beta，暂未采用开源许可证。
+
+**第一次打开？** 先看 [图文入门教程](docs/quick-start.md)。想先体验界面，可下载 [咖啡店示例导演包](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/blob/main/docs/examples/cafe-demo.mmxpack.zip)，启动后点击「导入导演包」。示例不需要 AI，不含真实人物或成片；导入前备份当前项目。
+
+![FRAME 工作流程示意（非运行截图）](docs/assets/workflow.svg)
 
 ## 适合什么用途
 
@@ -33,7 +37,7 @@
 ## 快速开始
 
 1. 安装 **Python 3.10 或更高版本**；程序运行不需要第三方 Python 包。
-2. 从源码启动，或下载未来 Releases 中的 `FRAME-Storyboard-Workbench-v1.zip`，解压到固定目录。
+2. 仓库首页点击 **Code → Download ZIP**，完整解压，进入含 `server.py` 的目录。未来 Releases 的安装 ZIP 也可用于新安装。
 3. Windows 双击 `Start-Windows.bat`。其他系统运行：
 
    ```bash
@@ -52,7 +56,7 @@
 
 ## 更新与数据
 
-关闭工作台网页及后台终端，把新 ZIP 拖到**原安装目录**的 `Update-Windows.bat`。更新程序会保留 `data/` 并将旧程序归档到 `versions/`。重启后按 Ctrl+F5。
+关闭工作台网页及后台终端，把新 ZIP 拖到**原安装目录**的 `Update-Windows.bat`。**GitHub 的源码 ZIP 不能直接拖入安装更新脚本。** 更新程序会保留 `data/` 并将旧程序归档到 `versions/`。重启后按 Ctrl+F5。
 
 - `data/` 保存项目、连接设置、素材说明及参考媒体；完整备份该目录。
 - API Key 保存于本机设置，请勿上传 `data/` 到 GitHub。
@@ -86,4 +90,4 @@ python tools/build_release.py
 
 项目目前 **All rights reserved**，详情见 [LICENSE](LICENSE)。仓库公开可见，尚未授予开源或一般商用许可；授权范围以 LICENSE 为准。
 
-此仓库排除了原内部测试导演包、人物图、店铺图片及生成视频。运行程序时所使用的模型、节点、工作流和外部素材各自适用其权利要求。见 [来源说明](NOTICE.md)。
+此仓库排除了原内部测试导演包、独立人物图、店铺图片及生成视频。文档中的历史界面截图包含虚构演示素材缩略图；咖啡店示例包由自绘示意图和人工镜头组成。运行程序时所使用的模型、节点、工作流和外部素材各自适用其权利要求。见 [来源说明](NOTICE.md)。

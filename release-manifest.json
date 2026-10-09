@@ -37,5 +37,8 @@
   "web/visual-library.js",
   "web/visual-reference.js",
   "web/workbench-state.js",
-  "web/workspace-ui.js"
+  "web/workspace-ui.js",
+  "docs/quick-start.md",
+  "docs/faq.md",
+  "docs/assets/screenshots/director-canvas-historical.png"
 ]

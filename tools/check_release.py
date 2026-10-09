@@ -14,8 +14,11 @@ def inputs(root=ROOT):
   if p.parts[0]=='versions' and name!='versions/README.txt':raise ValueError('Archived program in release')
   file=root/name
   if not file.is_file() or file.is_symlink() or any(parent.is_symlink() for parent in file.parents if parent!=root.parent):raise ValueError('Missing or linked input: '+name)
-  raw=file.read_text('utf-8')
-  if SECRET.search(raw):raise ValueError('Possible credential in '+name)
+  if p.suffix.lower()=='.png' and p.parts[:3]==('docs','assets','screenshots'):
+   if not file.read_bytes().startswith(b'\x89PNG\r\n\x1a\n'):raise ValueError('Invalid documentation PNG: '+name)
+  else:
+   raw=file.read_text('utf-8')
+   if SECRET.search(raw):raise ValueError('Possible credential in '+name)
   if file.stat().st_size>2*1024*1024:raise ValueError('Oversized source file: '+name)
   if name.endswith('.py'):ast.parse(raw,filename=name)
   if name.endswith('.json'):json.loads(raw)
