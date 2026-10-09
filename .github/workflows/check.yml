@@ -1,0 +1,28 @@
+name: Check and package
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Validate package inputs
+        run: python tools/check_release.py
+      - name: Structure and update tests
+        run: python -m unittest discover -s tests -v
+      - name: Build clean installer
+        run: python tools/build_release.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frame-v3.7-beta-installer
+          path: dist/*
+          if-no-files-found: error

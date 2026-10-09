@@ -1,0 +1,36 @@
+name: Bug / 功能异常
+description: 报告可复现的问题，请先脱敏
+title: "[Bug] "
+body:
+  - type: input
+    id: version
+    attributes:
+      label: 工作台版本
+      placeholder: V3.7
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 环境
+      description: 系统、浏览器；AI 问题附模型与量化。不要填 API Key。
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      placeholder: "1. 打开…
+2. 点击…
+3. 出现…"
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: 预期与实际结果
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: 脱敏错误信息 / 截图
+      description: 勿上传 data/、完整导演包、密钥或客户资料。

@@ -1,0 +1,25 @@
+# Local projects, API keys, analysis drafts, user media and program backups
+/data/
+/versions/*
+!/versions/README.txt
+/dist/
+/release-output/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+node_modules/
+*.log
+*.zip
+*.mmxpack
+*.mp4
+*.mov
+*.webm
+.DS_Store
+Thumbs.db
