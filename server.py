@@ -12,8 +12,9 @@ from pathlib import Path,PurePosixPath
 from http.server import ThreadingHTTPServer,BaseHTTPRequestHandler
 from urllib.request import Request,urlopen
 from urllib.error import HTTPError
-ROOT=Path(__file__).resolve().parent
-DATA=ROOT/'data'; DATA.mkdir(exist_ok=True)
+import runtime_paths
+ROOT=runtime_paths.resource_dir()
+DATA=runtime_paths.data_dir(); DATA.mkdir(parents=True,exist_ok=True)
 STATE=DATA/'project.json'; CONFIG=DATA/'settings.json'
 TOKEN=secrets.token_urlsafe(32)
 LOCK=threading.RLock()
@@ -622,7 +623,8 @@ class Handler(BaseHTTPRequestHandler):
             route=self.path.split('?')[0]
             if route=='/api/bootstrap':
                 if self.headers.get('Sec-Fetch-Site') not in [None,'same-origin','none']: raise ValueError('跨站请求已拒绝')
-                return self.respond({'token':TOKEN,'version':json.loads((ROOT/'version.json').read_text('utf-8')).get('version','')})
+                version=json.loads((ROOT/'version.json').read_text('utf-8'))
+                return self.respond({'token':TOKEN,'version':version.get('version',''),'release':version.get('release',''),'appId':'frame-storyboard-workbench','runtimeMode':'exe' if getattr(sys,'frozen',False) else 'source','dataDirectory':str(DATA)})
             if route.startswith('/reference-media/'):
                 name=route.rsplit('/',1)[-1]
                 if not re.fullmatch(r'[a-f0-9]{64}\.(?:bin|png|jpg|webp|gif|mp4|webm)',name):raise ValueError('参考媒体路径无效')
@@ -638,6 +640,10 @@ class Handler(BaseHTTPRequestHandler):
             if route.startswith('/api/') and not self.valid(): return self.respond({'error':'请求验证失败'},403)
             if route=='/api/project': return self.respond(load_project())
             if route=='/api/settings': return self.respond(settings())
+            if route=='/api/check-updates':
+                import update_check
+                current=json.loads((ROOT/'version.json').read_text('utf-8')).get('release','v3.9-beta.1')
+                return self.respond(update_check.check(current))
             if route=='/api/visual-references':
                 import visual_library
                 with LOCK:return self.respond(visual_library.read(DATA,public=True))

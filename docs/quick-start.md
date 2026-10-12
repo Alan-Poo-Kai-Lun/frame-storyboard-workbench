@@ -20,6 +20,9 @@
 
 ## 1. 安装与启动
 
+**Windows EXE（推荐）**：从 [Releases](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases) 下载单文件 EXE，双击，保持小启动器运行。不需要 Python。下面是源码版启动方式。
+
+
 需要 Python 3.10 或更高版本。Windows 安装 Python 时启用 **Add Python to PATH**，安装后重新打开终端。程序不需要 `pip install`。
 
 1. 打开仓库首页 → **Code → Download ZIP**。

@@ -2,11 +2,11 @@
 
 **把素材、故事、分镜与视频记录，整理在同一个本地导演工作台。**
 
-`V3.8 Beta` · `Python 3.10+` · `Windows 优先` · `本地运行` · `暂时保留权利`
+`V3.9 Beta` · `Windows EXE / Python 3.10+ 源码版` · `Windows 优先` · `本地运行` · `暂时保留权利`
 
 > **先开始分镜，再按需加入 AI。** 基础分镜不需要 Ollama、API 或 H3 导演台。AI 辅助需要 Ollama 或兼容 API，二选一；H3 视频交接的依赖见 [ComfyUI 对接说明](docs/h3-director-compatibility.md)。
 
-[🚀 第一次使用：图文入门](docs/quick-start.md) · [常见问题](docs/faq.md) · [English](docs/README.en.md) · [功能与历史说明](docs/workbench-guide.md) · [更新记录](CHANGELOG.md) · [发布管理](docs/releasing.md)
+[⬇ Windows EXE / 更新包](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases) · [🚀 第一次使用：图文入门](docs/quick-start.md) · [常见问题](docs/faq.md) · [English](docs/README.en.md) · [功能与历史说明](docs/workbench-guide.md) · [更新记录](CHANGELOG.md) · [发布管理](docs/releasing.md)
 
 ![真实导演画布截图（升级前版本）](docs/assets/screenshots/director-canvas-historical.png)
 
@@ -40,20 +40,19 @@
 
 ## 快速开始
 
-1. 安装 **Python 3.10 或更高版本**；程序运行不需要第三方 Python 包。
-2. 仓库首页点击 **Code → Download ZIP**，完整解压，进入含 `server.py` 的目录。未来 Releases 的安装 ZIP 也可用于新安装。
-3. Windows 双击 `Start-Windows.bat`。其他系统运行：
+**普通 Windows 用户（推荐）**：打开 [GitHub Releases](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases)，下载 `FRAME-Workbench-Windows-x64-版本号.exe`，双击即可启动，无需 Python。保持小启动器运行，它会自动打开浏览器中的工作台。首页可以先体验无需 AI 的示例。
 
-   ```bash
-   python3 server.py
-   ```
+**源码用户**：安装 Python 3.10+，下载源码并解压，双击 `Start-Windows.bat`；其他系统运行 `python3 server.py`，访问 `http://127.0.0.1:8787`。无需安装第三方 Python 运行包。
 
-4. 浏览器访问 `http://127.0.0.1:8787`，选择「体验示例项目」或「创建新项目」。
-5. 默认简洁模式：先写故事、准备素材，再手动添加并编辑镜头。无需模型。
-6. 点击 AI 功能时再配置模型；专业模式展开审查、反推、空间状态等高级功能。
-7. 「保存 / 交接」可保存完整 `.frame.json` 项目备份，或导出适配 AI 搅拌手 H3 导演台的导演包。
+### 更新与数据
 
-源码下载也可直接启动，无需先构建前端。端口占用时可运行 `python server.py --port 8788`。不希望自动打开浏览器时加 `--no-browser`。
+- 在工作台点击 **检查更新**，查看已发布版本和 EXE / 源码更新 ZIP 下载入口。
+- EXE：退出旧启动器，再运行新版。项目、素材、视觉参考、任务和连接设置默认保存在 `%LOCALAPPDATA%\FRAME\Workbench\data`，各 EXE 版本共用，不在程序临时目录内。
+- 源码：下载 Releases 中专门的 `FRAME-Storyboard-Workbench-版本号.zip`，关闭服务器，拖到原目录的 `Update-Windows.bat`，再启动并按 Ctrl+F5。原 `data/` 保留，旧程序备份放在 `versions/`。
+- 从源码转 EXE：先关闭源码版，把 EXE 放入原目录再首次启动。目标用户数据为空时复制旧 `data/`；原目录保留。已有 EXE 数据时使用项目备份导入。
+- 更新检查是手动操作，不会上传项目、素材或模型密钥，也不会静默安装。Beta 更新通过版本列表提供。
+
+详见 [Windows EXE 与升级说明](docs/release-v3.9-beta.1.md)。源码版端口占用时可使用 `--port 8788`；`--no-browser` 关闭自动打开浏览器。
 
 ### Ollama 配置
 

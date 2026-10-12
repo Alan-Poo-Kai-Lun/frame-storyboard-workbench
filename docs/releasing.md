@@ -57,3 +57,10 @@ GitHub Actions 权限设为 contents: read。打包产物仅用于本次提交�
 npm install --prefix /tmp/frame-ui-check jsdom@26.1.0 --ignore-scripts --no-audit --no-fund
 NODE_PATH=/tmp/frame-ui-check/node_modules node tests/test_startup_ui.cjs
 ```
+
+
+## Windows 与自动发布
+
+`.github/workflows/release-windows.yml` 在 main 的版本或构建文件更新后运行 Windows x64 构建、自检及 Beta 发布。仅该 job 使用 contents: write，PR 不发布。版本号取自 `version.json.release`，发布说明为 `docs/release-<tag>.md`。已公开版本不会被覆盖；后续更新必须增加 release 标签。
+
+构建依赖 PyInstaller 6.22.3，不加入源码安装包。发布 EXE、专用源码更新 ZIP 与 SHA256SUMS。若构建、自检或上传失败，查看 Actions；没有通过完整流程时不宣称已发布。

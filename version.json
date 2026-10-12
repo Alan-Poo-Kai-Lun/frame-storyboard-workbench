@@ -1,7 +1,11 @@
 {
-  "version": "V3.8",
+  "version": "V3.9",
   "date": "2026-10-12",
   "features": [
+    "Windows 单文件 EXE 与桌面启动器，无需 Python",
+    "EXE 数据独立保存在用户目录，复制迁移同目录旧 data",
+    "手动检查 GitHub Releases 更新；提供 EXE 与源码更新 ZIP 下载入口",
+    "Windows 构建、隔离数据自检与版本 Releases 发布工作流",
     "新手首页：体验示例、创建新项目、导入已有项目与继续本机项目",
     "默认简洁模式，故事、素材、分镜三步创作；专业模式按需展开",
     "内置自绘素材与人工分镜示例，无需 Ollama 或 API",
@@ -82,5 +86,5 @@
     "presets/system_prompt_t2i.txt",
     "demo/example.mmxpack.zip"
   ],
-  "release": "v3.8-beta.1"
+  "release": "v3.9-beta.1"
 }

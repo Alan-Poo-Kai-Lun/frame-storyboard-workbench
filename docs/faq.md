@@ -4,6 +4,12 @@
 
 ## 启动与更新
 
+**不想安装 Python？** 从 Releases 下载 Windows x64 EXE，双击启动。保持小启动器运行；通过「退出」关闭服务。
+
+**EXE 的数据在哪里？** `%LOCALAPPDATA%\FRAME\Workbench\data`。不同 EXE 版本共用；源码版仍在原安装目录 `data/`。
+
+**EXE 怎么更新？** 工作台「检查更新」→ 下载新版 → 退出旧启动器 → 运行新版。源码用户仍用专用更新 ZIP 和 Update-Windows.bat。详见 [EXE 与迁移说明](release-v3.9-beta.1.md)。
+
 **双击启动后窗口关闭，或者提示找不到 Python？** 在解压目录打开终端，运行 `py -3 --version`（Windows）和 `py -3 server.py` 查看错误。没有 Python 时先安装 Python 3.10+ 并启用 PATH。不要在 ZIP 内运行。
 
 **浏览器提示无法连接？** 保持运行服务器的终端打开，先看终端显示的网址。工作台与 Ollama 是两个服务：工作台默认端口 8787，Ollama 默认 11434。

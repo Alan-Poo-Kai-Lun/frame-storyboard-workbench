@@ -45,5 +45,10 @@
   "web/startup.js",
   "web/startup.css",
   "presets/starter-project.json",
-  "docs/release-v3.8-beta.1.md"
+  "docs/release-v3.8-beta.1.md",
+  "runtime_paths.py",
+  "update_check.py",
+  "windows_launcher.py",
+  "web/updates.js",
+  "docs/release-v3.9-beta.1.md"
 ]

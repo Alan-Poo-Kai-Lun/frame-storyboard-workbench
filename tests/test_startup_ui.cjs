@@ -24,6 +24,7 @@ async function fixture(existing=null,mode='simple',broken=false){
   else if(route==='project'){if(broken)throw Error('test startup error');if(body)project=copy(body);data=project;}
   else if(route==='settings')data=config;
   else if(route==='settings-patch'){for(const[k,v]of Object.entries(body))config[k]={...config[k],...v};data={ok:true};}
+  else if(route==='check-updates')data={current:'v3.9-beta.1',latest:'v3.9-beta.2',available:true,message:'发现新版本',releaseUrl:'https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/tag/v3.9-beta.2',notes:'更新说明',assets:[{name:'FRAME-Workbench-Windows-x64-v3.9-beta.2.exe',url:'https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.9-beta.2/FRAME-Workbench-Windows-x64-v3.9-beta.2.exe'}]};
   else if(route==='tasks')data={tasks:[],paused:false};
   else if(route==='asset-analysis-status')data={assets:[]};
   else if(route==='reverse-templates')data={};
@@ -44,7 +45,8 @@ async function run(){
  try{
   assert.equal(f.w.document.body.dataset.startupView,'home');assert.equal(f.w.document.body.dataset.workbenchMode,'simple');
   assert.equal(f.w.getComputedStyle(f.el('workspace')).display,'none');assert.equal(f.el('startupResume').hidden,true);assert.equal(f.el('startupLoadStatus').textContent,'');
-  assert(!f.calls.some(c=>['models','test','plan-shots','analyze-assets'].includes(c.route)),'Opening home must not contact models');
+  assert(!f.calls.some(c=>['check-updates','models','test','plan-shots','analyze-assets'].includes(c.route)),'Opening home must not contact models');
+  f.el('checkUpdates').click();await pause();assert.match(f.el('modalTitle').textContent,/新版本/);assert.match(f.el('modalBody').textContent,/Windows EXE/);f.w.close();
   f.el('startExample').click();await pause();
   assert.equal(f.project.assets.length,3);assert.equal(f.w.document.body.dataset.startupView,'workspace');assert.equal(f.w.document.body.dataset.startupStage,'shots');
   assert.equal(f.el('board').querySelectorAll('[data-shot]').length,3);assert.equal(f.w.getComputedStyle(f.el('startupHome')).display,'none');assert.equal(f.w.getComputedStyle(f.el('startupStoryBlock')).display,'none');

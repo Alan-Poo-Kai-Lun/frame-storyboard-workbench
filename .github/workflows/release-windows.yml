@@ -1,0 +1,59 @@
+name: Windows EXE and release
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'version.json'
+      - 'windows_launcher.py'
+      - 'runtime_paths.py'
+      - 'update_check.py'
+      - 'tools/build_windows.py'
+      - 'tools/test_windows_build.py'
+      - 'tools/publish_release.py'
+      - '.github/workflows/release-windows.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: windows-release
+  cancel-in-progress: false
+jobs:
+  windows:
+    if: github.repository == 'Alan-Poo-Kai-Lun/frame-storyboard-workbench' && github.ref == 'refs/heads/main'
+    runs-on: windows-2022
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          architecture: x64
+      - name: Validate public package and backend tests
+        run: |
+          python tools/check_release.py
+          python -m unittest discover -s tests -v
+      - name: Check frontend interactions
+        run: |
+          npm install --prefix "$env:RUNNER_TEMP/frame-ui-check" jsdom@26.1.0 --ignore-scripts --no-audit --no-fund
+          $env:NODE_PATH="$env:RUNNER_TEMP/frame-ui-check/node_modules"
+          node tests/test_startup_ui.cjs
+      - name: Build source updater ZIP
+        run: python tools/build_release.py
+      - name: Build single-file Windows EXE
+        run: |
+          python -m pip install pyinstaller==6.22.3
+          python tools/build_windows.py
+      - name: Exercise EXE in an isolated profile
+        run: python tools/test_windows_build.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frame-windows-verified-build
+          path: dist/*
+          if-no-files-found: error
+      - name: Publish verified beta release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python tools/publish_release.py --repository "${{ github.repository }}" --sha "${{ github.sha }}"

@@ -19,3 +19,12 @@
 ## 导演包目标接收端
 
 工作台导演包的目标接收端为 AI 搅拌手（AIMixer）的 [ComfyUI_MiniMaxH3_Director](https://github.com/AIMixer/ComfyUI_MiniMaxH3_Director)。FRAME 是独立的策划工具，引用名称是为了说明对接对象，不表示获得作者认证或联合发布；本仓库不分发其插件、工作流或模型。第三方许可分别适用，本项目的权利保留声明不覆盖它们。
+
+
+## Windows EXE 运行依赖
+
+EXE 使用 PyInstaller 打包 Python 运行环境和标准库 Tkinter/Tcl/Tk。构建时复制 Python、PyInstaller 与 Tcl/Tk 发行包中实际提供的许可证文本到内置 `third-party-notices/`。这些依赖各自的许可证和 PyInstaller bootloader 分发例外分别适用，FRAME 的保留权利声明不覆盖第三方运行组件。构建不包含模型、Ollama、ComfyUI 或用户数据。
+
+- Python: https://docs.python.org/3/license.html
+- PyInstaller: https://github.com/pyinstaller/pyinstaller/blob/develop/COPYING.txt
+- Tcl/Tk: https://www.tcl-lang.org/software/tcltk/license.html
