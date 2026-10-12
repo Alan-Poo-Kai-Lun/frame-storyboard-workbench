@@ -52,5 +52,7 @@
   "windows_launcher.py",
   "web/updates.js",
   "docs/release-v3.9-beta.1.md",
-  "docs/release-v3.10-beta.1.md"
+  "docs/release-v3.10-beta.1.md",
+  "web/canvas-controls.js",
+  "docs/release-v3.11-beta.1.md"
 ]

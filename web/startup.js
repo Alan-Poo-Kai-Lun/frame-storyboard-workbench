@@ -28,7 +28,7 @@ function syncStartup(){
 function openStartupHome(){restoreStartupBlocks();document.body.dataset.startupView='home';syncStartup()}
 function enterStartupWorkspace(stage='shots'){
  if(!P){openStartupCreate();return}
- startupStage=stage;document.body.dataset.startupView='workspace';syncStartup();
+ startupStage=stage;document.body.dataset.startupView='workspace';syncStartup();openFrameOverview();
 }
 function initStartup(){
  startupReady=true;startupMode=cfg.ui?.workbenchMode==='professional'?'professional':'simple';
@@ -46,7 +46,7 @@ async function createStartupProject(example=false,title=''){
   $('saved').textContent='项目已保存在本机';toast((example?'示例已就绪，可直接编辑':'空白项目已创建')+'；上一项目已自动备份');
  }finally{startupCreating=false}
 }
-function openStartupCreate(){if(!ready){toast('工作台正在加载，请稍候');return}modal('创建第一个项目',`<label>项目名称<input id="startupProjectName" maxlength="200" placeholder="例如：手机店短片"></label><p class="muted">从故事开始，素材与镜头可以稍后添加。${P?'当前项目会自动备份到本机。':''}</p>`,[{label:'取消',action:close},{label:'创建并写故事 →',class:'primary',action:()=>createStartupProject(false,$('startupProjectName').value.trim())}]);$('startupProjectName').focus()}
+function openStartupCreate(){if(!ready){toast('工作台正在加载，请稍候');return}modal('创建第一个项目',`<label>项目名称<input id="startupProjectName" maxlength="200" placeholder="例如：手机店短片"></label><p class="muted">从故事开始，素材与镜头可以稍后添加。${P?'当前项目会自动备份到本机。':''}</p>`,[{label:'取消',action:close},{label:'创建并进入总览 →',class:'primary',action:()=>createStartupProject(false,$('startupProjectName').value.trim())}]);$('startupProjectName').focus()}
 $('startCreate').onclick=openStartupCreate;$('newProject').onclick=openStartupCreate;
 $('startExample').onclick=()=>{if(!ready){toast('工作台正在加载，请稍候');return}if(P)modal('打开入门示例',`<p>示例包含 3 张自绘示意素材、3 个人工编写镜头，不调用 AI。当前项目「${esc(P.title)}」会自动备份；可以取消并继续原项目。</p>`,[{label:'取消',action:close},{label:'备份并打开示例',class:'primary',action:()=>createStartupProject(true)}]);else safe(()=>createStartupProject(true))};
 $('startImport').onclick=()=>$('import').click();$('startResume').onclick=()=>enterStartupWorkspace();$('homeEntry').onclick=openStartupHome;$('startHelp').onclick=startupHelp;

@@ -15,6 +15,7 @@ async function fixture(existing=null,mode='simple',broken=false){
  let failRebuild=false;
  const calls=[],errors=[];w.addEventListener('error',e=>errors.push(e.error));w.structuredClone=copy;
  Object.defineProperty(w.crypto,'randomUUID',{value:require('node:crypto').randomUUID});
+ Object.defineProperties(w.HTMLElement.prototype,{offsetWidth:{get(){return this.classList.contains('overviewNode')?230:1000}},offsetHeight:{get(){return this.classList.contains('overviewNode')?100:700}},clientWidth:{get(){return 1000}},clientHeight:{get(){return 700}}});
  w.ResizeObserver=class{observe(){}disconnect(){}unobserve(){}};
  w.matchMedia=()=>({matches:false,addEventListener(){},removeEventListener(){}});
  w.HTMLMediaElement.prototype.pause=function(){};w.confirm=()=>true;w.HTMLElement.prototype.scrollIntoView=function(){};
@@ -83,6 +84,33 @@ async function overviewChecks(){
   assert.equal(f.errors.length,0);console.log('PASS: editable overview shared saves, numbering, history, validation, rollback, stale drafts, media preservation, prompt mapping, creation and reuse');
  }finally{f.dom.window.close()}
 }
+async function canvasInteractionChecks(){
+ const f=await fixture(sample,'professional'),live=()=>f.w.eval('P'),sid=sample.segments[0].id;
+ const dialog=()=>f.el('overviewDialog'),map=()=>dialog().querySelector('.overviewMap');
+ const node=id=>dialog().querySelector('.overviewNode[data-overview-select="'+id+'"]');
+ const click=async id=>{node(id).click();await pause();await pause()};
+ const key=async(k,extra={},target=dialog())=>{target.dispatchEvent(new f.w.KeyboardEvent('keydown',{key:k,bubbles:true,cancelable:true,...extra}));await pause();await pause()};
+ const pointer=async(type,target,x,y,extra={})=>{target.dispatchEvent(new f.w.MouseEvent(type,{clientX:x,clientY:y,button:0,bubbles:true,cancelable:true,...extra}));await pause()};
+ const selectTwo=async()=>{await click('h:'+sid+':'+sample.segments[0].shots[0].id);node('h:'+sid+':'+sample.segments[0].shots[1].id).dispatchEvent(new f.w.MouseEvent('click',{bubbles:true,shiftKey:true}));await pause();await pause();assert.equal(dialog().querySelectorAll('.overviewNode.selected').length,2)};
+ try{
+  f.el('startResume').click();await pause();await pause();assert.equal(dialog().open,true,'Resume enters overview');
+  await key('a',{ctrlKey:true});assert.equal(dialog().querySelectorAll('.overviewNode.selected').length,dialog().querySelectorAll('.overviewNode').length,'All visible nodes selected');
+  await click('s:'+sid);f.el('canvas_story').value='未保存的故事';f.el('canvas_story').dispatchEvent(new f.w.Event('input',{bubbles:true}));await key('a',{ctrlKey:true},f.el('canvas_story'));assert.equal(dialog().querySelectorAll('.overviewNode.selected').length,1,'Text Ctrl+A does not select canvas');await key('s',{ctrlKey:true},f.el('canvas_story'));assert.equal(f.project.segments[0].storyText,'未保存的故事');
+  await selectTwo();const first='h:'+sid+':'+sample.segments[0].shots[0].id,second='h:'+sid+':'+sample.segments[0].shots[1].id;
+  const before=[node(first),node(second)].map(n=>({x:parseFloat(n.style.left),y:parseFloat(n.style.top)}));
+  await pointer('pointerdown',node(first),100,100);await pointer('pointermove',map(),145,135);await pointer('pointerup',map(),145,135);await f.w.flush();
+  assert.equal(dialog().querySelectorAll('.overviewNode.selected').length,2);const layout=f.project.overviewLayout.canvas37.positions;assert(layout[first]&&layout[second]);assert(Math.abs((layout[first].x-before[0].x)-(layout[second].x-before[1].x))<.001,'Batch drag preserves relative positions');
+  await key('z',{ctrlKey:true});await f.w.flush();assert.equal(f.project.overviewLayout.canvas37.positions[first].x,before[0].x);
+  await selectTwo();await key('Delete');assert.match(f.el('modalTitle').textContent,/删除所选/);f.el('modalActions').lastElementChild.click();await pause();await pause();await f.w.flush();assert.equal(f.project.segments[0].shots.length,1);assert.equal(f.project.assets.length,sample.assets.length,'Shared assets preserved');await key('z',{ctrlKey:true});await f.w.flush();assert.equal(f.project.segments[0].shots.length,3,'Deletion undo restores shots');
+  const box=dialog().querySelector('.canvasSelectionBox');await pointer('pointerdown',map(),0,0);await pointer('pointermove',map(),900,650);assert.equal(box.hidden,false);await pointer('pointerup',map(),900,650);assert(dialog().querySelectorAll('.overviewNode.selected').length>1,'Blank drag selects nodes');assert.equal(box.hidden,true);
+  await key('Escape');assert.equal(dialog().querySelectorAll('.overviewNode.selected').length,0);
+  const v={...live().overviewLayout.canvas37.view};await pointer('pointerdown',map(),100,100,{button:1});await pointer('pointermove',map(),140,125,{button:1});await pointer('pointerup',map(),140,125,{button:1});assert.equal(live().overviewLayout.canvas37.view.x,v.x+40,'Middle mouse pans');
+  map().dispatchEvent(new f.w.MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX:150,clientY:150}));await pause();const menu=dialog().querySelector('.canvasContextMenu');assert.equal(menu.hidden,false);assert(menu.querySelector('[data-menu-command="add-segment"]'));await key('Escape');assert.equal(menu.hidden,true);assert.equal(dialog().open,true,'Esc closes menu before canvas');
+  await click('s:'+sid);await key('Delete');f.el('modalActions').lastElementChild.click();await pause();await pause();await f.w.flush();assert.equal(f.project.segments.length,1);await key('z',{ctrlKey:true});await f.w.flush();assert.equal(f.project.segments.length,2);assert.equal(f.project.media[sample.assets[0].path],sample.media[sample.assets[0].path]);
+  await key('a',{ctrlKey:true});await key('Delete');f.el('modalActions').lastElementChild.click();await pause();await pause();await f.w.flush();assert.equal(f.project.segments.length,0,'Deleting all segments leaves a usable project');assert.equal(f.project.assets.length,sample.assets.length);assert(f.el('canvas_title'),'Project remains editable');await key('z',{ctrlKey:true});await f.w.flush();assert.equal(f.project.segments.length,2,'Undo restores all segments');
+  assert.equal(f.errors.length,0);console.log('PASS: overview default entry, keyboard text safety, multiselect drag, layout undo, box select, pan, menus, batch deletion and restore');
+ }finally{f.dom.window.close()}
+}
 async function run(){
  let f=await fixture();
  try{
@@ -92,6 +120,7 @@ async function run(){
   f.el('checkUpdates').click();await pause();assert.match(f.el('modalTitle').textContent,/新版本/);assert.match(f.el('modalBody').textContent,/Windows EXE/);f.w.close();
   f.el('startExample').click();await pause();
   assert.equal(f.project.assets.length,3);assert.equal(f.w.document.body.dataset.startupView,'workspace');assert.equal(f.w.document.body.dataset.startupStage,'shots');
+  assert.equal(f.el('overviewDialog').open,true,'Example enters editable overview');
   assert.equal(f.el('board').querySelectorAll('[data-shot]').length,3);assert.equal(f.w.getComputedStyle(f.el('startupHome')).display,'none');assert.equal(f.w.getComputedStyle(f.el('startupStoryBlock')).display,'none');
   const before=JSON.stringify(f.project.segments);
   f.el('workspaceMode').click();await pause();assert.notEqual(f.w.getComputedStyle(f.el('startupStoryBlock')).display,'none');assert.equal(f.config.ui.workbenchMode,'professional');assert.equal(f.w.document.body.dataset.workbenchMode,'professional');
@@ -113,5 +142,6 @@ async function run(){
  f=await fixture(null,'simple',true);
  try{assert.match(f.el('startupLoadStatus').textContent,/读取失败/);assert.equal(f.el('startExample').disabled,true);console.log('PASS: failed startup exposes error and disables creation');}finally{f.dom.window.close()}
  await overviewChecks();
+ await canvasInteractionChecks();
 }
 run().then(()=>process.exit(0)).catch(e=>{console.error(e);process.exit(1)});
