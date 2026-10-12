@@ -1,0 +1,193 @@
+{
+  "version": 1,
+  "projectId": "tutorial-cafe",
+  "title": "咖啡店的问候 · 入门示例",
+  "script": "在 @Picture 3 的咖啡店里，@Picture 1 从左侧入口走进来，停在右侧柜台前。@Picture 2 站在柜台后微笑招呼：“你好，欢迎光临。”\n\n15 秒，三个镜头。入口和柜台位置保持固定，不跨越柜台。",
+  "aspect": "16:9",
+  "fps": 24,
+  "segments": [
+    {
+      "id": "intro",
+      "title": "片段 01 · 进店问候",
+      "duration": 15,
+      "originalDuration": 15,
+      "prompt": "summary:\n人物 A 进入咖啡店并与柜台后的人物 B 打招呼。此为人工编写的入门示例。\n\n\ntimeline:\n\n[0.00s–5.00s]\n\n@Picture 1 从 @Picture 3 左侧入口走入，沿中央通路停在柜台前。@Picture 2 站在右侧柜台后。\n\nCamera: 全景，平视，固定机位。\n\nExpression: 自然、友善\n\nSound: 安静室内环境声\n\nSpatial start: A 在左侧入口；B 在右侧柜台后。\n\nSpatial end: A 在柜台前；B 在柜台后。\n\nProfessional: 景别：全景\n\n[5.00s–10.00s]\n\n@Picture 2 留在柜台后，面向 @Picture 1 微笑并轻轻点头。\n\nCamera: 中景，平视，固定机位。\n\nExpression: 自然、友善\n\nDialogue: @Picture 2：你好，欢迎光临。\n\nSound: 安静室内环境声\n\nSpatial start: A 在柜台前；B 在柜台后。\n\nSpatial end: A 在柜台前；B 在柜台后。\n\nProfessional: 景别：中景\n\n[10.00s–15.00s]\n\n@Picture 1 留在柜台前，面向 @Picture 2 点头回应，身体不跨越柜台。\n\nCamera: 中近景，平视，固定机位。\n\nExpression: 自然、友善\n\nSound: 安静室内环境声\n\nSpatial start: A 在柜台前；B 在柜台后。\n\nSpatial end: A 在柜台前；B 在柜台后。\n\nProfessional: 景别：近景\n\n",
+      "originalPrompt": "",
+      "shots": [
+        {
+          "id": "shot-1",
+          "start": 0,
+          "end": 5,
+          "action": "@Picture 1 从 @Picture 3 左侧入口走入，沿中央通路停在柜台前。@Picture 2 站在右侧柜台后。",
+          "camera": "全景，平视，固定机位。",
+          "expression": "自然、友善",
+          "dialogue": "",
+          "sound": "安静室内环境声",
+          "image": "storyboard_media/demo-c.png",
+          "locks": {
+            "identity": true,
+            "costume": true,
+            "scene": true
+          },
+          "professional": {
+            "size": "全景"
+          },
+          "startState": "A 在左侧入口；B 在右侧柜台后。",
+          "endState": "A 在柜台前；B 在柜台后。"
+        },
+        {
+          "id": "shot-2",
+          "start": 5,
+          "end": 10,
+          "action": "@Picture 2 留在柜台后，面向 @Picture 1 微笑并轻轻点头。",
+          "camera": "中景，平视，固定机位。",
+          "expression": "自然、友善",
+          "dialogue": "@Picture 2：你好，欢迎光临。",
+          "sound": "安静室内环境声",
+          "image": "storyboard_media/demo-c.png",
+          "locks": {
+            "identity": true,
+            "costume": true,
+            "scene": true
+          },
+          "professional": {
+            "size": "中景"
+          },
+          "startState": "A 在柜台前；B 在柜台后。",
+          "endState": "A 在柜台前；B 在柜台后。"
+        },
+        {
+          "id": "shot-3",
+          "start": 10,
+          "end": 15,
+          "action": "@Picture 1 留在柜台前，面向 @Picture 2 点头回应，身体不跨越柜台。",
+          "camera": "中近景，平视，固定机位。",
+          "expression": "自然、友善",
+          "dialogue": "",
+          "sound": "安静室内环境声",
+          "image": "storyboard_media/demo-c.png",
+          "locks": {
+            "identity": true,
+            "costume": true,
+            "scene": true
+          },
+          "professional": {
+            "size": "近景"
+          },
+          "startState": "A 在柜台前；B 在柜台后。",
+          "endState": "A 在柜台前；B 在柜台后。"
+        }
+      ],
+      "refs": [],
+      "continuity": false,
+      "storyText": "在 @Picture 3 的咖啡店里，@Picture 1 从左侧入口走进来，停在右侧柜台前。@Picture 2 站在柜台后微笑招呼：“你好，欢迎光临。”\n\n15 秒，三个镜头。入口和柜台位置保持固定，不跨越柜台。",
+      "storyHistory": [],
+      "planning": {
+        "summary": "人物 A 进入咖啡店并与柜台后的人物 B 打招呼。此为人工编写的入门示例。"
+      }
+    },
+    {
+      "id": "order",
+      "title": "片段 02 · 准备点单",
+      "duration": 15,
+      "originalDuration": 15,
+      "prompt": "",
+      "originalPrompt": "",
+      "shots": [],
+      "refs": [],
+      "continuity": true,
+      "storyText": "承接上一段：人物 A 已站在柜台前，人物 B 仍在柜台后。先核对上一段的结束状态，再拆镜。",
+      "guideFromPrev": true
+    }
+  ],
+  "assets": [
+    {
+      "id": "a",
+      "name": "人物 A",
+      "kind": "人物",
+      "description": "短发，浅棕色上衣，神态平和。演示角色，不对应真实人物。",
+      "path": "storyboard_media/demo-a.png",
+      "pictureNumber": 1,
+      "scope": "public",
+      "collapsed": false,
+      "confirmation": {
+        "mode": "manual",
+        "source": [
+          "storyboard_media/demo-a.png",
+          "人物 A",
+          "人物",
+          "短发，浅棕色上衣，神态平和。演示角色，不对应真实人物。"
+        ],
+        "signature": "090758efc96c45125be73786aee51bd0f9d82969faf0c8bd586cee54338a3253",
+        "confirmedAt": "2026-10-10 00:00:00"
+      }
+    },
+    {
+      "id": "b",
+      "name": "人物 B",
+      "kind": "人物",
+      "description": "短发，蓝绿色上衣，神态友善。演示角色，不对应真实人物。",
+      "path": "storyboard_media/demo-b.png",
+      "pictureNumber": 2,
+      "scope": "public",
+      "collapsed": false,
+      "confirmation": {
+        "mode": "manual",
+        "source": [
+          "storyboard_media/demo-b.png",
+          "人物 B",
+          "人物",
+          "短发，蓝绿色上衣，神态友善。演示角色，不对应真实人物。"
+        ],
+        "signature": "b702e2188b0b19efd7978054d93e9f0438a794acbfe5b9a5efdcd2cab375b93f",
+        "confirmedAt": "2026-10-10 00:00:00"
+      }
+    },
+    {
+      "id": "c",
+      "name": "咖啡店场景",
+      "kind": "场景",
+      "description": "固定基准机位：入口在画面左侧，木色柜台在右侧；入口与柜台之间通路畅通。暖色室内光。只使用图中可见区域。",
+      "path": "storyboard_media/demo-c.png",
+      "pictureNumber": 3,
+      "scope": "public",
+      "collapsed": false,
+      "sceneLayout": {
+        "view": "从入口侧平视柜台",
+        "left": "入口",
+        "right": "木色柜台",
+        "paths": "左侧入口通向右侧柜台，中央通路畅通",
+        "confirmed": true
+      },
+      "confirmation": {
+        "mode": "manual",
+        "source": [
+          "storyboard_media/demo-c.png",
+          "咖啡店场景",
+          "场景",
+          "固定基准机位：入口在画面左侧，木色柜台在右侧；入口与柜台之间通路畅通。暖色室内光。只使用图中可见区域。",
+          {
+            "view": "从入口侧平视柜台",
+            "left": "入口",
+            "right": "木色柜台",
+            "paths": "左侧入口通向右侧柜台，中央通路畅通",
+            "confirmed": true
+          }
+        ],
+        "signature": "699d99a267159ed0e16d230c5af84d75b91034b69760bfe6581325c0b1437643",
+        "confirmedAt": "2026-10-10 00:00:00"
+      }
+    }
+  ],
+  "media": {
+    "storyboard_media/demo-a.png": "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",
+    "storyboard_media/demo-b.png": "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ASAgwAAQEGAACAgwAAQEGAACAgwAAQEGgIAAA0BAgAEgIMAAEBBgAAgIMAAEBBgAAgIMAAEBBoCAAANAQIABICDAABAQYAAICDAABAQYAAICDAABAQaAgAADQECAASAgwAAQEGAACAgwAAQEGAACAgwAAQEGgIAAA0BAgAEgIMAAEBBgAAi8+9kvfl4/A8CVnGDslwkYAAICDAABAQaAgAADQECAASAgwAAQEGAACAgwAAQEGAACAgwAAQFm3/734UP9CGTsPrsmwAAQEGAACAgwAAQEGAACAszu+STOnOw7eyfAABAQYEZgGJqNHWcAAgwAAQEGgIAAMwh3kvOw14xBgAEgIMCMw2A0A7vMMASYoTidx2Z/GYkAA0BAgBmNIWlUdpbBCDADclKPx54yHgFmTM7rkdhNhiTADMupPQb7yKgEmJE5u/fODjIwAWZwTvD9sneMTYAZn3N8j+wawxNgpuA03xf7xQwEmFk40/fCTjGJz375m/f1M8Cqfv3e3/mNkl6mYgJmOk75bbIvzMYEzLyMwhshvcxJgEGJG7rL5AQYPpHh1UgvHAQYXqPHd6S48JwAA0DAp6ABICDAABAQYAAICDAABAQYAAICDAABAQaAgAADQECAASAgwAAQEGAACAgwAAQEGAACAgwAAQEGgIAAA0BAgAEgIMAAEBBgAAgIMAAEBBgAAgIMAAEBBoCAAANAQIABICDAABAQYAAICDAABAQYAAICDAABAQaAgAADQECAASAgwAAQEGAACAgwAAQEGAACAgwAAQEGgIAAA0BAgAEgIMAAEBBgAAgIMAAEBBgAAgIMAAEBBoCAAANAQIABICDAABAQYAAICDAABAQYAAICDAABAQaAgAADQECAASAgwAAQ+D//DIOuFXfhUgAAAABJRU5ErkJggg==",
+    "storyboard_media/demo-c.png": "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"
+  },
+  "originalZip": "",
+  "dialogueLanguage": "中文",
+  "assetsManaged": true,
+  "storySeparated": true,
+  "nextPictureNumber": 4,
+  "starterExample": true
+}

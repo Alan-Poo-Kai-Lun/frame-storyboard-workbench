@@ -1,11 +1,12 @@
 """Build the installation ZIP from an explicit input list, never user directories."""
-import hashlib,zipfile
+import hashlib,json,zipfile
 from pathlib import Path
 from check_release import ROOT,inputs
 
 def build(root=ROOT,output=None):
  names=inputs(root);folder=Path(output) if output else root/'dist';folder.mkdir(parents=True,exist_ok=True)
- path=folder/'FRAME-Storyboard-Workbench-v1.zip';temp=path.with_suffix('.tmp')
+ release=json.loads((root/'version.json').read_text('utf-8')).get('release','v1')
+ path=folder/('FRAME-Storyboard-Workbench-'+release+'.zip');temp=path.with_suffix('.tmp')
  with zipfile.ZipFile(temp,'w',zipfile.ZIP_DEFLATED) as z:
   for name in names:
    raw=(root/name).read_bytes()

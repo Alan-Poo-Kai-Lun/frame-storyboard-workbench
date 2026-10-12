@@ -12,7 +12,7 @@ function recordStory(segment,reason='编辑保存',text=segment?.storyText??''){
  segment.storyHistory.push({id:newId(),createdAt:new Date().toISOString(),reason,text});segment.storyHistory=segment.storyHistory.slice(-100);changed();
 }
 function syncWorkbenchState(){
- if(!connectionRestored){$('connection').textContent=cfg.ai?.model?'已读取 AI 设置 · '+cfg.ai.model:'请首次配置 AI 连接';connectionRestored=true}
+ if(!connectionRestored){$('connection').textContent=cfg.ai?.model?'已读取 AI 设置 · '+cfg.ai.model:'手动创作已就绪 · AI 可按需连接';connectionRestored=true}
  initSegmentStories();if(!P)return;
  if(seg()){seg().storyText=seg().storyText??'';if(P.script!==seg().storyText){P.script=seg().storyText;changed()}$('script').value=workspaceText(seg().storyText,true)}
  $('storyHistory').textContent='本片段故事历史 ('+(seg()?.storyHistory?.length||0)+')';

@@ -2,9 +2,9 @@
 
 **把素材、故事、分镜与视频记录，整理在同一个本地导演工作台。**
 
-`V3.7 Beta` · `Python 3.10+` · `Windows 优先` · `本地运行` · `暂时保留权利`
+`V3.8 Beta` · `Python 3.10+` · `Windows 优先` · `本地运行` · `暂时保留权利`
 
-> **导演包的目标接收端是 AI 搅拌手（AIMixer）的 [ComfyUI MiniMax H3 导演台](https://github.com/AIMixer/ComfyUI_MiniMaxH3_Director)。** 导出的 `.mmxpack.zip` 应在该节点的「导入导演包」中打开，不是可直接拖入 ComfyUI 的通用工作流 JSON。使用前需自行安装导演台、对应工作流和模型；见 [ComfyUI 对接与兼容说明](docs/h3-director-compatibility.md)。
+> **先开始分镜，再按需加入 AI。** 基础分镜不需要 Ollama、API 或 H3 导演台。AI 辅助需要 Ollama 或兼容 API，二选一；H3 视频交接的依赖见 [ComfyUI 对接说明](docs/h3-director-compatibility.md)。
 
 [🚀 第一次使用：图文入门](docs/quick-start.md) · [常见问题](docs/faq.md) · [English](docs/README.en.md) · [功能与历史说明](docs/workbench-guide.md) · [更新记录](CHANGELOG.md) · [发布管理](docs/releasing.md)
 
@@ -12,7 +12,7 @@
 
 > 真实截图来自维护者先前的演示项目，展示升级前版本；V3.7 已增加全屏、平移缩放与详情栏调宽。截图里的角色与飞剑是虚构演示素材，不代表生成质量。当前为公开源码 Beta，暂未采用开源许可证。
 
-**第一次打开？** 先看 [图文入门教程](docs/quick-start.md)。想先体验界面，可下载 [咖啡店示例导演包](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/blob/main/docs/examples/cafe-demo.mmxpack.zip)，启动后点击「导入导演包」。示例不需要 AI，不含真实人物或成片；导入前备份当前项目。
+**第一次打开？** 首页点击「体验示例项目」，立即打开自绘咖啡店素材和人工编写分镜；不调用 AI。也可点击「创建新项目」，沿故事 → 素材 → 分镜三步创作。已有本机项目会显示「继续编辑」，创建或导入示例前会自动备份旧项目。
 
 ![FRAME 工作流程示意（非运行截图）](docs/assets/workflow.svg)
 
@@ -26,6 +26,8 @@
 
 | 功能 | 当前能力 |
 |---|---|
+| 新手入口 | 三个首页入口、继续本机项目、默认简洁模式、内置无需 AI 的示例 |
+| 项目备份 | 完整 `.frame.json` 备份与导入，无需 H3 导演台 |
 | 导演画布 | 全屏、节点自由拖动、平移缩放、项目波纹、右侧详情调宽 |
 | 素材管理 | 公共 / 本组素材、拖入替换、Picture 引用与具体说明 |
 | 素材确认 | 人工确认或 AI 分析后确认；已确认说明供后续文字拆镜复用 |
@@ -46,9 +48,10 @@
    python3 server.py
    ```
 
-4. 浏览器访问 `http://127.0.0.1:8787`，点击「新建项目」。
-5. 在「连接设置」填自己的模型服务地址和模型名称。
-6. 添加素材并确认说明，再编排剧本、拆镜、编辑和导出。
+4. 浏览器访问 `http://127.0.0.1:8787`，选择「体验示例项目」或「创建新项目」。
+5. 默认简洁模式：先写故事、准备素材，再手动添加并编辑镜头。无需模型。
+6. 点击 AI 功能时再配置模型；专业模式展开审查、反推、空间状态等高级功能。
+7. 「保存 / 交接」可保存完整 `.frame.json` 项目备份，或导出适配 AI 搅拌手 H3 导演台的导演包。
 
 源码下载也可直接启动，无需先构建前端。端口占用时可运行 `python server.py --port 8788`。不希望自动打开浏览器时加 `--no-browser`。
 

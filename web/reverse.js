@@ -22,7 +22,7 @@ function renderReverseSources(){
 function syncReversePanel(){
  if(!P)return;
  if(reverseProject!==P.projectId){reverseProject=P.projectId;reverseLoadVersion++;releaseReverseDraft();reverseBusy=false;$('reverseSubmit').disabled=$('reverseSampling').disabled=false;reverseWantedTask='';reverseSeen.clear();$('reversePreview').innerHTML='';$('reverseOutput').hidden=true;$('reverseSamplingLabel').hidden=$('reverseAudio').hidden=true;$('reverseState').textContent='请选择图片或视频';$('reverseAudioNotes').value='';if(reverseTemplatesLoaded)renderReverseTemplates('',true)}
- renderReverseSources();if(!$('reverseModel').value)$('reverseModel').value=cfg.ui?.reverseModel||cfg.ai?.model||'';
+ renderReverseSources();if(!$('reverseModel').value)$('reverseModel').value=cfg.ui?.reverseModel||cfg.ai?.visionModel||cfg.ai?.model||'';
  if(ready&&!reverseTemplatesLoaded)safe(loadReverseTemplates);
 }
 async function openReversePanel(){if(!ready)throw Error('工作台正在加载，请稍候');ensure();$('reversePanel').open=true;syncReversePanel();await loadReverseTemplates();$('reversePanel').scrollIntoView?.({behavior:'smooth',block:'nearest'})}
@@ -106,7 +106,7 @@ $('reverseDeleteTemplate').onclick=()=>safe(async()=>{const id=reverseSelected;i
 $('reverseSubmit').onclick=()=>safe(async()=>{
  if(reverseBusy)throw Error('正在读取素材，请稍候');if(!reverseDraft)throw Error('请先选择图片或视频');const pid=P.projectId,draft=reverseDraft;
  if(draft.projectId!==pid)throw Error('项目已切换，请重新选择素材');const body={projectId:pid,mediaType:draft.type,name:draft.name,duration:draft.duration,frames:draft.frames,prompt:$('reverseInstruction').value,model:$('reverseModel').value.trim(),extra:$('reverseExtra').value,audioNotes:draft.type==='video'?$('reverseAudioNotes').value:''};
- if(!body.prompt.trim())throw Error('请选择模板或填写反推提示词');if(!body.model)throw Error('请填写支持图片输入的视觉模型');
+ if(!body.prompt.trim())throw Error('请选择模板或填写反推提示词');if(typeof requireStartupAI==='function'&&!requireStartupAI('图片 / 视频反推',()=>{if(!$('reverseModel').value.trim())$('reverseModel').value=cfg.ai?.visionModel||cfg.ai?.model||'';return $('reverseSubmit').onclick()},true,body.model))return;if(!body.model)throw Error('请填写支持图片输入的视觉模型');
  $('reverseSubmit').disabled=true;
  try{await flush();if(P.projectId!==pid)throw Error('项目已切换');const r=await api('reverse-prompt',body);if(P.projectId!==pid)throw Error('项目已切换，任务记录保留在原项目');reverseWantedTask=r.id;$('reverseState').textContent='反推任务已排队，完成后在下方显示结果';toast('已加入提示词反推队列');pollTasks()}finally{$('reverseSubmit').disabled=false}
 });

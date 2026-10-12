@@ -8,7 +8,7 @@ import reverse_backend as reverse
 import planning_backend as planning
 import asset_analysis
 import prompt_review
-from pathlib import Path
+from pathlib import Path,PurePosixPath
 from http.server import ThreadingHTTPServer,BaseHTTPRequestHandler
 from urllib.request import Request,urlopen
 from urllib.error import HTTPError
@@ -73,12 +73,64 @@ def load_project():
         p=json.loads(STATE.read_text('utf-8'))
         if not p.get('projectId'): p['projectId']=uid(); save(p)
         return p
-def create_project():
+def backup_project():
+    if STATE.exists():
+        backup=DATA/'backups'; backup.mkdir(exist_ok=True)
+        (backup/(time.strftime('%Y%m%d-%H%M%S')+'-'+uid()+'.json')).write_bytes(STATE.read_bytes())
+
+def create_project(example=False,title=''):
     with LOCK:
-        if STATE.exists():
-            backup=DATA/'backups'; backup.mkdir(exist_ok=True)
-            (backup/(time.strftime('%Y%m%d-%H%M%S')+'-'+uid()+'.json')).write_bytes(STATE.read_bytes())
-        p=blank_project();save(p);return p
+        if not isinstance(example,bool) or not isinstance(title,str):raise ValueError('新项目参数无效')
+        p=blank_project()
+        if example:
+            p=json.loads((ROOT/'presets/starter-project.json').read_text('utf-8'))
+            p['projectId']=uid()
+            for segment in p['segments']:
+                segment['id']=uid()
+                for shot in segment['shots']:shot['id']=uid()
+            for asset in p['assets']:
+                asset['id']=uid()
+                asset['confirmation']={'signature':asset_analysis.signature(asset,p['media']),'mode':'manual','confirmedAt':time.strftime('%Y-%m-%d %H:%M:%S'),'source':asset_analysis.source(asset)}
+        elif title.strip():p['title']=title.strip()[:200]
+        backup_project();save(p);return p
+
+def import_project(p):
+    """Read the portable FRAME JSON backup before replacing the current project."""
+    if not isinstance(p,dict) or p.get('version')!=1:raise ValueError('项目备份格式无效')
+    p=copy.deepcopy(p)
+    if not isinstance(p.get('title'),str) or not isinstance(p.get('script'),str) or not isinstance(p.get('aspect'),str):raise ValueError('项目基础字段无效')
+    segments=p.get('segments');assets=p.get('assets');media=p.get('media')
+    if not isinstance(segments,list) or not segments or len(segments)>500 or not isinstance(assets,list) or len(assets)>2000 or not isinstance(media,dict):raise ValueError('项目片段、素材或媒体格式无效')
+    if isinstance(p.get('fps'),bool) or not isinstance(p.get('fps'),(int,float)) or not math.isfinite(p['fps']) or not 1<=p['fps']<=120:raise ValueError('项目帧率无效')
+    ids=set()
+    def identity(obj):
+        if not isinstance(obj,dict) or not isinstance(obj.get('id'),str) or not obj['id'] or obj['id'] in ids:raise ValueError('项目条目编号缺失或重复')
+        ids.add(obj['id'])
+    for segment in segments:
+        identity(segment)
+        if not isinstance(segment.get('title'),str) or not isinstance(segment.get('shots'),list) or len(segment['shots'])>2000 or not isinstance(segment.get('refs',[]),list):raise ValueError('片段格式无效')
+        duration=segment.get('duration')
+        if isinstance(duration,bool) or not isinstance(duration,(int,float)) or not math.isfinite(duration) or not 0<duration<=600:raise ValueError('片段时长无效')
+        for shot in segment['shots']:
+            identity(shot)
+            for key in ['start','end']:
+                n=shot.get(key)
+                if isinstance(n,bool) or not isinstance(n,(int,float)) or not math.isfinite(n) or n<0:raise ValueError('镜头时间无效')
+            if shot['end']<=shot['start']:raise ValueError('镜头结束时间应晚于开始时间')
+            for key in ['action','camera','expression','dialogue','sound']:
+                if not isinstance(shot.get(key,''),str):raise ValueError('镜头描述格式无效')
+            shot.setdefault('locks',{})
+    for asset in assets:
+        identity(asset)
+        if not all(isinstance(asset.get(key),str) for key in ['name','kind','path']):raise ValueError('素材字段无效')
+    for name,value in media.items():
+        if not isinstance(name,str) or not isinstance(value,str) or name.startswith('/') or '..' in PurePosixPath(name).parts or '\\' in name or ':' in name:raise ValueError('媒体路径或内容无效')
+        try:base64.b64decode(value,validate=True)
+        except Exception:raise ValueError('媒体内容损坏')
+    if not isinstance(p.get('originalZip',''),str):raise ValueError('原导演包字段无效')
+    p['projectId']=uid()
+    with LOCK:backup_project();save(p)
+    return p
 def list_models(cfg):
     if cfg.get('provider')!='ollama': raise ValueError('自动检测目前支持 Ollama')
     base=cfg.get('endpoint','').strip().rstrip('/')
@@ -647,7 +699,8 @@ class Handler(BaseHTTPRequestHandler):
                 p=load_project()
                 if not p or p.get('projectId')!=body.get('projectId'):raise ValueError('项目已切换，请刷新')
                 return self.respond({'segments':[{'id':seg['id'],'title':seg['title'],'issues':prompt_review.quality(sys.modules[__name__],p,seg)} for seg in p['segments']]})
-            if route=='/api/new-project': return self.respond(create_project())
+            if route=='/api/new-project': return self.respond(create_project(body.get('example',False),body.get('title','')))
+            if route=='/api/import-project': return self.respond(import_project(body.get('project')))
             if route=='/api/unload': return self.respond(unload_model(body))
             if route=='/api/unload-all': return self.respond(unload_all_models(sys.modules[__name__]))
             if route=='/api/analyze-assets':return self.respond(asset_analysis.enqueue(sys.modules[__name__],body))

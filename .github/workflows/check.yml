@@ -19,10 +19,14 @@ jobs:
         run: python tools/check_release.py
       - name: Structure and update tests
         run: python -m unittest discover -s tests -v
+      - name: Frontend interaction checks
+        run: |
+          npm install --prefix "$RUNNER_TEMP/frame-ui-check" jsdom@26.1.0 --ignore-scripts --no-audit --no-fund
+          NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_startup_ui.cjs
       - name: Build clean installer
         run: python tools/build_release.py
       - uses: actions/upload-artifact@v4
         with:
-          name: frame-v3.7-beta-installer
+          name: frame-v3.8-beta-installer
           path: dist/*
           if-no-files-found: error

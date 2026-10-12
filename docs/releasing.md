@@ -28,7 +28,7 @@ python tools/build_release.py
 
 `dist/` 生成干净的安装 ZIP 和 SHA256SUMS.txt。发布包不包含测试、CI、Git 历史和用户数据，但包含安装说明与权利声明。
 
-发布初版建议 tag 为 `v3.7-beta.1`、标题为 `FRAME V3.7 Beta 1`。不要把安装 ZIP 提交进源码；在 GitHub Releases 手动上传 ZIP 和 SHA256SUMS.txt，勾选 Pre-release。发布前在 Windows 新目录测试安装，并在旧目录测试更新。
+本次版本 tag 为 `v3.8-beta.1`、标题为 `FRAME V3.8 Beta 1`。不要把安装 ZIP 提交进源码；在 GitHub Releases 手动上传 ZIP 和 SHA256SUMS.txt，勾选 Pre-release。发布前在 Windows 新目录测试安装，并在旧目录测试更新。
 
 后续发布从真实源码提交打 tag；每个 Release 对应一个版本。不要修改已发布 tag 来覆盖旧版。回退前备份 data/，旧程序不保证读取新版本数据。
 
@@ -49,3 +49,11 @@ GitHub Actions 权限设为 contents: read。打包产物仅用于本次提交�
 - https://cli.github.com/manual/gh_repo_create
 - https://docs.github.com/en/migrations/importing-source-code/using-the-command-line-to-import-source-code/adding-locally-hosted-code-to-github
 - https://docs.github.com/en/actions/tutorials/build-and-test-code/python
+
+
+前端交互检查使用开发依赖，不加入安装包：
+
+```bash
+npm install --prefix /tmp/frame-ui-check jsdom@26.1.0 --ignore-scripts --no-audit --no-fund
+NODE_PATH=/tmp/frame-ui-check/node_modules node tests/test_startup_ui.cjs
+```
