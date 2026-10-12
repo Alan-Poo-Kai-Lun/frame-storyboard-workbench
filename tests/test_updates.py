@@ -13,11 +13,11 @@ class UpdateChecks(unittest.TestCase):
     self.assertNotEqual(runtime_paths.data_dir(),runtime_paths.resource_dir())
  def test_legacy_migration_is_copy_only_and_never_overwrites(self):
   with tempfile.TemporaryDirectory() as folder:
-   p=Path(folder);old=p/'old/data';old.mkdir(parents=True);(old/'project.json').write_text('{"title":"原项目"}')
-   (old/'settings.json').write_text('{"ai":{"model":"original"}}');(old/'reference-media').mkdir();(old/'reference-media/a.bin').write_bytes(b'MEDIA')
+   p=Path(folder);old=p/'old/data';old.mkdir(parents=True);(old/'project.json').write_text('{"title":"原项目"}',encoding='utf-8')
+   (old/'settings.json').write_text('{"ai":{"model":"original"}}',encoding='utf-8');(old/'reference-media').mkdir();(old/'reference-media/a.bin').write_bytes(b'MEDIA')
    target=p/'profile/data';target.mkdir(parents=True)
    self.assertTrue(runtime_paths.migrate_legacy_data(old,target));self.assertEqual((target/'project.json').read_bytes(),(old/'project.json').read_bytes());self.assertTrue((old/'reference-media/a.bin').is_file())
-   (old/'project.json').write_text('NEW');self.assertFalse(runtime_paths.migrate_legacy_data(old,target));self.assertNotEqual((target/'project.json').read_text(),'NEW')
+   (old/'project.json').write_text('NEW',encoding='utf-8');self.assertFalse(runtime_paths.migrate_legacy_data(old,target));self.assertNotEqual((target/'project.json').read_text(encoding='utf-8'),'NEW')
  def test_newest_beta_selected_and_external_links_ignored(self):
   base='https://github.com/'+update_check.REPOSITORY+'/releases/'
   old={'tag_name':'v3.8-beta.1','html_url':base+'tag/v3.8-beta.1','draft':False,'prerelease':True}

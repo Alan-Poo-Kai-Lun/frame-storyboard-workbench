@@ -7,7 +7,10 @@ def program_dir():return Path(sys.executable).resolve().parent if getattr(sys,'f
 def data_dir():
  if os.environ.get('FRAME_DATA_DIR'):return Path(os.environ['FRAME_DATA_DIR']).expanduser().resolve()
  if not getattr(sys,'frozen',False):return resource_dir()/'data'
- home=Path(os.environ.get('LOCALAPPDATA',Path.home()/'AppData'/'Local')) if sys.platform=='win32' else Path(os.environ.get('XDG_DATA_HOME',Path.home()/'.local/share'))
+ if sys.platform=='win32':
+  configured=os.environ.get('LOCALAPPDATA');home=Path(configured) if configured else Path.home()/'AppData'/'Local'
+ else:
+  configured=os.environ.get('XDG_DATA_HOME');home=Path(configured) if configured else Path.home()/'.local/share'
  return home/'FRAME'/'Workbench'/'data'
 def migrate_legacy_data(source,target):
  """Copy into an empty destination atomically; never overwrite or remove the source."""
