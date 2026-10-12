@@ -747,6 +747,7 @@ class Handler(BaseHTTPRequestHandler):
             if route=='/api/unload-all': return self.respond(unload_all_models(sys.modules[__name__]))
             if route=='/api/analyze-assets':return self.respond(asset_analysis.enqueue(sys.modules[__name__],body))
             if route=='/api/apply-assets':return self.respond(asset_analysis.apply(sys.modules[__name__],body))
+            if route=='/api/confirm-assets':return self.respond(asset_analysis.confirm_all(sys.modules[__name__],body))
             if route=='/api/confirm-asset':return self.respond(asset_analysis.confirm(sys.modules[__name__],body))
             if route=='/api/edit-asset-analysis':return self.respond(asset_analysis.edit(sys.modules[__name__],body))
             if route=='/api/apply-planning':return self.respond(planning.apply(sys.modules[__name__],body))

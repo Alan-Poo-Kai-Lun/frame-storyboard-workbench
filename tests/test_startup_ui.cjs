@@ -15,7 +15,7 @@ async function fixture(existing=null,mode='simple',broken=false){
  let failRebuild=false;const projectSnapshots=new Map();if(project)projectSnapshots.set(project.projectId,copy(project));
  const calls=[],errors=[];w.addEventListener('error',e=>errors.push(e.error));w.structuredClone=copy;
  Object.defineProperty(w.crypto,'randomUUID',{value:require('node:crypto').randomUUID});
- Object.defineProperties(w.HTMLElement.prototype,{offsetWidth:{get(){if(this.classList.contains('overviewNode')){w._nodeMeasures=(w._nodeMeasures||0)+1;return 230}return 1000}},offsetHeight:{get(){if(this.classList.contains('overviewNode')){w._nodeMeasures=(w._nodeMeasures||0)+1;return 100}return 700}},clientWidth:{get(){return 1000}},clientHeight:{get(){return 700}}});
+ Object.defineProperties(w.HTMLElement.prototype,{offsetWidth:{get(){if(this.classList.contains('overviewNode')){w._nodeMeasures=(w._nodeMeasures||0)+1;return parseFloat(this.style.width)||230}return 1000}},offsetHeight:{get(){if(this.classList.contains('overviewNode')){w._nodeMeasures=(w._nodeMeasures||0)+1;return parseFloat(this.style.height)||100}return 700}},clientWidth:{get(){return 1000}},clientHeight:{get(){return 700}}});
  w.ResizeObserver=class{observe(){}disconnect(){}unobserve(){}};
  w.matchMedia=()=>({matches:false,addEventListener(){},removeEventListener(){}});
  w.HTMLMediaElement.prototype.pause=function(){};w.confirm=()=>true;w.HTMLElement.prototype.scrollIntoView=function(){};
@@ -32,7 +32,9 @@ async function fixture(existing=null,mode='simple',broken=false){
   else if(route==='settings-patch'){for(const[k,v]of Object.entries(body))config[k]={...config[k],...v};data={ok:true};}
   else if(route==='check-updates')data={current:'v3.9-beta.1',latest:'v3.9-beta.2',available:true,message:'发现新版本',releaseUrl:'https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/tag/v3.9-beta.2',notes:'更新说明',assets:[{name:'FRAME-Workbench-Windows-x64-v3.9-beta.2.exe',url:'https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.9-beta.2/FRAME-Workbench-Windows-x64-v3.9-beta.2.exe'}]};
   else if(route==='tasks')data={tasks:[],paused:false};
-  else if(route==='asset-analysis-status')data={assets:[]};
+  else if(route==='asset-analysis-status')data={assets:project.assets.filter(a=>!a.deleted).map(a=>({id:a.id,signature:'stamp-'+a.id}))};
+  else if(route==='confirm-assets'){for(const a of project.assets)if(body.assets.some(x=>x.id===a.id))a.confirmation={mode:'manual',source:[a.path||'',a.name||'',a.kind||'',a.description||'']};data={project,confirmed:body.assets.length,skipped:[]};}
+  else if(route==='prompt-quality')data={segments:[]};
   else if(route==='visual-library-storage')data={used:0,limit:null};
   else if(route==='visual-pack-preview')data={token:'test-preview',revision:'test-revision',count:1,conflicts:1,bytes:100,entries:[{title:'人物参考',category:'size',media:true,conflict:true}]};
   else if(route==='visual-pack-cancel')data={ok:true};
@@ -154,6 +156,47 @@ async function appearanceChecks(){
   assert.equal(f.errors.length,0);console.log('PASS: canvas appearance live changes, invalid size guard, persistence, reopen and reset');
  }finally{f.dom.window.close()}
 }
+async function canvasWorkflowChecks(){
+ const source=copy(sample),f=await fixture(source,'professional'),live=()=>f.w.eval('P'),dialog=()=>f.el('overviewDialog'),map=()=>dialog().querySelector('.overviewMap');
+ const first='s:'+source.segments[0].id,second='h:'+source.segments[0].id+':'+source.segments[0].shots[0].id,node=id=>[...dialog().querySelectorAll('.overviewNode')].find(el=>el.dataset.overviewSelect===id);
+ const click=async el=>{el.click();await pause();await pause()};
+ const pointer=async(type,target,x,y)=>{target.dispatchEvent(new f.w.MouseEvent(type,{clientX:x,clientY:y,button:0,bubbles:true,cancelable:true}));await pause()};
+ const key=async(key,extra={})=>{map().dispatchEvent(new f.w.KeyboardEvent('keydown',{key,bubbles:true,cancelable:true,...extra}));await pause();await pause()};
+ try{
+  f.el('startResume').click();await pause();await pause();
+  assert.equal(f.el('projectOverview').textContent,'画布模式');
+  const original=JSON.stringify(live().segments),assets=JSON.stringify(live().assets);
+  await click(node(first));node(second).dispatchEvent(new f.w.MouseEvent('click',{bubbles:true,shiftKey:true}));await pause();await key('g',{ctrlKey:true});
+  assert.equal(live().overviewLayout.canvas37.groups.length,1);assert.equal(live().overviewLayout.canvas37.groups[0].members.length,2);
+  const before=copy(live().overviewLayout.canvas37.positions),z=live().overviewLayout.canvas37.view.z;
+  await pointer('pointerdown',node(second),100,100);await pointer('pointermove',map(),150,130);await pointer('pointerup',map(),150,130);await f.w.flush();
+  for(const id of [first,second]){assert.equal(live().overviewLayout.canvas37.positions[id].x,before[id].x+50/z);assert.equal(live().overviewLayout.canvas37.positions[id].y,before[id].y+30/z)}
+  assert.equal(JSON.stringify(live().segments),original);assert.equal(JSON.stringify(live().assets),assets,'Layout grouping cannot alter project content');
+  assert(dialog().querySelector('.canvasGroupFrame'));
+  dialog().querySelector('.canvasGroupLabel').dispatchEvent(new f.w.MouseEvent('dblclick',{bubbles:true}));await pause();f.el('canvasGroupName').value='主角和镜头';await click(f.el('modalActions').lastElementChild);assert.equal(live().overviewLayout.canvas37.groups[0].title,'主角和镜头');
+  const grip=node(second).querySelector('.canvasResizeHandle');await pointer('pointerdown',grip,100,100);await pointer('pointermove',map(),200,170);await pointer('pointerup',map(),200,170);await f.w.flush();
+  const size=copy(live().overviewLayout.canvas37.sizes[second]);assert(size.w>230&&size.h>100);assert.equal(node(second).style.width,size.w+'px');
+  await key('z',{ctrlKey:true});assert.equal(live().overviewLayout.canvas37.sizes[second],undefined);assert.equal(node(second).style.width,'');
+  await pointer('pointerdown',node(second).querySelector('.canvasResizeHandle'),100,100);await pointer('pointermove',map(),180,150);await pointer('pointerup',map(),180,150);await f.w.flush();
+  const persisted=copy(live().overviewLayout.canvas37);
+  await click(dialog().querySelector('[data-overview-close]'));await click(f.el('projectOverview'));
+  assert.deepEqual(copy(live().overviewLayout.canvas37.groups),persisted.groups);assert.equal(node(second).style.width,persisted.sizes[second].w+'px');
+  await click(node(second));await key('g',{ctrlKey:true,shiftKey:true});assert.equal(live().overviewLayout.canvas37.groups.length,0);await key('z',{ctrlKey:true});assert.equal(live().overviewLayout.canvas37.groups.length,1);
+  // A group member hidden by switching focus still moves with its visible member.
+  await click(node('s:'+source.segments[1].id));assert(!node(second));
+  const hiddenBefore=copy(live().overviewLayout.canvas37.positions[second]);
+  await pointer('pointerdown',node(first),100,100);await pointer('pointermove',map(),130,140);await pointer('pointerup',map(),130,140);await f.w.flush();
+  assert.equal(live().overviewLayout.canvas37.positions[second].x,hiddenBefore.x+30/live().overviewLayout.canvas37.view.z);
+  // Validate direct export and import entry without a second implementation.
+  let exports=0,imports=0;f.w.eval('downloadDirectorPack=async()=>{window._exports=(window._exports||0)+1}');
+  await click(dialog().querySelector('[data-canvas-action="export-pack"]'));assert.equal(f.w._exports,1);
+  map().dispatchEvent(new f.w.MouseEvent('contextmenu',{bubbles:true,clientX:20,clientY:20}));await pause();assert(dialog().querySelector('[data-menu-command="import-pack"]'));assert(dialog().querySelector('[data-menu-command="export-pack"]'));
+  f.el('packFile').click=()=>imports++;await click(dialog().querySelector('[data-canvas-action="import-pack"]'));assert.equal(imports,1);assert.equal(dialog().open,false);
+  await click(f.el('projectOverview'));await click(dialog().querySelector('[data-canvas-action="confirm-all-assets"]'));assert.equal(f.calls.filter(c=>c.route==='confirm-assets').at(-1).body.assets.length,source.assets.length);
+  await click(f.w.document.querySelector('[data-confirm-assets="public"]'));assert(f.calls.filter(c=>c.route==='confirm-assets').at(-1).body.assets.every(row=>source.assets.find(a=>a.id===row.id).scope!=='segment'));
+  assert.equal(f.errors.length,0);console.log('PASS: canvas group/hidden-member movement, rename, resize, undo, persistence, pack entry and bulk confirmation');
+ }finally{f.dom.window.close()}
+}
 async function run(){
  let f=await fixture();
  try{
@@ -188,5 +231,6 @@ async function run(){
  await canvasInteractionChecks();
  await optimizationAndLibraryChecks();
  await appearanceChecks();
+ await canvasWorkflowChecks();
 }
 run().then(()=>process.exit(0)).catch(e=>{console.error(e);process.exit(1)});

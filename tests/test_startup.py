@@ -31,6 +31,8 @@ class StartupChecks(unittest.TestCase):
   self.assertEqual(sum(len(s['videos']) for s in p['segments']),1)
   self.assertTrue(all(a['path'] in p['media'] for a in p['assets']))
   p['overviewLayout']['canvas37']['appearance']={'background':'#142536','highlight':'#ff8800','gridSize':48,'pattern':'lines'}
+  p['overviewLayout']['canvas37']['groups']=[{'id':'g1','title':'场景与主角','members':['project','s:'+p['segments'][0]['id']]}]
+  p['overviewLayout']['canvas37']['sizes']={'project':{'w':360,'h':240}}
   blob=server.export_pack(p)
   with zipfile.ZipFile(io.BytesIO(blob)) as z:
    for path,value in p['media'].items():self.assertEqual(z.read(path),base64.b64decode(value))
@@ -75,9 +77,10 @@ class StartupChecks(unittest.TestCase):
    # The complete example now includes a video and its original portable archive.
    with urlopen(req,timeout=30) as response:return json.load(response)
   try:
-   with urlopen(base+'/',timeout=3) as response:self.assertIn(b'startup.js?v=3.13',response.read())
-   with urlopen(base+'/api/bootstrap',timeout=3) as response:self.assertEqual(json.load(response)['version'],'V3.13')
+   with urlopen(base+'/',timeout=3) as response:self.assertIn(b'startup.js?v=3.14',response.read())
+   with urlopen(base+'/api/bootstrap',timeout=3) as response:self.assertEqual(json.load(response)['version'],'V3.14')
    p=post('new-project',{'example':True});self.assertTrue(p['starterExample'])
+   result=post('confirm-assets',{'projectId':p['projectId'],'assets':[{'id':a['id'],'signature':asset_analysis.signature(a,p['media'])} for a in p['assets']]});self.assertEqual(result['confirmed'],0);self.assertEqual(len(result['skipped']),2)
    restored=post('import-project',{'project':p});self.assertEqual(restored['media'],p['media'])
    self.assertNotEqual(restored['projectId'],p['projectId'])
   finally:service.shutdown();service.server_close();thread.join(timeout=3)

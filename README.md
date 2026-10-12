@@ -2,7 +2,7 @@
 
 **把素材、故事、分镜与视频记录，整理在同一个本地导演工作台。**
 
-`V3.13 Beta` · `Windows EXE / Python 3.10+ 源码版` · `Windows 优先` · `本地运行` · `暂时保留权利`
+`V3.14 Beta` · `Windows EXE / Python 3.10+ 源码版` · `Windows 优先` · `本地运行` · `暂时保留权利`
 
 > **先开始分镜，再按需加入 AI。** 基础分镜不需要 Ollama、API 或 H3 导演台。AI 辅助需要 Ollama 或兼容 API，二选一；H3 视频交接的依赖见 [ComfyUI 对接说明](docs/h3-director-compatibility.md)。
 
@@ -56,7 +56,7 @@
 - 从源码转 EXE：先关闭源码版，把 EXE 放入原目录再首次启动。目标用户数据为空时复制旧 `data/`；原目录保留。已有 EXE 数据时使用项目备份导入。
 - 更新检查是手动操作，不会上传项目、素材或模型密钥，也不会静默安装。Beta 更新通过版本列表提供。
 
-详见 [本次更新说明](docs/release-v3.13-beta.1.md)与 [Windows EXE 数据迁移说明](docs/release-v3.9-beta.1.md)。源码版端口占用时可使用 `--port 8788`；`--no-browser` 关闭自动打开浏览器。
+详见 [本次更新说明](docs/release-v3.14-beta.1.md)与 [Windows EXE 数据迁移说明](docs/release-v3.9-beta.1.md)。源码版端口占用时可使用 `--port 8788`；`--no-browser` 关闭自动打开浏览器。
 
 ### Ollama 配置
 

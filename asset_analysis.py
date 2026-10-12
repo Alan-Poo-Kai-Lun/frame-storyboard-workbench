@@ -110,3 +110,29 @@ def confirm(s,body):
  return {'project':p,'message':'已'+('人工确认' if mode=='manual' else '确认 AI 分析说明')+'；后续拆镜直接使用文字'}
 def apply(s,body):raise ValueError('分析草稿已逐张保存；请在素材卡片确认使用说明')
 def edit(s,body):raise ValueError('请使用素材说明确认功能，分析草稿不会自动覆盖原说明')
+
+
+def confirm_all(s,body):
+ """Confirm the supplied snapshot atomically, without rewriting descriptions or AI drafts."""
+ with s.LOCK:
+  p=s.load_project()
+  if not p or p['projectId']!=body.get('projectId'):raise ValueError('项目已切换')
+  snapshots=body.get('assets')
+  if not isinstance(snapshots,list):raise ValueError('素材快照无效')
+  requested={row['id']:row.get('signature') for row in snapshots if isinstance(row,dict) and isinstance(row.get('id'),str)}
+  rows={a['id']:a for a in p['assets'] if not a.get('deleted')}
+  confirmed=0;skipped=[]
+  for ident,stamp in requested.items():
+   a=rows.get(ident);reason=''
+   if not a:reason='已删除或不存在'
+   elif stamp!=signature(a,p['media']):reason='素材已修改'
+   elif not p['media'].get(a.get('path')):reason='图片缺失'
+   elif not isinstance(a.get('description'),str) or not a['description'].strip():reason='说明为空'
+   elif len(a['description'])>30000:reason='说明超过 30000 字'
+   elif valid(a,p['media']):reason='已确认'
+   if reason:
+    skipped.append({'id':ident,'name':a.get('name',ident) if a else ident,'reason':reason});continue
+   a['confirmation']={'signature':signature(a,p['media']),'mode':'manual','confirmedAt':time.strftime('%Y-%m-%d %H:%M:%S'),'source':source(a)}
+   confirmed+=1
+  if confirmed:s.save(p)
+ return {'project':p,'confirmed':confirmed,'skipped':skipped}

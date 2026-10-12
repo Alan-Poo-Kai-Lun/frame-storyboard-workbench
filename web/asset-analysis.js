@@ -34,3 +34,27 @@ $('directorGuide').onclick=()=>safe(async()=>{
 
 const SCENE_LAYOUT_FIELDS={view:'基准机位 / 看向哪里',left:'基准画面左侧物件（多个用；分隔）',right:'基准画面右侧物件（多个用；分隔）',center:'中央通路 / 固定物件',background:'纵深背景（入口看不到就写未知）',access:'物件取用条件（玻璃柜、样机等）',unknown:'未确认区域 / 其他视角关系'};
 function editSceneLayout(id){const a=P.assets.find(v=>v.id===id);if(!a)return;const pid=P.projectId,layout=a.sceneLayout||{};modal('场景基准布局 · '+assetLabel(a),`<div class="dossierPreview">${imgTag(a.path)}</div><p class="notice">以当前正向参考图为基准，只填写可见事实。各视角分别确认；换机位可以改变屏幕投影，不能移动固定物件。保存后确认说明将失效，请核对素材卡片并重新确认。</p>${Object.entries(SCENE_LAYOUT_FIELDS).map(([k,label])=>`<label>${label}<textarea id="scene_${k}" rows="2">${esc(layout[k]||'')}</textarea></label>`).join('')}<label class="checkrow"><input id="sceneConfirmed" type="checkbox" ${layout.confirmed?'checked':''}>我已对照图片确认以上布局</label>`,[{label:'规范图片方向',action:async()=>{await normalizeAssetOrientation(id);close()}},{label:'取消',action:close},{label:'保存布局',class:'primary',action:async()=>{if(P?.projectId!==pid||!P.assets.includes(a))throw Error('素材已变化');const value=Object.fromEntries(Object.keys(SCENE_LAYOUT_FIELDS).map(k=>[k,$('scene_'+k).value.trim()]));if(!$('sceneConfirmed').checked||!value.view||!Object.entries(value).some(([k,v])=>k!=='view'&&v))throw Error('请填写基准机位与可见布局，并勾选人工核对');a.sceneLayout={...value,confirmed:true};changed();await flush();close();render();toast('布局已保存，请重新确认使用素材说明；之后无需反复看图。')}}])}
+
+let bulkConfirmationBusy=false;
+async function confirmAllAssets(scope='all'){
+ if(bulkConfirmationBusy)return;
+ bulkConfirmationBusy=true;
+ try{
+  await flush();const pid=P.projectId,sid=seg()?.id;
+  const targets=P.assets.filter(a=>!a.deleted&&(scope==='all'||(scope==='public'?a.scope!=='segment':a.scope==='segment'&&a.segmentId===sid)));
+  const snapshot=JSON.stringify(P.assets);
+  const status=await api('asset-analysis-status',{projectId:pid});
+  if(JSON.stringify(P.assets)!==snapshot)throw Error('素材正在修改，请保存后再确认全部');
+  if(P?.projectId!==pid)throw Error('项目已切换');
+  const stamps=new Map(status.assets.map(a=>[a.id,a.signature]));
+  const result=await api('confirm-assets',{projectId:pid,assets:targets.map(a=>({id:a.id,signature:stamps.get(a.id)}))});
+  if(P?.projectId!==pid)return;
+  if(JSON.stringify(P.assets)===snapshot&&!dirty){P=result.project;dirty=false}else{for(const a of P.assets){const saved=result.project.assets.find(v=>v.id===a.id);if(saved&&JSON.stringify(preparationSource(a))===JSON.stringify(preparationSource(saved))&&P.media[a.path]===result.project.media[saved.path])a.confirmation=saved.confirmation}changed()}render();
+  const counts={};for(const a of result.skipped)counts[a.reason]=(counts[a.reason]||0)+1;
+  toast('已人工确认 '+result.confirmed+' 张素材'+(result.skipped.length?'；跳过 '+result.skipped.length+' 张（'+Object.entries(counts).map(([k,v])=>k+' '+v).join('、')+'）':''));
+ }finally{bulkConfirmationBusy=false}
+}
+for(const [anchor,scope,label]of [['toggleAssets','public','确认全部公共素材'],['groupAssetsTitle','segment','确认本组素材']]){
+ const b=document.createElement('button');b.type='button';b.textContent=label;b.dataset.confirmAssets=scope;b.title='人工确认现有说明，跳过缺图、空说明和已确认素材';$(anchor).after(b);
+ b.onclick=()=>safe(async()=>{b.disabled=true;try{await confirmAllAssets(scope)}finally{b.disabled=false}});
+}

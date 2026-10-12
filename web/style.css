@@ -185,3 +185,17 @@ html[data-reference-library=true] #modal{position:fixed;inset:90px 2vw auto;marg
 .directorCanvas37 .overviewNode{background:var(--canvas-node-bg,var(--glass-solid))}
 .directorCanvas37 .overviewNode.selected{background:color-mix(in srgb,var(--canvas-glow) 8%,var(--canvas-node-bg,var(--glass-solid)));box-shadow:0 0 0 1px color-mix(in srgb,var(--canvas-glow) 25%,transparent),0 0 36px color-mix(in srgb,var(--canvas-glow) 10%,transparent)}
 .directorCanvas37 .canvasSelectionBox{border-color:var(--canvas-glow);background:color-mix(in srgb,var(--canvas-glow) 12%,transparent)}
+
+/* Layout groups and node sizes are project presentation only. */
+.directorCanvas37 .overviewGraph>.canvasGroupFrame{position:absolute;display:block;box-sizing:border-box;border:1px dashed color-mix(in srgb,var(--canvas-glow) 65%,var(--ink));border-radius:16px;background:color-mix(in srgb,var(--canvas-glow) 4%,transparent);pointer-events:none;z-index:0;min-height:0}
+.canvasGroupLabel{position:absolute;left:12px;top:3px;pointer-events:auto;cursor:move;font-size:11px;padding:3px 8px;border-radius:6px;background:var(--canvas-background,var(--glass-solid));color:var(--ink);white-space:nowrap}
+.canvasGroupTools{display:flex;gap:4px}
+.directorCanvas37 .overviewNode{box-sizing:border-box}
+.canvasResizeHandle{position:absolute;right:1px;bottom:1px;width:22px;height:22px;cursor:nwse-resize;touch-action:none;z-index:5;border-radius:0 0 9px 0;background:linear-gradient(135deg,transparent 55%,var(--canvas-glow) 56%,var(--canvas-glow) 62%,transparent 63%,transparent 74%,var(--canvas-glow) 75%,var(--canvas-glow) 81%,transparent 82%);opacity:.7}
+.directorCanvas37 .overviewNode.canvasSized{min-width:100px;min-height:70px;max-width:none;max-height:none;aspect-ratio:auto;overflow:hidden}
+.directorCanvas37 .canvasSized img{max-height:calc(100% - 55px);object-fit:contain}
+.directorCanvas37 .canvasSized .canvasVideoCover{height:calc(100% - 55px);min-height:25px}
+body[data-workbench-mode="professional"] header .canvasModeEntry{font-size:15px;font-weight:700;padding:12px 20px;color:var(--ink);background:color-mix(in srgb,var(--accent) 20%,var(--glass-solid));border:2px solid var(--accent);box-shadow:0 0 18px color-mix(in srgb,var(--accent) 20%,transparent)}
+.canvasHeadActions{flex-wrap:wrap}.directorCanvas37 .overviewHead{flex-wrap:wrap;gap:8px}
+
+.canvasContextMenu{max-height:calc(100dvh - 24px);overflow-y:auto}
