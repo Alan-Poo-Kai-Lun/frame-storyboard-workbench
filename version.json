@@ -1,7 +1,11 @@
 {
-  "version": "V3.9",
+  "version": "V3.10",
   "date": "2026-10-12",
   "features": [
+    "可编辑项目总览：直接修改项目、片段、镜头、素材说明与视频记录",
+    "总览新增 / 复制片段、镜头排序删除、视觉参考应用和任务入口",
+    "总览草稿切换时保存、输入验证、重建失败回滚与冲突保护",
+    "H3 最终提示词直接编辑并保留匹配镜头媒体，片段编号自动转换",
     "Windows 单文件 EXE 与桌面启动器，无需 Python",
     "EXE 数据独立保存在用户目录，复制迁移同目录旧 data",
     "手动检查 GitHub Releases 更新；提供 EXE 与源码更新 ZIP 下载入口",
@@ -86,5 +90,5 @@
     "presets/system_prompt_t2i.txt",
     "demo/example.mmxpack.zip"
   ],
-  "release": "v3.9-beta.1"
+  "release": "v3.10-beta.1"
 }

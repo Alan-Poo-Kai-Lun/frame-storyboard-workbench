@@ -51,8 +51,8 @@ class StartupChecks(unittest.TestCase):
    req=Request(base+'/api/'+route,data=json.dumps(value).encode(),headers={'X-Workbench-Token':server.TOKEN,'Content-Type':'application/json'})
    with urlopen(req,timeout=3) as response:return json.load(response)
   try:
-   with urlopen(base+'/',timeout=3) as response:self.assertIn(b'startup.js?v=3.9',response.read())
-   with urlopen(base+'/api/bootstrap',timeout=3) as response:self.assertEqual(json.load(response)['version'],'V3.9')
+   with urlopen(base+'/',timeout=3) as response:self.assertIn(b'startup.js?v=3.10',response.read())
+   with urlopen(base+'/api/bootstrap',timeout=3) as response:self.assertEqual(json.load(response)['version'],'V3.10')
    p=post('new-project',{'example':True});self.assertTrue(p['starterExample'])
    restored=post('import-project',{'project':p});self.assertEqual(restored['media'],p['media'])
    self.assertNotEqual(restored['projectId'],p['projectId'])

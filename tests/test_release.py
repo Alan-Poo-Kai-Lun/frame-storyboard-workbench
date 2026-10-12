@@ -13,7 +13,7 @@ class ReleaseChecks(unittest.TestCase):
   server.DATA,server.STATE,server.CONFIG=self.original;self.tmp.cleanup()
  def test_release_ignores_private_files_and_is_updater_compatible(self):
   package=build(ROOT,self.path/'dist');files=archive_files(package)
-  self.assertIn('web/project-overview.js',files);self.assertNotIn('demo/Scene-Reference-Test.mmxpack.zip',files)
+  self.assertIn('web/project-overview.js',files);self.assertIn('web/overview-editor.js',files);self.assertNotIn('demo/Scene-Reference-Test.mmxpack.zip',files)
   self.assertFalse(any(name.startswith('data/') for name in files))
  def test_update_preserves_project_and_settings(self):
   target=self.path/'installed';target.mkdir();(target/'web').mkdir();(target/'data').mkdir();(target/'server.py').write_text('# old');(target/'web/index.html').write_text('old');(target/'README.md').write_text('FRAME V3.6')

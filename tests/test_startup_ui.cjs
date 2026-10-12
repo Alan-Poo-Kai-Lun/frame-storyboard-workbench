@@ -12,10 +12,12 @@ async function fixture(existing=null,mode='simple',broken=false){
  const dom=new JSDOM(html,{url:'http://127.0.0.1:8787/',runScripts:'outside-only',pretendToBeVisual:true});
  const styles=dom.window.document.createElement('style');styles.textContent=fs.readFileSync(path.join(root,'web/startup.css'),'utf8');dom.window.document.head.append(styles);
  const w=dom.window;let project=existing&&copy(existing),config={ai:{provider:'ollama',endpoint:'http://127.0.0.1:11434',model:'',key:''},ui:{workbenchMode:mode}};
+ let failRebuild=false;
  const calls=[],errors=[];w.addEventListener('error',e=>errors.push(e.error));w.structuredClone=copy;
  Object.defineProperty(w.crypto,'randomUUID',{value:require('node:crypto').randomUUID});
+ w.ResizeObserver=class{observe(){}disconnect(){}unobserve(){}};
  w.matchMedia=()=>({matches:false,addEventListener(){},removeEventListener(){}});
- w.confirm=()=>true;w.HTMLElement.prototype.scrollIntoView=function(){};
+ w.HTMLMediaElement.prototype.pause=function(){};w.confirm=()=>true;w.HTMLElement.prototype.scrollIntoView=function(){};
  w.HTMLDialogElement.prototype.showModal=function(){this.open=true};w.HTMLDialogElement.prototype.show=function(){this.open=true};w.HTMLDialogElement.prototype.close=function(){this.open=false};
  w.fetch=async(url,options={})=>{
   const route=String(url).split('?')[0].replace('/api/','');let data;
@@ -27,10 +29,12 @@ async function fixture(existing=null,mode='simple',broken=false){
   else if(route==='check-updates')data={current:'v3.9-beta.1',latest:'v3.9-beta.2',available:true,message:'发现新版本',releaseUrl:'https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/tag/v3.9-beta.2',notes:'更新说明',assets:[{name:'FRAME-Workbench-Windows-x64-v3.9-beta.2.exe',url:'https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.9-beta.2/FRAME-Workbench-Windows-x64-v3.9-beta.2.exe'}]};
   else if(route==='tasks')data={tasks:[],paused:false};
   else if(route==='asset-analysis-status')data={assets:[]};
+  else if(route==='visual-references')data=[];
   else if(route==='reverse-templates')data={};
   else if(route==='new-project'){project=body.example?copy(sample):{version:1,projectId:'new-project',title:body.title||'新导演项目',script:'',aspect:'16:9',fps:24,segments:[{id:'s1',title:'片段 01',duration:15,shots:[],refs:[]}],assets:[],media:{},originalZip:''};data=project;}
   else if(route==='import-project'){project=copy(body.project);data=project;}
-  else if(route==='rebuild')data={prompt:'summary:\n测试\ntimeline:\n'};
+  else if(route==='rebuild'){if(failRebuild)throw Error('rebuild unavailable');data={prompt:'summary:\n测试\ntimeline:\n'};}
+  else if(route==='compiled-prompt')data={prompt:project.segments.find(s=>s.id===body.segmentId)?.prompt||'summary:\n测试\ntimeline:\n[0.00s–3.00s]\n测试画面',warnings:[]};
   else if(route==='plan-shots')data={id:'task1'};
   else if(route==='analyze-assets')data={id:'asset-task1'};
   else throw Error('Unexpected request '+route);
@@ -38,7 +42,46 @@ async function fixture(existing=null,mode='simple',broken=false){
  };
  for(const match of html.matchAll(/<script src="([^"?]+)/g))require('node:vm').runInContext(fs.readFileSync(path.join(root,'web',match[1]),'utf8'),dom.getInternalVMContext(),{filename:match[1]});
  await pause();
- return {dom,w,calls,errors,get project(){return project},get config(){return config},el:id=>w.document.getElementById(id)};
+ return {dom,w,calls,errors,set failRebuild(v){failRebuild=v},get project(){return project},get config(){return config},el:id=>w.document.getElementById(id)};
+}
+async function overviewChecks(){
+ const source=copy(sample);source.assets[1].pictureNumber=8;source.assets[2].pictureNumber=10;
+ source.segments[0].shots[0].image=source.assets[0].path;
+ source.segments[0].videos=[{id:'video-one',title:'旧视频',name:'demo.mp4',path:'videos/demo.mp4',note:'旧备注'}];
+ const f=await fixture(source,'professional');
+ const live=()=>f.w.eval('P'), sid=source.segments[0].id, hid=source.segments[0].shots[0].id;
+ const detail=()=>f.el('overviewDialog').querySelector('.overviewDetail');
+ const click=async selector=>{const el=f.el('overviewDialog').querySelector(selector);assert(el,'Missing control '+selector);el.click();await pause();await pause()};
+ const choose=async id=>click('[data-overview-select="'+id+'"]');
+ const set=(key,value)=>{const el=f.el('canvas_'+key);assert(el,'Missing field '+key);el.value=value;el.dispatchEvent(new f.w.Event('input',{bubbles:true}))};
+ const save=()=>click('[data-canvas-action="save"]');
+ try{
+  f.el('startResume').click();f.el('projectOverview').click();await pause();await pause();
+  assert.equal(f.el('overviewDialog').open,true);assert(f.el('canvas_story'));
+  set('story','@Picture 2 与 @Picture 1 在 @Picture 3 交谈。');await save();
+  assert.equal(f.project.segments[0].storyText,'@Picture 8 与 @Picture 1 在 @Picture 10 交谈。');assert(f.project.segments[0].storyHistory.length>=2);
+  await choose('project');set('title','总览编辑项目');await choose('h:'+sid+':'+hid);
+  assert.equal(f.project.title,'总览编辑项目','Selecting another node saves draft');
+  set('action','@Picture 2 在 @Picture 3 柜台后点头');set('startState','@Picture 2 在柜台后');set('pro_size','特写');await save();
+  assert.equal(f.project.segments[0].shots[0].action,'@Picture 8 在 @Picture 10 柜台后点头');assert.equal(f.project.segments[0].shots[0].professional.size,'特写');assert.equal(f.project.segments[0].shots[0].image,source.assets[0].path);assert(f.calls.some(c=>c.route==='rebuild'));
+  await click('[data-canvas-action="reference-camera"]');assert.match(f.el('modalTitle').textContent,/视觉参考库/);f.el('referenceCards').querySelector('[data-reference-apply]').click();await pause();await pause();await f.w.flush();assert.equal(f.el('modal').open,false);assert.equal(f.project.segments[0].shots[0].professional.size,'特写');assert.equal(f.project.segments[0].shots[1].professional.size,source.segments[0].shots[1].professional.size,'Reference applies only to selected shot');assert.equal(f.el('canvas_pro_size').value,'特写');
+  const before=f.project.segments[0].shots[0].action;
+  set('end',1000);await save();assert.match(detail().textContent,/保存失败/);assert.equal(f.project.segments[0].shots[0].action,before);assert.equal(f.el('canvas_end').value,'1000');
+  set('end',5);set('action','重建失败时保留输入');f.failRebuild=true;await save();assert.equal(live().segments[0].shots[0].action,before);assert.equal(f.el('canvas_action').value,'重建失败时保留输入');f.failRebuild=false;await save();assert.equal(f.project.segments[0].shots[0].action,'重建失败时保留输入');
+  set('action','尚未提交的草稿');live().segments[0].shots[0].action='外部操作已更新';f.w.render();await pause();await save();assert.match(detail().textContent,/未覆盖|保留当前输入/);assert.equal(live().segments[0].shots[0].action,'外部操作已更新');await click('[data-canvas-action="discard"]');assert.equal(f.el('canvas_action').value,'外部操作已更新');
+  await choose('a:'+source.assets[0].id);set('name','主角 A');set('description','全身蓝色制服，身份保持一致');await save();assert.equal(f.project.assets[0].description,'全身蓝色制服，身份保持一致');
+  await choose('v:'+sid+':video-one');set('title','已生成版本 2');set('note','已检查空间连贯');await save();assert.equal(f.project.segments[0].videos[0].title,'已生成版本 2');assert.equal(f.project.segments[0].videos[0].note,'已检查空间连贯');
+  await choose('p:'+sid);assert.equal(f.el('canvas_prompt').disabled,false);
+  set('prompt','summary:\n人物交谈\ntimeline:\n[0.00s–5.00s]\n<Subject 2> 对 <Subject 1> 点头\nCamera: 中景\nDialogue: <Subject 2>: 你好 Picture 2\n[5.00s–10.00s]\n回应\n[10.00s–15.00s]\n微笑');await save();assert.equal(f.project.segments[0].shots[0].id,hid);assert.equal(f.project.segments[0].shots[0].image,source.assets[0].path);assert.match(f.project.segments[0].shots[0].action,/<Picture 8>/);assert.equal(f.project.segments[0].shots[0].dialogue,'<Picture 8>: 你好 Picture 2','Speaker mapped; literal speech preserved');
+  await click('[data-canvas-action="add-segment"]');assert.equal(f.project.segments.length,source.segments.length+1);assert.equal(f.el('canvas_title').value,'片段 03','New segment selected');const created=f.project.segments.at(-1);assert.equal(created.continuity,false);
+  await click('[data-canvas-action="add-shot"]');assert.equal(f.project.segments.at(-1).shots.length,1);assert(f.el('canvas_action'),'New shot selected');
+  await click('[data-canvas-action="delete-shot"]');assert.equal(f.project.segments.at(-1).shots.length,0);assert(f.el('canvas_story'));
+  set('story','新片段的独立故事');await click('[data-canvas-action="copy-segment"]');assert.equal(f.project.segments.length,source.segments.length+2);assert.match(f.el('canvas_title').value,/副本/);assert.equal(f.project.segments.at(-1).storyText,'新片段的独立故事');
+  // Mention menus and tooltips stay reusable when closing and reopening the dialog.
+  set('story','@');f.el('canvas_story').selectionStart=1;f.el('canvas_story').dispatchEvent(new f.w.Event('input',{bubbles:true}));assert(f.el('assetMentions'));
+  await click('[data-overview-close]');assert.equal(f.el('overviewDialog').open,false);f.el('projectOverview').click();await pause();await pause();assert(f.el('assetMentions'));assert(f.el('canvas_story'));
+  assert.equal(f.errors.length,0);console.log('PASS: editable overview shared saves, numbering, history, validation, rollback, stale drafts, media preservation, prompt mapping, creation and reuse');
+ }finally{f.dom.window.close()}
 }
 async function run(){
  let f=await fixture();
@@ -69,5 +112,6 @@ async function run(){
  try{assert.equal(f.w.document.body.dataset.startupView,'home');assert.equal(f.el('startupResume').hidden,false);f.el('startResume').click();assert.equal(f.w.document.body.dataset.workbenchMode,'professional');assert.equal(f.project.projectId,sample.projectId);assert(!f.calls.some(c=>c.route==='new-project'));assert.equal(f.errors.length,0);console.log('PASS: existing project and persisted professional preference');}finally{f.dom.window.close()}
  f=await fixture(null,'simple',true);
  try{assert.match(f.el('startupLoadStatus').textContent,/读取失败/);assert.equal(f.el('startExample').disabled,true);console.log('PASS: failed startup exposes error and disables creation');}finally{f.dom.window.close()}
+ await overviewChecks();
 }
 run().then(()=>process.exit(0)).catch(e=>{console.error(e);process.exit(1)});

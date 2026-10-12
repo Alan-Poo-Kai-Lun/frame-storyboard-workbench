@@ -9,6 +9,7 @@ def self_test(report):
  import server,tkinter as tk
  root=tk.Tk();root.withdraw();root.update();root.destroy()
  assert (server.ROOT/'web/startup.js').is_file()
+ assert (server.ROOT/'web/overview-editor.js').is_file()
  assert (server.ROOT/'presets/starter-project.json').is_file()
  assert server.DATA==runtime_paths.data_dir()
  service=server.ThreadingHTTPServer(('127.0.0.1',0),server.Handler);service.daemon_threads=True
@@ -16,7 +17,9 @@ def self_test(report):
  try:
   with urlopen(base+'/api/bootstrap',timeout=5) as r:boot=json.load(r)
   assert boot['appId']=='frame-storyboard-workbench'
-  with urlopen(base+'/',timeout=5) as r:assert b'startup.js?v=3.9' in r.read()
+  with urlopen(base+'/',timeout=5) as r:
+   html=r.read();assert b'startup.js?v=3.10' in html and b'overview-editor.js?v=3.10' in html
+  with urlopen(base+'/overview-editor.js?v=3.10',timeout=5) as r:assert b'frameOverviewEditor' in r.read()
   req=Request(base+'/api/new-project',data=b'{"example":true}',headers={'X-Workbench-Token':server.TOKEN,'Content-Type':'application/json'})
   with urlopen(req,timeout=5) as r:p=json.load(r)
   assert len(p['assets'])==3 and len(p['segments'][0]['shots'])==3

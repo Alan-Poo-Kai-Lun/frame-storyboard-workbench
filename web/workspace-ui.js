@@ -19,7 +19,7 @@ function refreshMentionEditors(){
         mirror.innerHTML='<div>'+highlightMentions(input.value,'group')+'\n</div>';
         mirror.firstElementChild.style.transform=`translate(${-input.scrollLeft}px,${-input.scrollTop}px)`;
       };
-      input._mentionUpdate=update;input.addEventListener('input',update);input.addEventListener('scroll',update);if(typeof ResizeObserver!=='undefined')new ResizeObserver(update).observe(input);
+      input._mentionUpdate=update;input.addEventListener('input',update);input.addEventListener('scroll',update);if(typeof ResizeObserver!=='undefined'){input._mentionObserver=new ResizeObserver(update);input._mentionObserver.observe(input)}
       mirror.addEventListener('mousedown',e=>{const t=e.target.closest('[data-ref-number]');if(t){e.preventDefault();input.focus();input.setSelectionRange(Number(t.dataset.refStart),Number(t.dataset.refEnd))}});
     }
     input._mentionUpdate();

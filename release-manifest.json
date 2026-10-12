@@ -27,6 +27,7 @@
   "web/app.js",
   "web/asset-analysis.js",
   "web/index.html",
+  "web/overview-editor.js",
   "web/project-overview.js",
   "web/reference-library.html",
   "web/reverse.js",
@@ -50,5 +51,6 @@
   "update_check.py",
   "windows_launcher.py",
   "web/updates.js",
-  "docs/release-v3.9-beta.1.md"
+  "docs/release-v3.9-beta.1.md",
+  "docs/release-v3.10-beta.1.md"
 ]
