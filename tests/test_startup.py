@@ -66,11 +66,14 @@ class StartupChecks(unittest.TestCase):
   self.assertEqual(server.settings()['ui']['workbenchMode'],'simple')
  def test_http_home_and_project_routes(self):
   service=server.ThreadingHTTPServer(('127.0.0.1',0),server.Handler)
+  # Complete request workers before tearDown restores the module's data paths.
+  service.daemon_threads=False
   thread=threading.Thread(target=service.serve_forever,daemon=True);thread.start()
   base='http://127.0.0.1:'+str(service.server_port)
   def post(route,value):
    req=Request(base+'/api/'+route,data=json.dumps(value).encode(),headers={'X-Workbench-Token':server.TOKEN,'Content-Type':'application/json'})
-   with urlopen(req,timeout=3) as response:return json.load(response)
+   # The complete example now includes a video and its original portable archive.
+   with urlopen(req,timeout=30) as response:return json.load(response)
   try:
    with urlopen(base+'/',timeout=3) as response:self.assertIn(b'startup.js?v=3.13',response.read())
    with urlopen(base+'/api/bootstrap',timeout=3) as response:self.assertEqual(json.load(response)['version'],'V3.13')
@@ -81,11 +84,11 @@ class StartupChecks(unittest.TestCase):
 
  def test_http_reference_pack_projects_and_layout(self):
   import base64
-  service=server.ThreadingHTTPServer(('127.0.0.1',0),server.Handler);thread=threading.Thread(target=service.serve_forever,daemon=True);thread.start();base='http://127.0.0.1:'+str(service.server_port)
+  service=server.ThreadingHTTPServer(('127.0.0.1',0),server.Handler);service.daemon_threads=False;thread=threading.Thread(target=service.serve_forever,daemon=True);thread.start();base='http://127.0.0.1:'+str(service.server_port)
   headers={'X-Workbench-Token':server.TOKEN,'Content-Type':'application/json'}
   def call(route,body=None,raw=False):
    payload=body if isinstance(body,bytes) else json.dumps(body).encode() if body is not None else None
-   with urlopen(Request(base+'/api/'+route,data=payload,headers=headers),timeout=5) as response:return response.read() if raw else json.load(response)
+   with urlopen(Request(base+'/api/'+route,data=payload,headers=headers),timeout=30) as response:return response.read() if raw else json.load(response)
   try:
    p=call('new-project',{'example':True});layout={'canvas37':{'positions':{'project':{'x':12,'y':34}}}}
    self.assertTrue(call('canvas-layout',{'projectId':p['projectId'],'layout':layout})['ok']);self.assertEqual(server.load_project()['media'],p['media'])

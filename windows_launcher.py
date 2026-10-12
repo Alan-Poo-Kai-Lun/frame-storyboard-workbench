@@ -25,7 +25,7 @@ def self_test(report):
   with urlopen(Request(base+'/api/projects',headers={'X-Workbench-Token':server.TOKEN}),timeout=5) as r:assert isinstance(json.load(r),list)
   with urlopen(Request(base+'/api/visual-library-storage',headers={'X-Workbench-Token':server.TOKEN}),timeout=5) as r:assert json.load(r)['limit'] is None
   req=Request(base+'/api/new-project',data=b'{"example":true}',headers={'X-Workbench-Token':server.TOKEN,'Content-Type':'application/json'})
-  with urlopen(req,timeout=15) as r:p=json.load(r)
+  with urlopen(req,timeout=30) as r:p=json.load(r)
   assert len(p['assets'])==2 and len(p['segments'])==4 and sum(len(s['shots']) for s in p['segments'])==12
   assert all(a['path'] in p['media'] for a in p['assets'])
   restored=server.readzip(server.export_pack(p))
