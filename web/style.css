@@ -178,3 +178,10 @@ html[data-reference-library=true] #modal{position:fixed;inset:90px 2vw auto;marg
 .directorCanvas37.canvasInteracting .overviewEdges path{animation:none!important;filter:none!important}.directorCanvas37.canvasInteracting .overviewNode{box-shadow:none!important}.directorCanvas37.canvasInteracting .projectRipple{animation-play-state:paused}.directorCanvas37.canvasInteracting{backdrop-filter:none;-webkit-backdrop-filter:none}.canvasVideoCover small{padding:12px;text-align:center;color:var(--muted)}
 
 .referencePackEntries{max-height:300px;overflow:auto}.referencePackEntries p{padding:8px;border-bottom:1px solid var(--line)}.referencePackEntries small{display:block;color:var(--muted)}#referencePackError{color:#e7a39d}
+/* V3.13: project-scoped canvas appearance. */
+.directorCanvas37 .overviewMap{background-color:var(--canvas-background,var(--bg));background-image:radial-gradient(ellipse at 25% 50%,color-mix(in srgb,var(--canvas-glow) 8%,transparent),transparent 60%),radial-gradient(var(--canvas-grid-color,var(--line)) .7px,transparent .7px);background-size:auto,var(--canvas-grid-size,28px) var(--canvas-grid-size,28px)}
+.directorCanvas37[data-canvas-pattern="lines"] .overviewMap{background-image:linear-gradient(to right,var(--canvas-grid-color,var(--line)) 1px,transparent 1px),linear-gradient(to bottom,var(--canvas-grid-color,var(--line)) 1px,transparent 1px);background-size:var(--canvas-grid-size,28px) var(--canvas-grid-size,28px)}
+.directorCanvas37[data-canvas-pattern="none"] .overviewMap{background-image:none}
+.directorCanvas37 .overviewNode{background:var(--canvas-node-bg,var(--glass-solid))}
+.directorCanvas37 .overviewNode.selected{background:color-mix(in srgb,var(--canvas-glow) 8%,var(--canvas-node-bg,var(--glass-solid)));box-shadow:0 0 0 1px color-mix(in srgb,var(--canvas-glow) 25%,transparent),0 0 36px color-mix(in srgb,var(--canvas-glow) 10%,transparent)}
+.directorCanvas37 .canvasSelectionBox{border-color:var(--canvas-glow);background:color-mix(in srgb,var(--canvas-glow) 12%,transparent)}

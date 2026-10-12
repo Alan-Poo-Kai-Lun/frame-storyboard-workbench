@@ -1,7 +1,6 @@
 """Portable reference libraries. Preview is read-only; commit is atomic and backed up."""
 import base64,hashlib,io,json,re,time,uuid,zipfile
 import visual_library as library
-LIMIT=500*1024*1024
 EXT={'image/png':'png','image/jpeg':'jpg','image/webp':'webp','image/gif':'gif','video/mp4':'mp4','video/webm':'webm'}
 def revision(data):
     return hashlib.sha256(json.dumps(library._records(data),sort_keys=True,ensure_ascii=False).encode()).hexdigest()
@@ -15,18 +14,15 @@ def export(data):
             raw=path.read_bytes();name='media/'+hashlib.sha256(raw).hexdigest()+'.'+EXT[row['mime']]
             media[name]=raw;item.update(media=name,mime=row['mime'])
         manifest['entries'].append(item)
-    if sum(map(len,media.values()))>LIMIT:raise ValueError('整合包媒体超过 500MB')
     out=io.BytesIO()
     with zipfile.ZipFile(out,'w',zipfile.ZIP_STORED) as archive:
         archive.writestr('manifest.json',json.dumps(manifest,ensure_ascii=False));
         for name,raw in media.items():archive.writestr(name,raw)
     return out.getvalue()
 def parse(blob):
-    if len(blob)>LIMIT+5*1024*1024:raise ValueError('整合包超过 500MB')
     with zipfile.ZipFile(io.BytesIO(blob)) as archive:
         files=archive.infolist();names=[f.filename for f in files]
         if len(files)>1000 or len(names)!=len(set(names)) or 'manifest.json' not in names:raise ValueError('整合包目录无效或重复')
-        if sum(f.file_size for f in files)>LIMIT+2*1024*1024:raise ValueError('解压内容超过上限')
         for f in files:
             if (f.external_attr>>16)&0o170000==0o120000 or f.flag_bits&1:raise ValueError('不支持链接或加密文件')
             if f.filename!='manifest.json' and not re.fullmatch(r'media/[a-f0-9]{64}\.(png|jpg|webp|gif|mp4|webm)',f.filename):raise ValueError('整合包含非法路径')
@@ -85,8 +81,6 @@ def apply(data,body):
     result=list(existing.values())
     if sum(not r.get('builtin') for r in result)>200:raise ValueError('合并后自定义参考超过 200 条')
     raw_by_hash={name.split('/')[1].split('.')[0]+'.bin':raw for name,raw in media.items()};used={r.get('mediaFile') for r in result if r.get('mediaFile')}
-    size=sum(len(raw_by_hash[name]) if name in raw_by_hash else (data/'reference-media'/name).stat().st_size for name in used)
-    if size>LIMIT:raise ValueError('合并后参考媒体超过 500MB，请先删除不需要的媒体')
     # Backup includes original media so future cleanup cannot invalidate it.
     backup=data/'reference-pack-backups';backup.mkdir(parents=True,exist_ok=True);backup_name=time.strftime('%Y%m%d-%H%M%S')+'-'+uuid.uuid4().hex[:8]+'.frame-refs.zip';(backup/backup_name).write_bytes(export(data))
     folder=data/'reference-media';folder.mkdir(exist_ok=True)

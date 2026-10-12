@@ -15,6 +15,7 @@ class ReleaseChecks(unittest.TestCase):
   package=build(ROOT,self.path/'dist');files=archive_files(package)
   self.assertIn('web/project-overview.js',files);self.assertIn('web/overview-editor.js',files);self.assertNotIn('demo/Scene-Reference-Test.mmxpack.zip',files)
   self.assertFalse(any(name.startswith('data/') for name in files))
+  self.assertEqual(files['presets/starter-project.mmxpack.zip'],(ROOT/'presets/starter-project.mmxpack.zip').read_bytes())
  def test_update_preserves_project_and_settings(self):
   target=self.path/'installed';target.mkdir();(target/'web').mkdir();(target/'data').mkdir();(target/'server.py').write_text('# old');(target/'web/index.html').write_text('old');(target/'README.md').write_text('FRAME V3.6')
   for name in ['project.json','settings.json']:(target/'data'/name).write_text('PRIVATE_SENTINEL')

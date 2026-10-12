@@ -6,6 +6,24 @@ window.createFrameCanvasControls=function(o){
  const menu=document.createElement('div');menu.className='canvasContextMenu';menu.hidden=true;dialog.append(menu);
  const box=document.createElement('div');box.className='canvasSelectionBox';box.hidden=true;map.append(box);
  const toolbar=dialog.querySelector('.overviewToolbar');
+ const appearanceButton=document.createElement('button');appearanceButton.type='button';appearanceButton.textContent='画布外观';appearanceButton.dataset.canvasAppearance='';toolbar.append(appearanceButton);
+ const colors={background:'--canvas-background',node:'--canvas-node-bg',highlight:'--canvas-glow',grid:'--canvas-grid-color'};
+ function applyAppearance(){
+  const a=o.appearance();for(const[key,css]of Object.entries(colors)){if(/^#[0-9a-f]{6}$/i.test(a[key]||''))dialog.style.setProperty(css,a[key]);else dialog.style.removeProperty(css)}
+  if(Number.isFinite(a.gridSize)&&a.gridSize>=8&&a.gridSize<=160)dialog.style.setProperty('--canvas-grid-size',a.gridSize+'px');else dialog.style.removeProperty('--canvas-grid-size');
+  dialog.dataset.canvasPattern=['dots','lines','none'].includes(a.pattern)?a.pattern:'dots';
+ }
+ function appearance(){
+  const a=o.appearance(),style=getComputedStyle(map),nodeStyle=getComputedStyle(map.querySelector('.overviewNode.segment')||map);
+  const hex=(value,fallback)=>{if(/^#[0-9a-f]{6}$/i.test(value))return value;const rgb=value.match(/^rgba?\(\s*(\d+)[, ]+\s*(\d+)[, ]+\s*(\d+)/);return rgb?'#'+rgb.slice(1,4).map(n=>Number(n).toString(16).padStart(2,'0')).join(''):fallback};
+  const defaults={background:hex(style.backgroundColor,'#18222b'),node:hex(nodeStyle.backgroundColor,'#24333e'),highlight:hex(style.getPropertyValue('--canvas-glow').trim(),'#91ddc8'),grid:hex(style.getPropertyValue('--line').trim(),'#364454')};
+  modal('画布外观',`<p class="muted">修改立即生效，自动随当前项目保存，也会随导演包导出。</p>${Object.entries({background:'背景颜色',node:'节点颜色',highlight:'高亮颜色',grid:'网格颜色'}).map(([key,label])=>`<label>${label}<input type="color" data-appearance-color="${key}" value="${/^#[0-9a-f]{6}$/i.test(a[key]||'')?a[key]:defaults[key]}"></label>`).join('')}<label>背景样式<select id="canvasPattern"><option value="dots">点阵</option><option value="lines">方格</option><option value="none">纯色</option></select></label><label>格子大小（8–160 px）<input id="canvasGridSize" type="number" min="8" max="160" step="1" value="${Number.isFinite(a.gridSize)&&a.gridSize>=8&&a.gridSize<=160?a.gridSize:28}"></label><p id="canvasAppearanceStatus" role="status"></p>`,[{label:'恢复默认',action:()=>{o.setAppearance({});applyAppearance();close()}},{label:'完成',class:'primary',action:close}]);
+  $('canvasPattern').value=['dots','lines','none'].includes(a.pattern)?a.pattern:'dots';
+  for(const input of $('modalBody').querySelectorAll('[data-appearance-color]'))input.oninput=()=>{o.setAppearance({...o.appearance(),[input.dataset.appearanceColor]:input.value});applyAppearance()};
+  $('canvasPattern').onchange=e=>{o.setAppearance({...o.appearance(),pattern:e.target.value});applyAppearance()};
+  $('canvasGridSize').oninput=e=>{const value=e.target.valueAsNumber,valid=Number.isInteger(value)&&value>=8&&value<=160;$('canvasAppearanceStatus').textContent=valid?'':'请输入 8–160 的整数';if(valid){o.setAppearance({...o.appearance(),gridSize:value});applyAppearance()}};
+ }
+ applyAppearance();on(appearanceButton,'click',()=>safe(async()=>{if(!active()||!await o.save())return;appearance()}));
  const tools=document.createElement('div');tools.className='canvasSelectionTools';tools.innerHTML='<button type="button" data-canvas-tool="select" class="active" title="拖空白框选">↖ 选择</button><button type="button" data-canvas-tool="pan" title="拖空白平移">✥ 平移</button><span class="canvasSelectionCount" aria-live="polite"></span>';toolbar.prepend(tools);
  const editing=e=>e.target.closest('input,textarea,select,video,[contenteditable="true"]');
  const active=()=>dialog.open&&!o.busy()&&!document.querySelector('#modal[open],#imageViewer[open]');
@@ -60,5 +78,5 @@ window.createFrameCanvasControls=function(o){
   if(e.key==='?'){e.preventDefault();help()}
  },{capture:true});
  on(document,'keyup',e=>{if(e.code==='Space'){space=false;setMode(mode)}});on(window,'blur',()=>{space=false;finish();setMode(mode)});
- return {repaint,select(id){ids=new Set(id?[id]:[]);repaint()},command,help,dispose(){abort.abort();if(frame)cancelAnimationFrame(frame);frame=0;lastMove=null;dialog.classList.remove('canvasInteracting');space=false;gesture=null;menu.remove();box.remove();tools.remove()}};
+ return {repaint,select(id){ids=new Set(id?[id]:[]);repaint()},command,help,dispose(){abort.abort();if(frame)cancelAnimationFrame(frame);frame=0;lastMove=null;dialog.classList.remove('canvasInteracting');space=false;gesture=null;menu.remove();box.remove();tools.remove();appearanceButton.remove()}};
 };

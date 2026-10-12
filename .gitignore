@@ -27,6 +27,9 @@ Thumbs.db
 # Deliberately authored documentation demo only; never include user packs
 !/docs/examples/cafe-demo.mmxpack.zip
 
+# Maintainer-approved complete starter, checksum-verified by the release checker.
+!/presets/starter-project.mmxpack.zip
+
 /build/
 *.spec
 *.exe

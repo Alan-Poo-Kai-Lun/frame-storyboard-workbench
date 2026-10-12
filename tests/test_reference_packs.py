@@ -39,4 +39,6 @@ class PackChecks(unittest.TestCase):
  def test_shared_media_pack_deduplicated_and_large_image_accepted(self):
   self.add();library.update(self.data,{'category':'size','title':'第二项','note':'中景','image':IMAGE});blob=packs.export(self.data)
   with zipfile.ZipFile(io.BytesIO(blob)) as archive:self.assertEqual(len([n for n in archive.namelist() if n.startswith('media/')]),1)
-  bigger='data:image/png;base64,'+base64.b64encode(PNG+b'0'*(6*1024*1024)).decode();self.assertEqual(library.media_type(bigger),'image/png')
+  bigger='data:image/png;base64,'+base64.b64encode(PNG+b'0'*(21*1024*1024)).decode();self.assertEqual(library.media_type(bigger),'image/png')
+  library.update(self.data,{'category':'size','title':'超过旧图片上限','note':'大图','image':bigger})
+  rows,media=packs.parse(packs.export(self.data));self.assertEqual(len(rows),3);self.assertEqual(max(map(len,media.values())),len(base64.b64decode(bigger.split(',',1)[1])))

@@ -84,11 +84,11 @@ def create_project(example=False,title=''):
         if not isinstance(example,bool) or not isinstance(title,str):raise ValueError('新项目参数无效')
         p=blank_project()
         if example:
-            p=json.loads((ROOT/'presets/starter-project.json').read_text('utf-8'))
-            p['projectId']=uid()
-            for segment in p['segments']:
-                segment['id']=uid()
-                for shot in segment['shots']:shot['id']=uid()
+            p=readzip((ROOT/'presets/starter-project.mmxpack.zip').read_bytes())
+            p['starterExample']=True
+            # Fit the example to the visitor's window rather than the author's viewport.
+            p.get('overviewLayout',{}).get('canvas37',{}).pop('view',None)
+            # IDs belong to this fresh project. Preserve cross-references and canvas keys.
             for asset in p['assets']:
                 asset['id']=uid()
                 asset['confirmation']={'signature':asset_analysis.signature(asset,p['media']),'mode':'manual','confirmedAt':time.strftime('%Y-%m-%d %H:%M:%S'),'source':asset_analysis.source(asset)}
@@ -655,7 +655,7 @@ class Handler(BaseHTTPRequestHandler):
                 import visual_library
                 with LOCK:
                     rows=visual_library._records(DATA);used={r['mediaFile'] for r in rows if r.get('mediaFile')};size=sum((DATA/'reference-media'/name).stat().st_size for name in used if (DATA/'reference-media'/name).is_file())
-                    return self.respond({'used':size,'limit':500*1024*1024})
+                    return self.respond({'used':size,'limit':None})
             if route=='/api/visual-pack-export':
                 import reference_packs
                 with LOCK:return self.respond(reference_packs.export(DATA),mime='application/zip')
@@ -672,9 +672,10 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if not self.valid(): return self.respond({'error':'请求验证失败'},403)
         try:
-            size=int(self.headers.get('Content-Length',0))
-            if size>550*1024*1024: raise ValueError('文件超过上传上限')
-            raw=self.rfile.read(size); route=self.path.split('?')[0]
+            size=int(self.headers.get('Content-Length',0));route=self.path.split('?')[0]
+            if size<0:raise ValueError('请求长度无效')
+            if route not in {'/api/visual-references','/api/visual-pack-preview'} and size>550*1024*1024: raise ValueError('文件超过上传上限')
+            raw=self.rfile.read(size)
             if route=='/api/import':
                 p=readzip(raw)
                 with LOCK: save(p)

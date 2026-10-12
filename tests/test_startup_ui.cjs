@@ -33,7 +33,7 @@ async function fixture(existing=null,mode='simple',broken=false){
   else if(route==='check-updates')data={current:'v3.9-beta.1',latest:'v3.9-beta.2',available:true,message:'发现新版本',releaseUrl:'https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/tag/v3.9-beta.2',notes:'更新说明',assets:[{name:'FRAME-Workbench-Windows-x64-v3.9-beta.2.exe',url:'https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.9-beta.2/FRAME-Workbench-Windows-x64-v3.9-beta.2.exe'}]};
   else if(route==='tasks')data={tasks:[],paused:false};
   else if(route==='asset-analysis-status')data={assets:[]};
-  else if(route==='visual-library-storage')data={used:0,limit:500*1048576};
+  else if(route==='visual-library-storage')data={used:0,limit:null};
   else if(route==='visual-pack-preview')data={token:'test-preview',revision:'test-revision',count:1,conflicts:1,bytes:100,entries:[{title:'人物参考',category:'size',media:true,conflict:true}]};
   else if(route==='visual-pack-cancel')data={ok:true};
   else if(route==='visual-pack-apply')data={rows:[],imported:1,skipped:0};
@@ -128,13 +128,30 @@ async function optimizationAndLibraryChecks(){
   node(first).dispatchEvent(new f.w.MouseEvent('pointerdown',{bubbles:true,button:0,clientX:100,clientY:100}));await pause();const measures=f.w._nodeMeasures;await f.w.flush();const fullSaves=f.calls.filter(c=>c.route==='project'&&c.body).length;
   for(let i=0;i<120;i++)map().dispatchEvent(new f.w.MouseEvent('pointermove',{bubbles:true,clientX:100+i,clientY:100+i}));assert.equal(queue.length,1,'120 pointer events coalesce into one frame');assert.equal(f.w._nodeMeasures,measures);queue.shift()();assert.equal(f.w._nodeMeasures,measures,'Drag uses cached geometry, without per-frame layout reads');map().dispatchEvent(new f.w.MouseEvent('pointerup',{bubbles:true}));await pause();f.w.requestAnimationFrame=request;f.w.cancelAnimationFrame=cancel;await f.w.flush();assert.equal(f.calls.filter(c=>c.route==='project'&&c.body).length,fullSaves,'Layout-only save avoids serializing the full project in the browser');assert(f.calls.some(c=>c.route==='canvas-layout'));
   assert.equal(dialog().querySelector('.overviewEdges path'),path);assert.equal(a.querySelector('img'),image);
-  await f.w.openVisualReference('size');await pause();assert(f.el('importReferencePack'));assert(f.el('referenceStorage').textContent.includes('500'));
+  await f.w.openVisualReference('size');await pause();assert(f.el('importReferencePack'));assert(f.el('referenceStorage').textContent.includes('不设媒体容量上限'));
   f.el('referenceCards').querySelector('[data-reference-edit]').click();await pause();await pause();assert(f.el('customRefFile'));
   const png=new f.w.File([new Uint8Array([137,80,78,71,13,10,26,10,1])],'reference.png',{type:'image/png'});Object.defineProperty(f.el('customRefFile'),'files',{configurable:true,value:[png]});f.el('customRefFile').onchange({target:f.el('customRefFile')});await pause();await pause();assert.match(f.el('customRefStatus').textContent,/已读入/);f.el('modalActions').lastElementChild.click();await pause();await pause();assert(f.calls.some(c=>c.route==='visual-references'&&c.body?.image?.startsWith('data:image/png;base64,')),'Single reference image upload remains functional');
   const pack=new f.w.File(['TEST'],'test.frame-refs.zip',{type:'application/zip'});Object.defineProperty(f.el('referencePackFile'),'files',{configurable:true,value:[pack]});f.el('referencePackFile').onchange({target:f.el('referencePackFile')});await pause();await pause();assert.match(f.el('modalTitle').textContent,/导入视觉参考/);assert.equal(f.el('referencePackMode').value,'keep');f.el('referencePackMode').value='replace';f.el('referencePackMode').onchange();f.el('modalActions').lastElementChild.click();await pause();assert.match(f.el('referencePackError').textContent,/确认替换/);assert(!f.calls.some(c=>c.route==='visual-pack-apply'));f.el('referencePackAck').checked=true;f.el('modalActions').lastElementChild.click();await pause();await pause();assert(f.calls.some(c=>c.route==='visual-pack-apply'&&c.body.mode==='replace'));f.w.close();
   dialog().querySelector('[data-canvas-home]').click();await pause();await pause();assert(f.el('localProjectList').querySelector('[data-local-project]'));
   f.el('startCreate').click();f.el('startupProjectName').value='第二个项目';f.el('modalActions').lastElementChild.click();await pause();await pause();dialog().querySelector('[data-canvas-home]').click();await pause();await pause();assert.equal(f.el('localProjectList').querySelectorAll('[data-local-project]').length,2);f.el('localProjectList').querySelector('[data-local-project="'+sample.projectId+'"]').click();await pause();await pause();assert.equal(f.project.projectId,sample.projectId);assert.equal(dialog().open,true);assert.equal(f.errors.length,0);
   console.log('PASS: frame coalescing, cached geometry, retained media/path nodes, single reference upload, pack conflict confirmation and multiple project entry');
+ }finally{f.dom.window.close()}
+}
+async function appearanceChecks(){
+ const f=await fixture(sample,'simple');
+ try{
+  f.el('startResume').click();await pause();const d=f.el('overviewDialog');
+  d.querySelector('[data-canvas-appearance]').click();await pause();
+  const color=f.el('modalBody').querySelector('[data-appearance-color="highlight"]');color.value='#ff8800';color.dispatchEvent(new f.w.Event('input'));
+  const bg=f.el('modalBody').querySelector('[data-appearance-color="background"]');bg.value='#102030';bg.dispatchEvent(new f.w.Event('input'));
+  f.el('canvasPattern').value='lines';f.el('canvasPattern').dispatchEvent(new f.w.Event('change'));
+  f.el('canvasGridSize').value='48';f.el('canvasGridSize').dispatchEvent(new f.w.Event('input'));
+  assert.equal(d.style.getPropertyValue('--canvas-glow'),'#ff8800');assert.equal(d.dataset.canvasPattern,'lines');assert.equal(d.style.getPropertyValue('--canvas-grid-size'),'48px');
+  f.el('canvasGridSize').value='0';f.el('canvasGridSize').dispatchEvent(new f.w.Event('input'));assert.equal(d.style.getPropertyValue('--canvas-grid-size'),'48px');
+  f.el('modalActions').lastElementChild.click();await f.w.flush();assert.equal(f.project.overviewLayout.canvas37.appearance.background,'#102030');
+  d.querySelector('[data-overview-close]').click();await pause();f.w.openFrameOverview();await pause();assert.equal(d.style.getPropertyValue('--canvas-glow'),'#ff8800');
+  d.querySelector('[data-canvas-appearance]').click();await pause();f.el('modalActions').firstElementChild.click();await f.w.flush();assert.deepEqual(f.project.overviewLayout.canvas37.appearance,{});assert.equal(d.style.getPropertyValue('--canvas-glow'),'');assert.equal(d.dataset.canvasPattern,'dots');
+  assert.equal(f.errors.length,0);console.log('PASS: canvas appearance live changes, invalid size guard, persistence, reopen and reset');
  }finally{f.dom.window.close()}
 }
 async function run(){
@@ -170,5 +187,6 @@ async function run(){
  await overviewChecks();
  await canvasInteractionChecks();
  await optimizationAndLibraryChecks();
+ await appearanceChecks();
 }
 run().then(()=>process.exit(0)).catch(e=>{console.error(e);process.exit(1)});

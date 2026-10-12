@@ -2,11 +2,11 @@
 
 A local planning workspace for assets, scripts, shot lists, H3 prompts and manually uploaded clip records.
 
-**V3.8 Beta. Publicly visible source. All rights reserved.** No open-source permission is granted at this time.
+**V3.13 Beta. Publicly visible source. All rights reserved.** No open-source permission is granted at this time.
 
-[Chinese step-by-step tutorial](quick-start.md) · [Troubleshooting](faq.md) · [Importable demo pack](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/blob/main/docs/examples/cafe-demo.mmxpack.zip)
+[Chinese step-by-step tutorial](quick-start.md) · [Troubleshooting](faq.md) · [Importable sample pack](../presets/starter-project.mmxpack.zip)
 
-The README screenshot is a real historical canvas view supplied by the maintainer, not a current V3.7 fullscreen screenshot. The cafe example uses drawn diagrams and hand-written shots; it contains no model output or generated video. Back up your active project before importing it.
+The README screenshot is a historical canvas view. The built-in Cyber Cultivation v5 sample includes two reference images, four segments, twelve shots and one existing video. Opening it needs no AI connection and backs up the current project. Director-pack export retains the media and storyboard.
 
 ## Export target
 
@@ -39,6 +39,6 @@ To update on Windows, close the browser and server, drag the release ZIP onto `U
 See the [Chinese README](../README.md), [release guide](releasing.md), [LICENSE](../LICENSE) and [NOTICE](../NOTICE.md).
 
 
-## First-run flow in V3.8
+## First-run flow in V3.13
 
-The home screen offers Try example, Create project, Import project, and Continue for an existing local project. The built-in illustrated cafe example needs no AI. Simple mode follows Story → Assets → Shots; Professional mode exposes the full editor. AI tools prompt for Ollama or a compatible API only when needed. Save / handoff can download a complete `.frame.json` project backup without H3. H3 director-pack export still requires the separate AI Mixer ComfyUI node, workflow, and models.
+The home screen offers Try example, Create project, Import project, and Continue for an existing local project. The built-in Cyber Cultivation v5 project needs no AI to open. Simple mode follows Story → Assets → Shots; Professional mode exposes the full editor. Canvas appearance controls save background, node, highlight and grid colors, background pattern and grid size with the project. Reference-library media and reference packs have no file-size or total-capacity cap; available memory and disk still apply. AI tools prompt for Ollama or a compatible API only when needed. Save / handoff can download a complete `.frame.json` project backup without H3. H3 director-pack export still requires the separate AI Mixer ComfyUI node, workflow, and models.

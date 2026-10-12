@@ -12,7 +12,7 @@ def self_test(report):
  assert (server.ROOT/'web/overview-editor.js').is_file()
  assert (server.ROOT/'web/canvas-controls.js').is_file()
  assert (server.ROOT/'web/visual-packs.js').is_file()
- assert (server.ROOT/'presets/starter-project.json').is_file()
+ assert (server.ROOT/'presets/starter-project.mmxpack.zip').is_file()
  assert server.DATA==runtime_paths.data_dir()
  service=server.ThreadingHTTPServer(('127.0.0.1',0),server.Handler);service.daemon_threads=True
  thread=threading.Thread(target=service.serve_forever,daemon=True);thread.start();base='http://127.0.0.1:'+str(service.server_port)
@@ -20,13 +20,16 @@ def self_test(report):
   with urlopen(base+'/api/bootstrap',timeout=5) as r:boot=json.load(r)
   assert boot['appId']=='frame-storyboard-workbench'
   with urlopen(base+'/',timeout=5) as r:
-   html=r.read();assert b'startup.js?v=3.12' in html and b'overview-editor.js?v=3.12' in html and b'canvas-controls.js?v=3.12' in html
-  with urlopen(base+'/overview-editor.js?v=3.12',timeout=5) as r:assert b'frameOverviewEditor' in r.read()
+   html=r.read();assert b'startup.js?v=3.13' in html and b'overview-editor.js?v=3.13' in html and b'canvas-controls.js?v=3.13' in html
+  with urlopen(base+'/overview-editor.js?v=3.13',timeout=5) as r:assert b'frameOverviewEditor' in r.read()
   with urlopen(Request(base+'/api/projects',headers={'X-Workbench-Token':server.TOKEN}),timeout=5) as r:assert isinstance(json.load(r),list)
-  with urlopen(Request(base+'/api/visual-library-storage',headers={'X-Workbench-Token':server.TOKEN}),timeout=5) as r:assert json.load(r)['limit']==500*1024*1024
+  with urlopen(Request(base+'/api/visual-library-storage',headers={'X-Workbench-Token':server.TOKEN}),timeout=5) as r:assert json.load(r)['limit'] is None
   req=Request(base+'/api/new-project',data=b'{"example":true}',headers={'X-Workbench-Token':server.TOKEN,'Content-Type':'application/json'})
-  with urlopen(req,timeout=5) as r:p=json.load(r)
-  assert len(p['assets'])==3 and len(p['segments'][0]['shots'])==3
+  with urlopen(req,timeout=15) as r:p=json.load(r)
+  assert len(p['assets'])==2 and len(p['segments'])==4 and sum(len(s['shots']) for s in p['segments'])==12
+  assert all(a['path'] in p['media'] for a in p['assets'])
+  restored=server.readzip(server.export_pack(p))
+  assert restored['media']==p['media'] and restored['segments']==p['segments']
   result={'ok':True,'release':boot['release'],'runtime':boot['runtimeMode'],'tk':True,'resources':True,'http':True,'example':True}
   if report:Path(report).write_text(json.dumps(result,indent=2),'utf-8')
  finally:service.shutdown();service.server_close();thread.join(5)

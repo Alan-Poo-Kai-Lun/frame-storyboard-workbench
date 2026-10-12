@@ -13,14 +13,35 @@ class StartupChecks(unittest.TestCase):
  def test_example_is_ready_without_ai_and_preserves_existing_project(self):
   old=server.create_project(title='原项目');server.save_settings({'ai':{'model':'my-local-model','key':'test-key'},'ui':{'workbenchMode':'professional'}},patch=True)
   first=server.create_project(example=True)
-  self.assertEqual(len(first['assets']),3);self.assertEqual(len(first['segments'][0]['shots']),3)
+  self.assertEqual(len(first['assets']),2);self.assertEqual(len(first['segments'][0]['shots']),3)
   self.assertTrue(all(asset_analysis.valid(a,first['media']) for a in first['assets']))
   self.assertTrue(first['starterExample']);self.assertNotEqual(first['projectId'],old['projectId'])
   backups=[json.loads(p.read_text()) for p in (server.DATA/'backups').glob('*.json')]
   self.assertTrue(any(p['projectId']==old['projectId'] for p in backups))
   self.assertEqual(server.settings()['ai']['key'],'test-key')
   second=server.create_project(example=True)
-  self.assertNotEqual(first['segments'][0]['id'],second['segments'][0]['id'])
+  self.assertNotEqual(first['projectId'],second['projectId'])
+  self.assertEqual(first['segments'],second['segments'])
+ def test_cyber_sample_exports_complete_media_and_storyboard(self):
+  import base64,io,zipfile
+  p=server.create_project(example=True)
+  self.assertEqual(p['title'],'赛博修仙 v5')
+  self.assertEqual(len(p['segments']),4)
+  self.assertEqual(sum(len(s['shots']) for s in p['segments']),12)
+  self.assertEqual(sum(len(s['videos']) for s in p['segments']),1)
+  self.assertTrue(all(a['path'] in p['media'] for a in p['assets']))
+  p['overviewLayout']['canvas37']['appearance']={'background':'#142536','highlight':'#ff8800','gridSize':48,'pattern':'lines'}
+  blob=server.export_pack(p)
+  with zipfile.ZipFile(io.BytesIO(blob)) as z:
+   for path,value in p['media'].items():self.assertEqual(z.read(path),base64.b64decode(value))
+   shared=json.loads(z.read('shared_params/shared_params.json'))
+   self.assertEqual(len(shared['refs']),2)
+   for ref in shared['refs']:self.assertIn(ref['imageFile'],z.namelist())
+  restored=server.readzip(blob)
+  self.assertEqual(restored['overviewLayout'],p['overviewLayout'])
+  self.assertEqual(restored['media'],p['media'])
+  for a,b in zip(p['segments'],restored['segments']):
+   for field in ['id','shots','prompt','storyText','videos']:self.assertEqual(a[field],b[field])
  def test_portable_project_retains_media_spatial_states_and_original_pack(self):
   p=server.create_project(example=True);p['segments'][0]['videos']=[{'id':'v1','path':'clip.webm','name':'clip.webm'}];p['media']['clip.webm']='VEVTVA=='
   p['originalZip']='UEFDSw=='
@@ -51,8 +72,8 @@ class StartupChecks(unittest.TestCase):
    req=Request(base+'/api/'+route,data=json.dumps(value).encode(),headers={'X-Workbench-Token':server.TOKEN,'Content-Type':'application/json'})
    with urlopen(req,timeout=3) as response:return json.load(response)
   try:
-   with urlopen(base+'/',timeout=3) as response:self.assertIn(b'startup.js?v=3.12',response.read())
-   with urlopen(base+'/api/bootstrap',timeout=3) as response:self.assertEqual(json.load(response)['version'],'V3.12')
+   with urlopen(base+'/',timeout=3) as response:self.assertIn(b'startup.js?v=3.13',response.read())
+   with urlopen(base+'/api/bootstrap',timeout=3) as response:self.assertEqual(json.load(response)['version'],'V3.13')
    p=post('new-project',{'example':True});self.assertTrue(p['starterExample'])
    restored=post('import-project',{'project':p});self.assertEqual(restored['media'],p['media'])
    self.assertNotEqual(restored['projectId'],p['projectId'])
@@ -70,7 +91,7 @@ class StartupChecks(unittest.TestCase):
    self.assertTrue(call('canvas-layout',{'projectId':p['projectId'],'layout':layout})['ok']);self.assertEqual(server.load_project()['media'],p['media'])
    image='data:image/png;base64,'+base64.b64encode(b'\x89PNG\r\n\x1a\nTEST').decode()
    call('visual-references',{'category':'size','title':'自定义参考','note':'面部特写','image':image});blob=call('visual-pack-export',raw=True);preview=call('visual-pack-preview',blob);self.assertEqual(preview['count'],1);self.assertEqual(call('visual-pack-apply',{**preview,'mode':'keep'})['skipped'],1)
-   self.assertEqual(call('visual-library-storage')['limit'],500*1024*1024)
+   self.assertIsNone(call('visual-library-storage')['limit'])
    second=call('new-project',{'title':'第二个项目'});self.assertEqual(len(call('projects')),2);restored=call('project-open',{'projectId':p['projectId'],'currentProjectId':second['projectId']});self.assertEqual(restored['media'],p['media']);self.assertEqual(restored['overviewLayout'],layout)
   finally:service.shutdown();service.server_close();thread.join(3)
 
