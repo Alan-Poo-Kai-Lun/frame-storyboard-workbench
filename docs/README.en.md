@@ -4,9 +4,11 @@ A local planning workspace for assets, scripts, shot lists, H3 prompts and manua
 
 **V3.14 Beta. Publicly visible source. All rights reserved.** No open-source permission is granted at this time.
 
+[Download Windows EXE — no Python required](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.14-beta.1/FRAME-Workbench-Windows-x64-v3.14-beta.1.exe) · [All releases](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases)
+
 [Chinese step-by-step tutorial](quick-start.md) · [Troubleshooting](faq.md) · [Importable sample pack](../presets/starter-project.mmxpack.zip)
 
-The README screenshot is a historical canvas view. The built-in Cyber Cultivation v5 sample includes two reference images, four segments, twelve shots and one existing video. Opening it needs no AI connection and backs up the current project. Director-pack export retains the media and storyboard.
+The README shows the actual V3.14 canvas with layout groups and a resized shot node. The built-in Cyber Cultivation v5 sample includes two reference images, four segments, twelve shots and one existing video. Opening it needs no AI connection and backs up the current project. Director-pack export retains the media and storyboard.
 
 ## Export target
 
@@ -14,7 +16,9 @@ Director packs target **AI Mixer / AIMixer’s [ComfyUI MiniMax H3 Director](htt
 
 ## Run
 
-Install Python 3.10+. No third-party Python package is required.
+**Windows users:** download the EXE above, run it and keep the launcher open. The workbench opens in your browser. Try the built-in sample first; AI setup is optional.
+
+**Source users:** install Python 3.10+. No third-party Python package is required.
 
 On Windows, run `Start-Windows.bat`; alternatively:
 
@@ -22,7 +26,7 @@ On Windows, run `Start-Windows.bat`; alternatively:
 python3 server.py
 ```
 
-Open http://127.0.0.1:8787, create a project and configure your model service. Ollama defaults to http://127.0.0.1:11434. Image analysis requires a vision-capable model. Confirmed asset descriptions can be reused for text-only shot planning.
+Open http://127.0.0.1:8787, create a project. Configure a model service only when you want AI assistance. Ollama defaults to http://127.0.0.1:11434. Image analysis requires a vision-capable model. Confirmed asset descriptions can be reused for text-only shot planning.
 
 ## Features
 

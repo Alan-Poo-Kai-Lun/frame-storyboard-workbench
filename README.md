@@ -1,90 +1,51 @@
 # FRAME · 分镜工作台
 
-**把素材、故事、分镜与视频记录，整理在同一个本地导演工作台。**
+**把故事、参考素材、分镜和成片记录，整理在同一张导演画布里。**
 
-`V3.14 Beta` · `Windows EXE / Python 3.10+ 源码版` · `Windows 优先` · `本地运行` · `暂时保留权利`
+Windows · 本地运行 · V3.14 Beta · 基础分镜无需 AI
 
-> **先开始分镜，再按需加入 AI。** 基础分镜不需要 Ollama、API 或 H3 导演台。AI 辅助需要 Ollama 或兼容 API，二选一；H3 视频交接的依赖见 [ComfyUI 对接说明](docs/h3-director-compatibility.md)。
+## 下载并开始
 
-[⬇ Windows EXE / 更新包](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases) · [🚀 第一次使用：图文入门](docs/quick-start.md) · [常见问题](docs/faq.md) · [English](docs/README.en.md) · [功能与历史说明](docs/workbench-guide.md) · [更新记录](CHANGELOG.md) · [发布管理](docs/releasing.md)
+### [⬇ 下载 Windows 版（EXE，无需 Python）](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.14-beta.1/FRAME-Workbench-Windows-x64-v3.14-beta.1.exe)
 
-![真实导演画布截图（升级前版本）](docs/assets/screenshots/director-canvas-historical.png)
+[所有版本与更新包](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases) · [新手图文教程](docs/quick-start.md) · [常见问题](docs/faq.md) · [English](docs/README.en.md)
 
-> 真实截图来自维护者先前的演示项目，展示升级前版本；V3.7 已增加全屏、平移缩放与详情栏调宽。截图里的角色与飞剑是虚构演示素材，不代表生成质量。当前为公开源码 Beta，暂未采用开源许可证。
+1. **双击 EXE**，保持小启动器运行，浏览器会打开工作台。
+2. **点击「体验示例项目」**，查看「赛博修仙 v5」的素材、4 个片段、12 个镜头和已有视频。
+3. **点片段写故事，点镜头编辑**；准备好以后，保存项目备份或导出导演包。
 
-**第一次打开？** 首页点击「体验示例项目」，直接进入总览，查看「赛博修仙 v5」的参考素材、4 个片段、12 个镜头与已有视频；不调用 AI。也可点击「创建新项目」，进入总览，沿故事 → 素材 → 分镜三步创作。本机项目会显示为列表，可打开不同项目；旧版导入的项目可通过「找回旧项目」扫描现存备份，创建或导入示例前会自动备份旧项目。
+不需要先安装 Ollama 或配置 API。AI 拆镜可以之后再设置。
 
-**默认在总览开始创作。** 点片段写故事 / 添加素材 → 点镜头修改动作、摄影机和对白 → 点成片上传视频。右侧可以直接保存，切换节点也会保存；专业参数按需展开。最终提示词可查看和修改，任务结果在任务中心预览应用。拖空白可框选，Shift 点选追加，拖选中节点可一起移动；右键显示快捷操作，复杂操作可进入「详细编辑」。
+![FRAME V3.14 实际画布：分组、节点尺寸调整与素材批量确认](docs/assets/screenshots/director-canvas-v3.14.png)
 
-![FRAME 工作流程示意（非运行截图）](docs/assets/workflow.svg)
+*截图来自 V3.14 的「赛博修仙 v5」示例项目。*
 
-**视觉参考可以整包共享。** 参考库点击「导出整合包」，包含自定义 / 已替换参考、说明和图片、GIF、视频；别人导入前可预览，默认保留自己的重复条目。不设单文件与总媒体容量上限，并显示已用空间。内置默认示意图随软件提供，不另打包。
+## 你可以用它做什么
 
-## 适合什么用途
+- **整理素材**：公共与本组参考、具体说明、一键人工确认。
+- **编排分镜**：编辑动作、摄影机、对白和时长，保留历史版本。
+- **使用导演画布**：框选编组、整组拖动、调整节点大小，自定义颜色与网格。
+- **按需使用 AI**：连接 Ollama 或兼容 API，辅助分析素材和拆镜。
+- **保存与交接**：完整项目备份、导入 / 导出 H3 导演包，记录各片段视频版本。
 
-为本地 AI 视频创作者整理素材说明、编排分镜、管理片段承接，并导出 H3 导演包。可以配合 Ollama 或兼容的文字模型接口使用。
+FRAME 负责规划与记录。图片和视频在外部工具生成，再放回对应片段。
 
-**工作台负责策划与记录。图片和视频在外部工具生成，生成后可上传到对应片段。**
+## 下一步
 
-## 主要功能
-
-| 功能 | 当前能力 |
+| 你想做什么 | 从这里开始 |
 |---|---|
-| 新手入口 | 三个首页入口、继续本机项目、默认简洁模式、内置无需 AI 的示例 |
-| 项目备份 | 完整 `.frame.json` 备份与导入，无需 H3 导演台 |
-| 导演画布 | 全屏、节点拖动与缩放、详情调宽；背景 / 节点 / 高亮 / 网格颜色、格子大小与背景样式可调 |
-| 素材管理 | 公共 / 本组素材、拖入替换、Picture 引用与具体说明 |
-| 素材确认 | 人工确认或 AI 分析后确认；已确认说明供后续文字拆镜复用 |
-| AI 拆镜 | 队列、分阶段耗时、生成进度、失败输出保存与重新解析 |
-| 分镜编辑 | 镜头参数、动作、表情、对白、起止空间状态、历史版本 |
-| 视觉参考库 | 可自定义说明及图片、GIF、MP4 / WebM 动态参考 |
-| 提示词 | 片段内参考编号、最终提示词、历史与导出检查 |
-| 视频记录 | 上传、播放、备注、按片段保存并随导演包打包 |
-| 模型管理 | Ollama 模型检测、任务内复用、任务结束或手动卸载 |
+| 跟着做第一个项目 | [新手图文教程](docs/quick-start.md) |
+| 更新软件、迁移或备份数据 | [安装、更新与数据](docs/install-and-data.md) |
+| 把导演包交给 ComfyUI | [H3 导演台对接说明](docs/h3-director-compatibility.md) |
+| 查看完整功能和更新 | [功能说明](docs/workbench-guide.md) · [V3.14 更新](docs/release-v3.14-beta.1.md) · [更新记录](CHANGELOG.md) |
+| 遇到问题 | [常见问题](docs/faq.md) · [提交问题](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/issues/new/choose) |
 
-## 快速开始
+H3 交接需要另行安装 AIMixer 的 ComfyUI H3 导演台、工作流和模型，详情见对接说明。项目与设置保存在本机；使用云模型时，请求会发送到你配置的服务。
 
-**普通 Windows 用户（推荐）**：打开 [GitHub Releases](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases)，下载 `FRAME-Workbench-Windows-x64-版本号.exe`，双击即可启动，无需 Python。保持小启动器运行，它会自动打开浏览器中的工作台。首页可以先体验无需 AI 的示例。
+<details>
+<summary>开发、源码与授权</summary>
 
-**源码用户**：安装 Python 3.10+，下载源码并解压，双击 `Start-Windows.bat`；其他系统运行 `python3 server.py`，访问 `http://127.0.0.1:8787`。无需安装第三方 Python 运行包。
-
-### 更新与数据
-
-- 在工作台点击 **检查更新**，查看已发布版本和 EXE / 源码更新 ZIP 下载入口。
-- EXE：退出旧启动器，再运行新版。项目、素材、视觉参考、任务和连接设置默认保存在 `%LOCALAPPDATA%\FRAME\Workbench\data`，各 EXE 版本共用，不在程序临时目录内。
-- 源码：下载 Releases 中专门的 `FRAME-Storyboard-Workbench-版本号.zip`，关闭服务器，拖到原目录的 `Update-Windows.bat`，再启动并按 Ctrl+F5。原 `data/` 保留，旧程序备份放在 `versions/`。
-- 从源码转 EXE：先关闭源码版，把 EXE 放入原目录再首次启动。目标用户数据为空时复制旧 `data/`；原目录保留。已有 EXE 数据时使用项目备份导入。
-- 更新检查是手动操作，不会上传项目、素材或模型密钥，也不会静默安装。Beta 更新通过版本列表提供。
-
-详见 [本次更新说明](docs/release-v3.14-beta.1.md)与 [Windows EXE 数据迁移说明](docs/release-v3.9-beta.1.md)。源码版端口占用时可使用 `--port 8788`；`--no-browser` 关闭自动打开浏览器。
-
-### Ollama 配置
-
-先在自己电脑启动 Ollama，并安装所需模型。默认服务地址为 `http://127.0.0.1:11434`。纯文字拆镜选择文字模型；分析图片必须选择支持图片输入的视觉模型。模型推理速度取决于模型、量化、显存与输出长度。
-
-## 更新与数据
-
-关闭工作台网页及后台终端，把新 ZIP 拖到**原安装目录**的 `Update-Windows.bat`。**GitHub 的源码 ZIP 不能直接拖入安装更新脚本。** 更新程序会保留 `data/` 并将旧程序归档到 `versions/`。重启后按 Ctrl+F5。
-
-- `data/` 保存项目、连接设置、素材说明及参考媒体；完整备份该目录。
-- API Key 保存于本机设置，请勿上传 `data/` 到 GitHub。
-- `versions/` 保存旧程序，不适合提交源码仓库。
-- 连接模型服务时，请求内容会发送到你配置的服务；选择云接口时并非完全离线。
-- 发布包名中的 `v1` 是沿用的文件名；实际软件版本以界面和 `version.json` 为准。
-
-## 兼容性与已知限制
-
-- 目标接收端：**AI 搅拌手 / AIMixer 的 H3 导演台**；格式 `minimax-h3-director-pack` / `formatVersion: 1`。这只是包格式版本，不是插件版本。未固定实测的插件版本，不能承诺所有新版 / 分支兼容。
-- Windows 启动脚本优先；其他系统的 Python 启动方式尚需更多实机测试。
-- 本地测试通过不代表所有显卡、浏览器、模型或视频编码都能兼容。
-- 视频播放依赖浏览器支持的编码；视频记录属于片段，不自动识别镜头归属。
-- 单视频上限 50MB，项目视频合计上限 150MB，导演包解压资源上限约 400MB。
-- 当前不提供图片 / 视频生成、视频剪辑合并或云托管服务。
-- IDM 等浏览器插件可能拦截本地媒体；可在插件中排除 localhost。
-
-## 开发与反馈
-
-以下命令在 GitHub **源码目录**运行；安装 ZIP 不包含开发测试脚本。
+源码运行需要 Python 3.10+，见 [安装说明](docs/install-and-data.md#源码启动)。开发检查在仓库源码目录执行：
 
 ```bash
 python -m unittest discover -s tests -v
@@ -92,10 +53,8 @@ python tools/check_release.py
 python tools/build_release.py
 ```
 
-问题反馈请使用仓库 Issue 模板，附版本、复现步骤和脱敏错误信息。请勿公开真实客户资料、API Key 或完整个人导演包。重大隐私问题请通过仓库所有者的私下联系方式反馈。
+[发布管理](docs/releasing.md) · [贡献说明](CONTRIBUTING.md) · [安全反馈](SECURITY.md)
 
-## 权利与素材
+当前源码公开可见，采用 **All rights reserved**，授权以 [LICENSE](LICENSE) 为准。素材与第三方来源见 [NOTICE](NOTICE.md)。
 
-项目目前 **All rights reserved**，详情见 [LICENSE](LICENSE)。仓库公开可见，尚未授予开源或一般商用许可；授权范围以 LICENSE 为准。
-
-此仓库排除了原内部测试导演包、独立人物图、店铺图片及生成视频。文档中的历史界面截图包含虚构演示素材缩略图；咖啡店示例包由自绘示意图和人工镜头组成。运行程序时所使用的模型、节点、工作流和外部素材各自适用其权利要求。见 [来源说明](NOTICE.md)。
+</details>
