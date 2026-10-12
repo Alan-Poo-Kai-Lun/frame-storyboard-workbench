@@ -577,7 +577,11 @@ def _unload_model(cfg):
     if result.get('error'): raise ValueError(result['error'])
     return {'message':'已请求 Ollama 卸载 '+model+'（释放内存，不删除模型文件）'}
 def save(p):
-    temp=STATE.with_suffix('.tmp'); temp.write_text(json.dumps(p,ensure_ascii=False),'utf-8'); temp.replace(STATE)
+    import project_store
+    with LOCK:
+        project_store.before_save(DATA,STATE,p)
+        temp=STATE.with_suffix('.tmp');temp.write_text(json.dumps(p,ensure_ascii=False),'utf-8');temp.replace(STATE)
+        project_store.after_save(DATA,STATE,p)
 def settings(): return json.loads(CONFIG.read_text('utf-8')) if CONFIG.exists() else {'ai':{'provider':'ollama','endpoint':'http://127.0.0.1:11434','model':'','key':''}}
 def save_settings(body,patch=False):
     if not isinstance(body,dict): raise ValueError('连接设置格式无效')
@@ -638,12 +642,23 @@ class Handler(BaseHTTPRequestHandler):
                     raw=(DATA/'reference-media'/name).read_bytes()
                 return self.respond(raw,mime=row['mime'],inline=True)
             if route.startswith('/api/') and not self.valid(): return self.respond({'error':'请求验证失败'},403)
+            if route=='/api/projects':
+                import project_store
+                with LOCK:return self.respond(project_store.listing(DATA,STATE))
             if route=='/api/project': return self.respond(load_project())
             if route=='/api/settings': return self.respond(settings())
             if route=='/api/check-updates':
                 import update_check
                 current=json.loads((ROOT/'version.json').read_text('utf-8')).get('release','v3.9-beta.1')
                 return self.respond(update_check.check(current))
+            if route=='/api/visual-library-storage':
+                import visual_library
+                with LOCK:
+                    rows=visual_library._records(DATA);used={r['mediaFile'] for r in rows if r.get('mediaFile')};size=sum((DATA/'reference-media'/name).stat().st_size for name in used if (DATA/'reference-media'/name).is_file())
+                    return self.respond({'used':size,'limit':500*1024*1024})
+            if route=='/api/visual-pack-export':
+                import reference_packs
+                with LOCK:return self.respond(reference_packs.export(DATA),mime='application/zip')
             if route=='/api/visual-references':
                 import visual_library
                 with LOCK:return self.respond(visual_library.read(DATA,public=True))
@@ -664,7 +679,27 @@ class Handler(BaseHTTPRequestHandler):
                 p=readzip(raw)
                 with LOCK: save(p)
                 return self.respond(p)
+            if route=='/api/visual-pack-preview':
+                import reference_packs
+                with LOCK:return self.respond(reference_packs.preview(DATA,raw))
             body=json.loads(raw or b'{}')
+            if route=='/api/canvas-layout':
+                with LOCK:
+                    p=load_project();layout=body.get('layout')
+                    if not p or p['projectId']!=body.get('projectId'):raise ValueError('项目已切换，布局未覆盖新项目')
+                    if not isinstance(layout,dict) or len(json.dumps(layout))>1024*1024:raise ValueError('布局无效或过大')
+                    p['overviewLayout']=layout;save(p);return self.respond({'ok':True})
+            if route in ['/api/project-open','/api/projects-recover']:
+                import project_store
+                with LOCK:
+                    if route.endswith('recover'):return self.respond(project_store.recover(DATA,STATE))
+                    return self.respond(project_store.open_project(DATA,STATE,body.get('projectId'),body.get('currentProjectId'),save))
+            if route in ['/api/visual-pack-apply','/api/visual-pack-cancel']:
+                import reference_packs
+                with LOCK:
+                    if route.endswith('cancel'):
+                        reference_packs.cancel(DATA,body.get('token'));return self.respond({'ok':True})
+                    return self.respond(reference_packs.apply(DATA,body))
             if route=='/api/visual-reference-media':
                 import visual_library
                 with LOCK:

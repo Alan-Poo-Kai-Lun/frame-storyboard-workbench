@@ -12,27 +12,34 @@ async function fixture(existing=null,mode='simple',broken=false){
  const dom=new JSDOM(html,{url:'http://127.0.0.1:8787/',runScripts:'outside-only',pretendToBeVisual:true});
  const styles=dom.window.document.createElement('style');styles.textContent=fs.readFileSync(path.join(root,'web/startup.css'),'utf8');dom.window.document.head.append(styles);
  const w=dom.window;let project=existing&&copy(existing),config={ai:{provider:'ollama',endpoint:'http://127.0.0.1:11434',model:'',key:''},ui:{workbenchMode:mode}};
- let failRebuild=false;
+ let failRebuild=false;const projectSnapshots=new Map();if(project)projectSnapshots.set(project.projectId,copy(project));
  const calls=[],errors=[];w.addEventListener('error',e=>errors.push(e.error));w.structuredClone=copy;
  Object.defineProperty(w.crypto,'randomUUID',{value:require('node:crypto').randomUUID});
- Object.defineProperties(w.HTMLElement.prototype,{offsetWidth:{get(){return this.classList.contains('overviewNode')?230:1000}},offsetHeight:{get(){return this.classList.contains('overviewNode')?100:700}},clientWidth:{get(){return 1000}},clientHeight:{get(){return 700}}});
+ Object.defineProperties(w.HTMLElement.prototype,{offsetWidth:{get(){if(this.classList.contains('overviewNode')){w._nodeMeasures=(w._nodeMeasures||0)+1;return 230}return 1000}},offsetHeight:{get(){if(this.classList.contains('overviewNode')){w._nodeMeasures=(w._nodeMeasures||0)+1;return 100}return 700}},clientWidth:{get(){return 1000}},clientHeight:{get(){return 700}}});
  w.ResizeObserver=class{observe(){}disconnect(){}unobserve(){}};
  w.matchMedia=()=>({matches:false,addEventListener(){},removeEventListener(){}});
  w.HTMLMediaElement.prototype.pause=function(){};w.confirm=()=>true;w.HTMLElement.prototype.scrollIntoView=function(){};
  w.HTMLDialogElement.prototype.showModal=function(){this.open=true};w.HTMLDialogElement.prototype.show=function(){this.open=true};w.HTMLDialogElement.prototype.close=function(){this.open=false};
  w.fetch=async(url,options={})=>{
   const route=String(url).split('?')[0].replace('/api/','');let data;
-  const body=options.body?JSON.parse(options.body):null;calls.push({route,body});
+  const body=options.body?(options.body instanceof w.File?options.body:JSON.parse(options.body)):null;calls.push({route,body});
   if(route==='bootstrap')data={token:'test-token'};
-  else if(route==='project'){if(broken)throw Error('test startup error');if(body)project=copy(body);data=project;}
+  else if(route==='project'){if(broken)throw Error('test startup error');if(body){project=copy(body);projectSnapshots.set(project.projectId,copy(project))}data=project;}
+  else if(route==='canvas-layout'){project.overviewLayout=copy(body.layout);projectSnapshots.set(project.projectId,copy(project));data={ok:true};}
+  else if(route==='projects')data=[...projectSnapshots.values()].map(p=>({id:p.projectId,title:p.title,segments:p.segments.length,shots:p.segments.reduce((n,s)=>n+s.shots.length,0),assets:p.assets.length,current:p.projectId===project?.projectId,updatedAt:'2026-10-12'}));
+  else if(route==='project-open'){project=copy(projectSnapshots.get(body.projectId));data=project;}
   else if(route==='settings')data=config;
   else if(route==='settings-patch'){for(const[k,v]of Object.entries(body))config[k]={...config[k],...v};data={ok:true};}
   else if(route==='check-updates')data={current:'v3.9-beta.1',latest:'v3.9-beta.2',available:true,message:'发现新版本',releaseUrl:'https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/tag/v3.9-beta.2',notes:'更新说明',assets:[{name:'FRAME-Workbench-Windows-x64-v3.9-beta.2.exe',url:'https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.9-beta.2/FRAME-Workbench-Windows-x64-v3.9-beta.2.exe'}]};
   else if(route==='tasks')data={tasks:[],paused:false};
   else if(route==='asset-analysis-status')data={assets:[]};
+  else if(route==='visual-library-storage')data={used:0,limit:500*1048576};
+  else if(route==='visual-pack-preview')data={token:'test-preview',revision:'test-revision',count:1,conflicts:1,bytes:100,entries:[{title:'人物参考',category:'size',media:true,conflict:true}]};
+  else if(route==='visual-pack-cancel')data={ok:true};
+  else if(route==='visual-pack-apply')data={rows:[],imported:1,skipped:0};
   else if(route==='visual-references')data=[];
   else if(route==='reverse-templates')data={};
-  else if(route==='new-project'){project=body.example?copy(sample):{version:1,projectId:'new-project',title:body.title||'新导演项目',script:'',aspect:'16:9',fps:24,segments:[{id:'s1',title:'片段 01',duration:15,shots:[],refs:[]}],assets:[],media:{},originalZip:''};data=project;}
+  else if(route==='new-project'){if(project)projectSnapshots.set(project.projectId,copy(project));project=body.example?copy(sample):{version:1,projectId:'new-project',title:body.title||'新导演项目',script:'',aspect:'16:9',fps:24,segments:[{id:'s1',title:'片段 01',duration:15,shots:[],refs:[]}],assets:[],media:{},originalZip:''};projectSnapshots.set(project.projectId,copy(project));data=project;}
   else if(route==='import-project'){project=copy(body.project);data=project;}
   else if(route==='rebuild'){if(failRebuild)throw Error('rebuild unavailable');data={prompt:'summary:\n测试\ntimeline:\n'};}
   else if(route==='compiled-prompt')data={prompt:project.segments.find(s=>s.id===body.segmentId)?.prompt||'summary:\n测试\ntimeline:\n[0.00s–3.00s]\n测试画面',warnings:[]};
@@ -111,6 +118,25 @@ async function canvasInteractionChecks(){
   assert.equal(f.errors.length,0);console.log('PASS: overview default entry, keyboard text safety, multiselect drag, layout undo, box select, pan, menus, batch deletion and restore');
  }finally{f.dom.window.close()}
 }
+async function optimizationAndLibraryChecks(){
+ const f=await fixture(sample,'professional'),sid=sample.segments[0].id,first='h:'+sid+':'+sample.segments[0].shots[0].id;
+ const dialog=()=>f.el('overviewDialog'),map=()=>dialog().querySelector('.overviewMap'),node=id=>dialog().querySelector('.overviewNode[data-overview-select="'+id+'"]');
+ try{
+  f.el('startResume').click();await pause();await pause();const a=node('a:'+sample.assets[0].id),image=a.querySelector('img'),path=dialog().querySelector('.overviewEdges path');
+  node(first).click();await pause();await pause();assert.equal(node('a:'+sample.assets[0].id),a);assert.equal(a.querySelector('img'),image);assert.equal(dialog().querySelector('.overviewEdges path'),path,'SVG paths reused across selection');
+  const request=f.w.requestAnimationFrame,cancel=f.w.cancelAnimationFrame;let queue=[];f.w.requestAnimationFrame=cb=>{queue.push(cb);return queue.length};f.w.cancelAnimationFrame=()=>{};
+  node(first).dispatchEvent(new f.w.MouseEvent('pointerdown',{bubbles:true,button:0,clientX:100,clientY:100}));await pause();const measures=f.w._nodeMeasures;await f.w.flush();const fullSaves=f.calls.filter(c=>c.route==='project'&&c.body).length;
+  for(let i=0;i<120;i++)map().dispatchEvent(new f.w.MouseEvent('pointermove',{bubbles:true,clientX:100+i,clientY:100+i}));assert.equal(queue.length,1,'120 pointer events coalesce into one frame');assert.equal(f.w._nodeMeasures,measures);queue.shift()();assert.equal(f.w._nodeMeasures,measures,'Drag uses cached geometry, without per-frame layout reads');map().dispatchEvent(new f.w.MouseEvent('pointerup',{bubbles:true}));await pause();f.w.requestAnimationFrame=request;f.w.cancelAnimationFrame=cancel;await f.w.flush();assert.equal(f.calls.filter(c=>c.route==='project'&&c.body).length,fullSaves,'Layout-only save avoids serializing the full project in the browser');assert(f.calls.some(c=>c.route==='canvas-layout'));
+  assert.equal(dialog().querySelector('.overviewEdges path'),path);assert.equal(a.querySelector('img'),image);
+  await f.w.openVisualReference('size');await pause();assert(f.el('importReferencePack'));assert(f.el('referenceStorage').textContent.includes('500'));
+  f.el('referenceCards').querySelector('[data-reference-edit]').click();await pause();await pause();assert(f.el('customRefFile'));
+  const png=new f.w.File([new Uint8Array([137,80,78,71,13,10,26,10,1])],'reference.png',{type:'image/png'});Object.defineProperty(f.el('customRefFile'),'files',{configurable:true,value:[png]});f.el('customRefFile').onchange({target:f.el('customRefFile')});await pause();await pause();assert.match(f.el('customRefStatus').textContent,/已读入/);f.el('modalActions').lastElementChild.click();await pause();await pause();assert(f.calls.some(c=>c.route==='visual-references'&&c.body?.image?.startsWith('data:image/png;base64,')),'Single reference image upload remains functional');
+  const pack=new f.w.File(['TEST'],'test.frame-refs.zip',{type:'application/zip'});Object.defineProperty(f.el('referencePackFile'),'files',{configurable:true,value:[pack]});f.el('referencePackFile').onchange({target:f.el('referencePackFile')});await pause();await pause();assert.match(f.el('modalTitle').textContent,/导入视觉参考/);assert.equal(f.el('referencePackMode').value,'keep');f.el('referencePackMode').value='replace';f.el('referencePackMode').onchange();f.el('modalActions').lastElementChild.click();await pause();assert.match(f.el('referencePackError').textContent,/确认替换/);assert(!f.calls.some(c=>c.route==='visual-pack-apply'));f.el('referencePackAck').checked=true;f.el('modalActions').lastElementChild.click();await pause();await pause();assert(f.calls.some(c=>c.route==='visual-pack-apply'&&c.body.mode==='replace'));f.w.close();
+  dialog().querySelector('[data-canvas-home]').click();await pause();await pause();assert(f.el('localProjectList').querySelector('[data-local-project]'));
+  f.el('startCreate').click();f.el('startupProjectName').value='第二个项目';f.el('modalActions').lastElementChild.click();await pause();await pause();dialog().querySelector('[data-canvas-home]').click();await pause();await pause();assert.equal(f.el('localProjectList').querySelectorAll('[data-local-project]').length,2);f.el('localProjectList').querySelector('[data-local-project="'+sample.projectId+'"]').click();await pause();await pause();assert.equal(f.project.projectId,sample.projectId);assert.equal(dialog().open,true);assert.equal(f.errors.length,0);
+  console.log('PASS: frame coalescing, cached geometry, retained media/path nodes, single reference upload, pack conflict confirmation and multiple project entry');
+ }finally{f.dom.window.close()}
+}
 async function run(){
  let f=await fixture();
  try{
@@ -143,5 +169,6 @@ async function run(){
  try{assert.match(f.el('startupLoadStatus').textContent,/读取失败/);assert.equal(f.el('startExample').disabled,true);console.log('PASS: failed startup exposes error and disables creation');}finally{f.dom.window.close()}
  await overviewChecks();
  await canvasInteractionChecks();
+ await optimizationAndLibraryChecks();
 }
 run().then(()=>process.exit(0)).catch(e=>{console.error(e);process.exit(1)});

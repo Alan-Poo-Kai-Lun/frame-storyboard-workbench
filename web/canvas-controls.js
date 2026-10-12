@@ -1,7 +1,7 @@
 /* Canvas gestures stay separate from shared project data and text editing. */
 window.createFrameCanvasControls=function(o){
  const {dialog,map}=o,abort=new AbortController(),signal=abort.signal;
- let ids=new Set(),mode='select',space=false,gesture=null,suppress=false,pending=0,history=[];
+ let ids=new Set(),mode='select',space=false,gesture=null,suppress=false,pending=0,history=[],frame=0,lastMove=null;
  const on=(el,type,fn,extra={})=>el.addEventListener(type,fn,{...extra,signal});
  const menu=document.createElement('div');menu.className='canvasContextMenu';menu.hidden=true;dialog.append(menu);
  const box=document.createElement('div');box.className='canvasSelectionBox';box.hidden=true;map.append(box);
@@ -12,7 +12,7 @@ window.createFrameCanvasControls=function(o){
  function closeMenu(){menu.hidden=true}
  function repaint(){
   const rows=o.nodes();ids=new Set([...ids].filter(id=>rows.has(id)));
-  for(const[id,el]of rows){el.classList.toggle('selected',ids.has(id));el.setAttribute('aria-pressed',String(ids.has(id)))}
+  for(const[id,el]of rows){const value=ids.has(id);if(el.classList.contains('selected')!==value)el.classList.toggle('selected',value);if(el.getAttribute('aria-pressed')!==String(value))el.setAttribute('aria-pressed',String(value))}
   tools.querySelector('.canvasSelectionCount').textContent=ids.size>1?'已选 '+ids.size+' 个':'';
  }
  async function choose(next){if(!active()||!await o.save())return false;ids=new Set(next);if(ids.size===1)await o.select([...ids][0]);else o.multi(ids.size);repaint();return true}
@@ -38,16 +38,17 @@ window.createFrameCanvasControls=function(o){
    if(pan){gesture={kind:'pan',x,y,view:{...o.view()}};map.classList.add('panning')}
    else if(node){const id=node.dataset.overviewSelect;if(e.shiftKey){const next=new Set(ids);next.has(id)?next.delete(id):next.add(id);await choose([...next]);suppress=true}else if(!ids.has(id))await choose([id]);if(request!==pending)return;gesture={kind:'nodes',x,y,points:[...ids].filter(id=>o.positions().has(id)).map(id=>({id,...o.positions().get(id)})),moved:false}}
    else{gesture={kind:'box',x,y,base:e.shiftKey?[...ids]:[]};box.hidden=false}
-   map.setPointerCapture?.(e.pointerId);
+   if(gesture){gesture.rect=r;gesture.bounds=[...o.nodes()].map(([id,el])=>({id,w:el.offsetWidth,h:el.offsetHeight}));dialog.classList.add('canvasInteracting')}map.setPointerCapture?.(e.pointerId);
   });
  });
- on(map,'pointermove',e=>{if(!gesture)return;const r=map.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top,dx=x-gesture.x,dy=y-gesture.y,v=o.view();
+ function applyMove(e){if(!gesture)return;const r=gesture.rect,x=e.clientX-r.left,y=e.clientY-r.top,dx=x-gesture.x,dy=y-gesture.y,v=o.view();
   if(gesture.kind==='pan'){o.pan(gesture.view.x+dx,gesture.view.y+dy);return}
-  if(gesture.kind==='nodes'){if(!gesture.moved&&Math.abs(dx)+Math.abs(dy)<5)return;gesture.moved=true;for(const p of gesture.points){const pos=o.positions().get(p.id),el=o.nodes().get(p.id);if(pos&&el){pos.x=p.x+dx/v.z;pos.y=p.y+dy/v.z;el.style.left=pos.x+'px';el.style.top=pos.y+'px'}}o.draw();return}
+  if(gesture.kind==='nodes'){if(!gesture.moved&&Math.abs(dx)+Math.abs(dy)<5)return;gesture.moved=true;for(const p of gesture.points){const pos=o.positions().get(p.id),el=o.nodes().get(p.id);if(pos&&el){pos.x=p.x+dx/v.z;pos.y=p.y+dy/v.z;el.style.left=pos.x+'px';el.style.top=pos.y+'px'}}o.draw(new Set(gesture.points.map(p=>p.id)));return}
   const left=Math.min(x,gesture.x),top=Math.min(y,gesture.y),width=Math.abs(dx),height=Math.abs(dy);Object.assign(box.style,{left:left+'px',top:top+'px',width:width+'px',height:height+'px'});
-  const hit=[...o.nodes()].filter(([id,el])=>{const p=o.positions().get(id),nx=p.x*v.z+v.x,ny=p.y*v.z+v.y;return nx<left+width&&nx+el.offsetWidth*v.z>left&&ny<top+height&&ny+el.offsetHeight*v.z>top}).map(([id])=>id);ids=new Set([...gesture.base,...hit]);repaint();
- });
- function finish(){pending++;if(gesture?.kind==='nodes'&&gesture.moved){const before=gesture.points.map(p=>({...p})),after=gesture.points.map(p=>({id:p.id,...o.positions().get(p.id)}));o.persist(after);record(async()=>{o.persist(before);o.refresh();toast('已撤销节点移动')});suppress=true}else if(gesture?.kind==='box'){o.multi(ids.size);repaint();if(ids.size===1)safe(()=>o.select([...ids][0]))}else if(gesture?.kind==='pan')o.saveView();gesture=null;box.hidden=true;map.classList.remove('panning');setTimeout(()=>suppress=false,0)}
+  const hit=gesture.bounds.filter(({id,w,h})=>{const p=o.positions().get(id);if(!p)return false;const nx=p.x*v.z+v.x,ny=p.y*v.z+v.y;return nx<left+width&&nx+w*v.z>left&&ny<top+height&&ny+h*v.z>top}).map(({id})=>id);ids=new Set([...gesture.base,...hit]);repaint();
+ }
+ on(map,'pointermove',e=>{if(!gesture)return;lastMove={clientX:e.clientX,clientY:e.clientY};if(!frame)frame=requestAnimationFrame(()=>{frame=0;const next=lastMove;lastMove=null;if(next)applyMove(next)})});
+ function finish(){if(frame)cancelAnimationFrame(frame);frame=0;if(lastMove)applyMove(lastMove);lastMove=null;dialog.classList.remove('canvasInteracting');pending++;if(gesture?.kind==='nodes'&&gesture.moved){const before=gesture.points.map(p=>({...p})),after=gesture.points.map(p=>({id:p.id,...o.positions().get(p.id)}));o.persist(after);record(async()=>{o.persist(before);o.refresh();toast('已撤销节点移动')});suppress=true}else if(gesture?.kind==='box'){o.multi(ids.size);repaint();if(ids.size===1)safe(()=>o.select([...ids][0]))}else if(gesture?.kind==='pan')o.saveView();gesture=null;box.hidden=true;map.classList.remove('panning');setTimeout(()=>suppress=false,0)}
  on(map,'pointerup',finish);on(map,'pointercancel',finish);
  on(document,'pointerdown',e=>{if(!menu.contains(e.target))closeMenu()});
  on(document,'keydown',e=>{
@@ -59,5 +60,5 @@ window.createFrameCanvasControls=function(o){
   if(e.key==='?'){e.preventDefault();help()}
  },{capture:true});
  on(document,'keyup',e=>{if(e.code==='Space'){space=false;setMode(mode)}});on(window,'blur',()=>{space=false;finish();setMode(mode)});
- return {repaint,select(id){ids=new Set(id?[id]:[]);repaint()},command,help,dispose(){abort.abort();space=false;gesture=null;menu.remove();box.remove();tools.remove()}};
+ return {repaint,select(id){ids=new Set(id?[id]:[]);repaint()},command,help,dispose(){abort.abort();if(frame)cancelAnimationFrame(frame);frame=0;lastMove=null;dialog.classList.remove('canvasInteracting');space=false;gesture=null;menu.remove();box.remove();tools.remove()}};
 };

@@ -41,7 +41,7 @@ def media_type(value):
     if not value:return ''
     match=re.fullmatch(r'data:(image/(?:png|jpeg|webp|gif)|video/(?:mp4|webm));base64,([A-Za-z0-9+/=]+)',value)
     if not match:raise ValueError('支持 PNG / JPG / WebP / GIF / MP4 / WebM')
-    mime=match[1];limit=20 if mime.startswith('video/') else 10 if mime=='image/gif' else 5
+    mime=match[1];limit=100 if mime.startswith('video/') else 30 if mime=='image/gif' else 20
     if len(match[2])>limit*1024*1024*4//3+8:raise ValueError('参考媒体超过上限：'+str(limit)+'MB')
     raw=base64.b64decode(match[2],validate=True)
     if len(raw)>limit*1024*1024:raise ValueError('参考媒体超过上限：'+str(limit)+'MB')
@@ -49,7 +49,7 @@ def media_type(value):
     if not signatures[mime]:raise ValueError('参考媒体内容与格式不符')
     return mime
 def update(data,body,public=False):
-    records=_records(data);key=body.get('id');builtin=body.get('builtin','')
+    records=_records(data);original_used={r.get('mediaFile') for r in records};key=body.get('id');builtin=body.get('builtin','')
     if body.get('action')=='delete':
         records=[row for row in records if row['id']!=key]
     else:
@@ -76,7 +76,9 @@ def update(data,body,public=False):
         found=any(row['id']==key for row in records)
         records=[item if row['id']==key else row for row in records] if found else records+[item]
         if sum(not row.get('builtin') for row in records)>200:raise ValueError('自定义参考最多 200 条')
-        if sum((data/'reference-media'/r['mediaFile']).stat().st_size for r in records if r.get('mediaFile'))>100*1024*1024:raise ValueError('参考媒体总上限约 100MB，请删除不需要的媒体后添加')
+        if sum((data/'reference-media'/name).stat().st_size for name in {r['mediaFile'] for r in records if r.get('mediaFile')} if (data/'reference-media'/name).is_file())>500*1024*1024:
+            if item.get('mediaFile') and item['mediaFile'] not in original_used:(data/'reference-media'/item['mediaFile']).unlink(missing_ok=True)
+            raise ValueError('参考媒体总上限约 500MB，请删除不需要的媒体后添加')
     _write(data,records)
     folder=data/'reference-media'
     used={row.get('mediaFile') for row in records}

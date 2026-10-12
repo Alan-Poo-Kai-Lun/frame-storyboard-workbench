@@ -51,11 +51,27 @@ class StartupChecks(unittest.TestCase):
    req=Request(base+'/api/'+route,data=json.dumps(value).encode(),headers={'X-Workbench-Token':server.TOKEN,'Content-Type':'application/json'})
    with urlopen(req,timeout=3) as response:return json.load(response)
   try:
-   with urlopen(base+'/',timeout=3) as response:self.assertIn(b'startup.js?v=3.11',response.read())
-   with urlopen(base+'/api/bootstrap',timeout=3) as response:self.assertEqual(json.load(response)['version'],'V3.11')
+   with urlopen(base+'/',timeout=3) as response:self.assertIn(b'startup.js?v=3.12',response.read())
+   with urlopen(base+'/api/bootstrap',timeout=3) as response:self.assertEqual(json.load(response)['version'],'V3.12')
    p=post('new-project',{'example':True});self.assertTrue(p['starterExample'])
    restored=post('import-project',{'project':p});self.assertEqual(restored['media'],p['media'])
    self.assertNotEqual(restored['projectId'],p['projectId'])
   finally:service.shutdown();service.server_close();thread.join(timeout=3)
+
+ def test_http_reference_pack_projects_and_layout(self):
+  import base64
+  service=server.ThreadingHTTPServer(('127.0.0.1',0),server.Handler);thread=threading.Thread(target=service.serve_forever,daemon=True);thread.start();base='http://127.0.0.1:'+str(service.server_port)
+  headers={'X-Workbench-Token':server.TOKEN,'Content-Type':'application/json'}
+  def call(route,body=None,raw=False):
+   payload=body if isinstance(body,bytes) else json.dumps(body).encode() if body is not None else None
+   with urlopen(Request(base+'/api/'+route,data=payload,headers=headers),timeout=5) as response:return response.read() if raw else json.load(response)
+  try:
+   p=call('new-project',{'example':True});layout={'canvas37':{'positions':{'project':{'x':12,'y':34}}}}
+   self.assertTrue(call('canvas-layout',{'projectId':p['projectId'],'layout':layout})['ok']);self.assertEqual(server.load_project()['media'],p['media'])
+   image='data:image/png;base64,'+base64.b64encode(b'\x89PNG\r\n\x1a\nTEST').decode()
+   call('visual-references',{'category':'size','title':'自定义参考','note':'面部特写','image':image});blob=call('visual-pack-export',raw=True);preview=call('visual-pack-preview',blob);self.assertEqual(preview['count'],1);self.assertEqual(call('visual-pack-apply',{**preview,'mode':'keep'})['skipped'],1)
+   self.assertEqual(call('visual-library-storage')['limit'],500*1024*1024)
+   second=call('new-project',{'title':'第二个项目'});self.assertEqual(len(call('projects')),2);restored=call('project-open',{'projectId':p['projectId'],'currentProjectId':second['projectId']});self.assertEqual(restored['media'],p['media']);self.assertEqual(restored['overviewLayout'],layout)
+  finally:service.shutdown();service.server_close();thread.join(3)
 
 if __name__=='__main__':unittest.main()

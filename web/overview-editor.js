@@ -15,8 +15,8 @@
  }
  function fingerprint(d){
   if(!d)return '';
-  if(d.kind==='project')return JSON.stringify([P.title,P.aspect,P.fps,P.dialogueLanguage,P.intent]);
-  if(d.kind==='asset')return JSON.stringify(['name','kind','description','scope','segmentId','path'].map(k=>d.item[k]));
+  if(d.kind==='project')return JSON.stringify([P.title,P.aspect,P.fps,P.dialogueLanguage,P.intent,P.segments.map(s=>[s.id,s.title,s.duration,s.shots.length])]);
+  if(d.kind==='asset')return JSON.stringify(['name','kind','description','scope','segmentId','path','confirmation','sceneLayout'].map(k=>d.item[k]));
   if(d.kind==='video')return JSON.stringify([d.item.title,d.item.note,d.item.path]);
   const s=d.segment||d.item,refs=availableAssets(d.segment||(['segment','prompt'].includes(d.kind)?d.item:seg())).map(a=>[a.id,assetNumber(a)]);
   if(d.kind==='segment')return JSON.stringify([s.title,s.duration,s.storyText,s.continuity,s.guideFromPrev,s.planning?.summary,s.shots,refs]);

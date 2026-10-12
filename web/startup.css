@@ -23,3 +23,8 @@ body[data-workbench-mode="professional"] #homeEntry{display:inline-block}
 body[data-workbench-mode="simple"] #workspace>.sidebar #startupStoryBlock{display:none}
 
 .updateDownloads{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0}.updateDownload{display:inline-block;padding:10px 14px;border:1px solid var(--line);border-radius:8px;color:var(--ink);text-decoration:none;background:var(--bg)}.updateNotes{white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.7 system-ui,sans-serif}
+
+.startupLocalProjects{margin:20px 0;border-top:1px solid var(--line);padding-top:20px}.startupLocalHeading{display:flex;align-items:center;gap:10px}.startupLocalHeading h2{margin-right:auto;font-size:17px}#localProjectList{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px;max-height:400px;overflow:auto}.localProjectCard{display:flex;align-items:center;gap:12px;background:var(--panel,var(--bg));border:1px solid var(--line);border-radius:12px;padding:16px}.localProjectCard>div{min-width:0;flex:1}.localProjectCard b{display:block;overflow-wrap:anywhere}.localProjectCard small{display:block;color:var(--muted);font-size:11px;margin-top:6px}.localProjectCard button{white-space:nowrap;font-size:12px}#localProjectStatus{color:var(--muted);font-size:12px}
+
+/* Legacy single-current-project control remains wired for compatibility; use the list. */
+#startupResume{display:none}
