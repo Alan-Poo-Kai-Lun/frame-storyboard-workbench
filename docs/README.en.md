@@ -2,9 +2,9 @@
 
 A local planning workspace for assets, scripts, shot lists, H3 prompts and manually uploaded clip records.
 
-**V3.16 Beta. Publicly visible source. All rights reserved.** No open-source permission is granted at this time.
+**V3.16 Beta 2. Publicly visible source. All rights reserved.** No open-source permission is granted at this time.
 
-[Download Windows EXE — no Python required](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.16-beta.1/FRAME-Workbench-Windows-x64-v3.16-beta.1.exe) · [All releases](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases)
+[Download Windows EXE — no Python required](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.16-beta.2/FRAME-Workbench-Windows-x64-v3.16-beta.2.exe) · [All releases](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases)
 
 [Chinese step-by-step tutorial](quick-start.md) · [Troubleshooting](faq.md) · [Importable sample pack](../presets/starter-project.mmxpack.zip)
 
@@ -29,6 +29,8 @@ python3 server.py
 Open http://127.0.0.1:8787, create a project. Configure a model service only when you want AI assistance. Ollama defaults to http://127.0.0.1:11434. Image analysis requires a vision-capable model. Confirmed asset descriptions can be reused for text-only shot planning.
 
 ![Actual V3.16 director canvas](assets/screenshots/director-canvas-v3.16.png)
+
+**Beta 2 fixes interrupted typing:** focused text fields and IME composition no longer trigger autosave. Changes save when you leave text editing or switch nodes; manual saves preserve the caret and selection. [Fix notes](release-v3.16-beta.2.md).
 
 ## New in V3.16
 

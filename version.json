@@ -2,6 +2,7 @@
   "version": "V3.16",
   "date": "2026-10-13",
   "features": [
+    "文字编辑和输入法选词时不自动保存；离开编辑再保存，保留光标与选区",
     "画布右侧片段 / 素材 / 设置常驻 Inspector，滑块与清晰色块",
     "按投放位置新增公共 / 本组素材，明确素材替换与成片上传目标",
     "本段模式和对应输入直接编辑，自动保存并保留其他片段模式",
@@ -117,5 +118,5 @@
     "presets/system_prompt_t2i.txt",
     "demo/example.mmxpack.zip"
   ],
-  "release": "v3.16-beta.1"
+  "release": "v3.16-beta.2"
 }

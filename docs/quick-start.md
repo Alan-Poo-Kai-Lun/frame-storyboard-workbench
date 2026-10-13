@@ -18,7 +18,7 @@
 
 **Windows 用户推荐下载 EXE，无需 Python。**
 
-1. [下载 V3.16 Windows EXE](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.16-beta.1/FRAME-Workbench-Windows-x64-v3.16-beta.1.exe)，或到 [版本下载页](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases) 选择版本。
+1. [下载 V3.16 Windows EXE](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.16-beta.2/FRAME-Workbench-Windows-x64-v3.16-beta.2.exe)，或到 [版本下载页](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases) 选择版本。
 2. 双击 EXE，保持小启动器运行；浏览器会自动打开工作台。
 3. 点击「体验示例项目」，先试着点击片段和镜头，再创建自己的项目。
 
@@ -65,7 +65,7 @@
 
 点击片段，在右侧 **本段生成模式** 选择 T2V / I2V / FL2V / R2V，并按提示指定输入。改变某段模式后，项目使用 MIXED，其他段保留原模式。V2V / RV2V 项目在项目的生成配置中指定源视频；MIXED 的逐段选项为前述四种。参考素材、首尾帧和成片记录用途不同，成片不会自动成为生成输入。
 
-停止输入后自动保存，留意状态提示；失败时草稿保留，可点「立即保存」重试。素材右键或侧栏可删除，先核对影响范围；删除后可到「素材」页恢复。
+离开文字编辑或切换节点时自动保存，留意状态提示；失败时草稿保留，可点「立即保存」重试。素材右键或侧栏可删除，先核对影响范围；删除后可到「素材」页恢复。
 
 ## 3. 新建项目与片段
 

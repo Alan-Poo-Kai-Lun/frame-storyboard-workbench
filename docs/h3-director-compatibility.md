@@ -40,7 +40,7 @@ FRAME 从零新建时的包模板使用 **r2v（参考主体生视频）**。作
 | 项目 | 当前说明 |
 |---|---|
 | 目标插件 | AI 搅拌手 / AIMixer 的 ComfyUI_MiniMaxH3_Director |
-| FRAME 当前版本 | V3.16 Beta 1 |
+| FRAME 当前版本 | V3.16 Beta 2 |
 | 包标识 | `minimax-h3-director-pack` |
 | 包格式版本 | `formatVersion: 1`，**不是**导演台插件版本 |
 | 默认新建任务模式 | r2v |

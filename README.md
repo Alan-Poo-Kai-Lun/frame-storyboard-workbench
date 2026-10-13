@@ -2,9 +2,9 @@
 
 **把故事、参考素材、分镜和成片记录，整理在同一张导演画布里。**
 
-Windows · 本地运行 · V3.16 Beta · 基础分镜无需 AI
+Windows · 本地运行 · V3.16 Beta 2 · 基础分镜无需 AI
 
-### [⬇ 下载 Windows 版（EXE，无需 Python）](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.16-beta.1/FRAME-Workbench-Windows-x64-v3.16-beta.1.exe)
+### [⬇ 下载 Windows 版（EXE，无需 Python）](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.16-beta.2/FRAME-Workbench-Windows-x64-v3.16-beta.2.exe)
 
 [所有版本与更新包](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases) · [新手教程](docs/quick-start.md) · [常见问题](docs/faq.md) · [English](docs/README.en.md)
 
@@ -18,9 +18,11 @@ Windows · 本地运行 · V3.16 Beta · 基础分镜无需 AI
 
 无需先安装 Ollama 或配置 API。AI 分析素材、拆镜和审查可以之后再设置。
 
+**Beta 2 修复自动保存打断输入**：文字框保持焦点时可以继续写作、停顿构思和输入法选词，离开文字编辑或切换节点后再保存。见 [修复说明](docs/release-v3.16-beta.2.md)。
+
 ## V3.16 有什么变化
 
-- **右侧直接编辑**：常驻「片段 / 素材 / 设置」，本段生成模式、提示词和输入素材就地调整；停止输入后自动保存，并显示保存状态。
+- **右侧直接编辑**：常驻「片段 / 素材 / 设置」，本段生成模式、提示词和输入素材就地调整；离开文字编辑或切换节点时自动保存，并显示保存状态。
 - **拖入图片、视频、音频**：空白处添加公共参考，镜头 / 片段卡添加该片段参考，素材卡同类替换；成片卡接收已有视频记录。
 - **画布更易读**：素材画面随节点尺寸调整，可直接播放音视频；字号、颜色、网格、PCB 连线、HUD 箭头与光效均可设置。
 - **整理与交接**：素材删除前查看影响、删除后可恢复；保留编组、一键确认素材、完整项目备份和导演包导入 / 导出。
@@ -30,7 +32,7 @@ Windows · 本地运行 · V3.16 Beta · 基础分镜无需 AI
 
 ![V3.16 常驻设置面板：字号滑块与颜色色块](docs/assets/screenshots/canvas-settings-v3.16.png)
 
-两张截图均来自 V3.16 的内置示例，未调用生成模型。更多变化见 [V3.16 更新说明](docs/release-v3.16-beta.1.md)。
+两张截图来自 V3.16 Beta 1 的内置示例，未调用生成模型；Beta 2 保持布局，修复保存交互。更多变化见 [V3.16 更新说明](docs/release-v3.16-beta.1.md)。
 
 </details>
 

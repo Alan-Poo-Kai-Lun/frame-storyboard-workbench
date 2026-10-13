@@ -207,6 +207,43 @@ async function multimediaAndGenerationChecks(){
   console.log('PASS: media roles, native control gesture safety, MIXED per-segment persistence, five edge styles, typography and animation settings');
  }finally{f.dom.window.close()}
 }
+async function uninterruptedTypingChecks(){
+ const f=await fixture(sample,'professional'),live=()=>f.w.eval('P');
+ const wait=ms=>new Promise(r=>setTimeout(r,ms));
+ try{
+  f.el('startResume').click();await pause();await pause();
+  const dialog=f.el('overviewDialog'),story=f.el('canvas_story'),title=f.el('canvas_title'),original=live().segments[0].storyText;
+  const writes=()=>f.calls.filter(c=>c.route==='rebuild'||c.route==='project'&&c.body).length;
+  const input=(field,text)=>{field.value=text;field.dispatchEvent(new f.w.Event('input',{bubbles:true}))};
+  story.focus();input(story,'写到一半，先想一想');story.setSelectionRange(3,6);story.scrollTop=22;
+  const baseline=writes();await wait(1000);
+  assert.equal(writes(),baseline,'Pausing while focused must not save or rebuild');assert.equal(live().segments[0].storyText,original);
+  assert.equal(f.w.document.activeElement,story);assert.equal(story.disabled,false);assert.equal(story.selectionStart,3);assert.equal(story.selectionEnd,6);assert.equal(f.el('canvas_story'),story);
+  input(story,'@');story.setSelectionRange(1,1);story.dispatchEvent(new f.w.Event('input',{bubbles:true}));assert.equal(f.el('assetMentions').hidden,false);
+  const imeEnter=new f.w.KeyboardEvent('keydown',{key:'Enter',keyCode:229,isComposing:true,bubbles:true,cancelable:true});story.dispatchEvent(imeEnter);assert.equal(imeEnter.defaultPrevented,false,'IME Enter must not insert a Picture reference');assert.equal(story.value,'@');
+  story.dispatchEvent(new f.w.CompositionEvent('compositionstart',{bubbles:true}));assert.equal(f.el('assetMentions').hidden,true);
+  story.value='中文选词中';story.dispatchEvent(new f.w.InputEvent('input',{bubbles:true,isComposing:true}));await wait(1000);assert.equal(writes(),baseline,'IME composition must not save');
+  story.dispatchEvent(new f.w.CompositionEvent('compositionend',{bubbles:true,data:'中文'}));await wait(900);assert.equal(writes(),baseline,'Confirming IME text must not interrupt continued editing');
+  title.focus();input(title,'新的片段名称');await wait(1000);assert.equal(writes(),baseline,'Tabbing between text fields must not save mid-edit');
+  input(story,'完整故事，写完再保存。');f.el('overviewSearch').focus();await wait(400);await f.w.flush();
+  assert.equal(f.project.segments[0].storyText,'完整故事，写完再保存。');assert.equal(f.project.segments[0].title,'新的片段名称');assert.equal(f.el('canvas_story'),story,'Blur save retains the existing input nodes');
+  // A previously scheduled select save must also defer if text editing starts before it runs.
+  f.el('canvas_genTask').value='t2v';f.el('canvas_genTask').dispatchEvent(new f.w.Event('change',{bubbles:true}));
+  story.focus();input(story,'改模式后继续写故事');const pending=writes();await wait(1000);assert.equal(writes(),pending);
+  story.setSelectionRange(2,5,'backward');story.scrollTop=37;
+  story.dispatchEvent(new f.w.KeyboardEvent('keydown',{key:'s',ctrlKey:true,bubbles:true,cancelable:true}));await pause();await pause();await f.w.flush();
+  assert.equal(f.project.segments[0].storyText,'改模式后继续写故事');assert.equal(f.w.document.activeElement,story);assert.equal(story.selectionStart,2);assert.equal(story.selectionEnd,5);assert.equal(story.selectionDirection,'backward');assert.equal(story.scrollTop,37);
+  const sid=sample.segments[0].id,hid=sample.segments[0].shots[0].id;
+  dialog.querySelector('[data-overview-select="h:'+sid+':'+hid+'"]').click();await pause();await pause();
+  const action=f.el('canvas_action'),before=live().segments[0].shots[0].action;action.focus();input(action,'镜头动作还没写完');action.setSelectionRange(2,4);
+  const shotBaseline=writes();await wait(1000);assert.equal(writes(),shotBaseline,'Shot text uses the same uninterrupted editing rule');assert.equal(live().segments[0].shots[0].action,before);
+  f.failRebuild=true;action.dispatchEvent(new f.w.KeyboardEvent('keydown',{key:'s',ctrlKey:true,bubbles:true,cancelable:true}));await pause();await pause();
+  assert.match(dialog.querySelector('.canvasEditStatus').textContent,/失败/);assert.equal(action.value,'镜头动作还没写完');assert.equal(f.w.document.activeElement,action);assert.equal(action.selectionStart,2);assert.equal(action.selectionEnd,4);assert.equal(action.disabled,false);f.failRebuild=false;
+  input(action,'镜头动作完整保存');dialog.querySelector('[data-overview-select="s:'+sample.segments[1].id+'"]').click();await pause();await pause();await f.w.flush();
+  assert.equal(f.project.segments[0].shots[0].action,'镜头动作完整保存','Switching nodes saves the completed draft');assert(f.el('canvas_story'));assert.equal(f.errors.length,0);
+  console.log('PASS: focused typing pauses, IME and mention Enter, field-to-field editing, blur/node saves, pending timers, Ctrl+S caret and failed drafts');
+ }finally{f.dom.window.close()}
+}
 async function inspectorWorkflowChecks(){
  const source=copy(sample);source.segments[1].shots=[{...copy(source.segments[0].shots[0]),id:'drop-shot-second'}];
  const f=await fixture(source,'professional'),live=()=>f.w.eval('P');try{
@@ -263,5 +300,6 @@ async function run(){
  await canvasWorkflowChecks();
  await multimediaAndGenerationChecks();
  await inspectorWorkflowChecks();
+ await uninterruptedTypingChecks();
 }
 run().then(()=>process.exit(0)).catch(e=>{console.error(e);process.exit(1)});
