@@ -19,9 +19,11 @@ def self_test(report):
  try:
   with urlopen(base+'/api/bootstrap',timeout=5) as r:boot=json.load(r)
   assert boot['appId']=='frame-storyboard-workbench'
+  cache_version=boot['version'].removeprefix('V')
   with urlopen(base+'/',timeout=5) as r:
-   html=r.read();assert b'startup.js?v=3.16' in html and b'overview-editor.js?v=3.16' in html and b'canvas-controls.js?v=3.16' in html
-  with urlopen(base+'/overview-editor.js?v=3.16',timeout=5) as r:assert b'frameOverviewEditor' in r.read()
+   html=r.read()
+   for script in ['startup.js','overview-editor.js','canvas-controls.js']:assert (script+'?v='+cache_version).encode() in html,'页面资源版本不一致：'+script
+  with urlopen(base+'/overview-editor.js?v='+cache_version,timeout=5) as r:assert b'frameOverviewEditor' in r.read()
   with urlopen(Request(base+'/api/projects',headers={'X-Workbench-Token':server.TOKEN}),timeout=5) as r:assert isinstance(json.load(r),list)
   with urlopen(Request(base+'/api/visual-library-storage',headers={'X-Workbench-Token':server.TOKEN}),timeout=5) as r:assert json.load(r)['limit'] is None
   req=Request(base+'/api/new-project',data=b'{"example":true}',headers={'X-Workbench-Token':server.TOKEN,'Content-Type':'application/json'})

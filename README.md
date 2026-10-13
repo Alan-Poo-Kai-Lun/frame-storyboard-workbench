@@ -2,13 +2,13 @@
 
 **把故事、参考素材、分镜和成片记录，整理在同一张导演画布里。**
 
-Windows · 本地运行 · V3.16 Beta 2 · 基础分镜无需 AI
+Windows · 本地运行 · V3.18 Beta 1 · 基础分镜无需 AI
 
-### [⬇ 下载 Windows 版（EXE，无需 Python）](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.16-beta.2/FRAME-Workbench-Windows-x64-v3.16-beta.2.exe)
+### [⬇ 下载 Windows 版（EXE，无需 Python）](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.18-beta.1/FRAME-Workbench-Windows-x64-v3.18-beta.1.exe)
 
 [所有版本与更新包](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases) · [新手教程](docs/quick-start.md) · [常见问题](docs/faq.md) · [English](docs/README.en.md)
 
-![FRAME V3.16 实际界面：赛博修仙 v5 导演画布与本段生成模式](docs/assets/screenshots/director-canvas-v3.16.png)
+![FRAME V3.18 实际界面：片段卡片画布](docs/assets/screenshots/director-cards-v3.18.jpg)
 
 ## 三步开始
 
@@ -18,21 +18,22 @@ Windows · 本地运行 · V3.16 Beta 2 · 基础分镜无需 AI
 
 无需先安装 Ollama 或配置 API。AI 分析素材、拆镜和审查可以之后再设置。
 
-**Beta 2 修复自动保存打断输入**：文字框保持焦点时可以继续写作、停顿构思和输入法选词，离开文字编辑或切换节点后再保存。见 [修复说明](docs/release-v3.16-beta.2.md)。
+## V3.18 有什么变化
 
-## V3.16 有什么变化
-
-- **右侧直接编辑**：常驻「片段 / 素材 / 设置」，本段生成模式、提示词和输入素材就地调整；离开文字编辑或切换节点时自动保存，并显示保存状态。
-- **拖入图片、视频、音频**：空白处添加公共参考，镜头 / 片段卡添加该片段参考，素材卡同类替换；成片卡接收已有视频记录。
-- **画布更易读**：素材画面随节点尺寸调整，可直接播放音视频；字号、颜色、网格、PCB 连线、HUD 箭头与光效均可设置。
-- **整理与交接**：素材删除前查看影响、删除后可恢复；保留编组、一键确认素材、完整项目备份和导演包导入 / 导出。
+- **片段卡片模式**：素材、横排镜头、最终提示词和成片按片段集中排列；新建卡片片段默认一个镜头，保留自由画布模式。
+- **保存自己的布局**：调整素材位置、列数、间距与尺寸，捕获手动排列；保存多个命名方案，选择新项目默认布局。已有项目不会自动重排。
+- **独立素材库**：自定义名称、内容说明和分类；搜索、收藏及删除恢复，预览图片、视频和音频，再加入公共或本段参考。项目使用媒体副本。
+- **入口更直观**：首页 / 示例、素材库、视觉参考库与任务中心固定在画布左上。
+- **保留写作体验**：文字编辑时不自动保存打断输入；空提示词可保存并从故事 AI 拆镜，本机项目支持删除、清空与回收站恢复。
 
 <details>
-<summary>查看新版设置面板实际截图</summary>
+<summary>查看素材库与布局方案实际截图</summary>
 
-![V3.16 常驻设置面板：字号滑块与颜色色块](docs/assets/screenshots/canvas-settings-v3.16.png)
+![V3.18 独立素材库：图片、音频、视频及文字说明](docs/assets/screenshots/asset-library-v3.18.jpg)
 
-两张截图来自 V3.16 Beta 1 的内置示例，未调用生成模型；Beta 2 保持布局，修复保存交互。更多变化见 [V3.16 更新说明](docs/release-v3.16-beta.1.md)。
+![V3.18 可保存多个命名布局并设置新项目默认](docs/assets/screenshots/layout-options-v3.18.jpg)
+
+截图来自隔离测试环境，库内展示测试条目；安装包不携带这些测试条目或私人素材库。未调用生成模型。详见 [V3.18 更新说明](docs/release-v3.18-beta.1.md)。
 
 </details>
 

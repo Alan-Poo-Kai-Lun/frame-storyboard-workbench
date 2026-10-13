@@ -28,7 +28,7 @@ python tools/build_release.py
 
 `dist/` 生成干净的安装 ZIP 和 SHA256SUMS.txt。发布包不包含测试、CI、Git 历史和用户数据，但包含安装说明、权利声明和维护者明确批准的完整示例。`presets/starter-project.mmxpack.zip` 是唯一允许打包的项目归档，通过固定 SHA256 校验；更换示例时须检查内容并更新校验值。
 
-本次版本 tag 为 `v3.16-beta.2`、标题为 `FRAME v3.16-beta.2`。不要把安装 ZIP 提交进源码。推送 main 后由下方 Windows 工作流构建、自检并发布 EXE、源码更新 ZIP 和 SHA256SUMS.txt，标记为 Pre-release。发布前在 Windows 新目录测试安装，并在旧目录测试更新。
+本次版本 tag 为 `v3.18-beta.1`、标题为 `FRAME v3.18-beta.1`。不要把安装 ZIP 提交进源码。推送 main 后由下方 Windows 工作流构建、自检并发布 EXE、源码更新 ZIP 和 SHA256SUMS.txt，标记为 Pre-release。发布前在 Windows 新目录测试安装，并在旧目录测试更新。
 
 后续发布从真实源码提交打 tag；每个 Release 对应一个版本。不要修改已发布 tag 来覆盖旧版。回退前备份 data/，旧程序不保证读取新版本数据。
 

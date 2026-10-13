@@ -94,6 +94,11 @@ def create_project(example=False,title=''):
                 asset['id']=uid()
                 asset['confirmation']={'signature':asset_analysis.signature(asset,p['media']),'mode':'manual','confirmedAt':time.strftime('%Y-%m-%d %H:%M:%S'),'source':asset_analysis.source(asset)}
         elif title.strip():p['title']=title.strip()[:200]
+        if not example:
+            import creative_library
+            layout=creative_library.default_layout(DATA);p['overviewLayout']={'canvas37':layout}
+            if layout['mode']=='cards':
+                p['segments'][0]['shots']=[{'id':uid(),'start':0,'end':3,'action':'','camera':'','dialogue':'','sound':'','expression':'','image':'','locks':{}}]
         backup_project();save(p);return p
 
 def import_project(p):
@@ -655,10 +660,17 @@ class Handler(BaseHTTPRequestHandler):
                     if not row:raise ValueError('参考媒体不存在')
                     raw=(DATA/'reference-media'/name).read_bytes()
                 return self.respond(raw,mime=row['mime'],inline=True)
+            if route.startswith('/asset-library-media/'):
+                import creative_library
+                with LOCK:raw,mime=creative_library.media_file(DATA,route.removeprefix('/asset-library-media/'))
+                return self.respond(raw,mime=mime,inline=True)
             if route.startswith('/api/') and not self.valid(): return self.respond({'error':'请求验证失败'},403)
-            if route=='/api/projects':
+            if route in ['/api/asset-library','/api/layout-presets']:
+                import creative_library
+                with LOCK:return self.respond(creative_library.library(DATA) if route.endswith('asset-library') else creative_library.presets(DATA))
+            if route in ['/api/projects','/api/projects-trash']:
                 import project_store
-                with LOCK:return self.respond(project_store.listing(DATA,STATE))
+                with LOCK:return self.respond(project_store.trash_listing(DATA,STATE) if route.endswith('trash') else project_store.listing(DATA,STATE))
             if route=='/api/project': return self.respond(load_project())
             if route=='/api/settings': return self.respond(settings())
             if route=='/api/check-updates':
@@ -698,16 +710,26 @@ class Handler(BaseHTTPRequestHandler):
                 import reference_packs
                 with LOCK:return self.respond(reference_packs.preview(DATA,raw))
             body=json.loads(raw or b'{}')
+            if route in ['/api/asset-library','/api/asset-library-apply','/api/layout-presets']:
+                import creative_library
+                with LOCK:
+                    if route.endswith('apply'):return self.respond(creative_library.apply_asset(sys.modules[__name__],body))
+                    return self.respond(creative_library.update_asset(DATA,body) if route.endswith('asset-library') else creative_library.update_preset(DATA,body))
             if route=='/api/canvas-layout':
                 with LOCK:
                     p=load_project();layout=body.get('layout')
                     if not p or p['projectId']!=body.get('projectId'):raise ValueError('项目已切换，布局未覆盖新项目')
                     if not isinstance(layout,dict) or len(json.dumps(layout))>1024*1024:raise ValueError('布局无效或过大')
                     p['overviewLayout']=layout;save(p);return self.respond({'ok':True})
-            if route in ['/api/project-open','/api/projects-recover']:
+            if route in ['/api/project-open','/api/projects-recover','/api/projects-delete','/api/project-restore']:
                 import project_store
                 with LOCK:
                     if route.endswith('recover'):return self.respond(project_store.recover(DATA,STATE))
+                    if route.endswith('delete'):
+                        result=project_store.delete_projects(DATA,STATE,body.get('projectIds'),body.get('currentProjectId'),body.get('all',False))
+                        tasks.cancel_projects(sys.modules[__name__],body['projectIds'])
+                        return self.respond(result)
+                    if route.endswith('restore'):return self.respond(project_store.restore_project(DATA,STATE,body.get('projectId'),body.get('currentProjectId')))
                     return self.respond(project_store.open_project(DATA,STATE,body.get('projectId'),body.get('currentProjectId'),save))
             if route in ['/api/visual-pack-apply','/api/visual-pack-cancel']:
                 import reference_packs

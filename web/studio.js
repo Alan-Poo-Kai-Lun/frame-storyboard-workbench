@@ -51,7 +51,7 @@ function renderTaskCenter(){
 async function pollTasks(){
  if(!ready||taskLoading)return;taskLoading=true;
  try{
- const r=await api('tasks');taskRows=r.tasks;tasksPaused=r.paused;if(typeof consumePreparationTasks==='function')await consumePreparationTasks(taskRows);if(typeof consumeReverseTasks==='function')consumeReverseTasks(taskRows);if(typeof syncAIStatus==='function')syncAIStatus();$('taskCount').textContent=taskRows.filter(r=>['waiting','running'].includes(r.status)).length;
+ const r=await api('tasks');taskRows=r.tasks;tasksPaused=r.paused;if(typeof consumePreparationTasks==='function')await consumePreparationTasks(taskRows);if(typeof consumeReverseTasks==='function')consumeReverseTasks(taskRows);if(typeof syncAIStatus==='function')syncAIStatus();$('taskCount').textContent=taskRows.filter(r=>['waiting','running'].includes(r.status)).length;document.querySelectorAll('[data-canvas-task-count]').forEach(el=>el.textContent=$('taskCount').textContent);
  const running=taskRows.find(r=>r.status==='running'),waiting=taskRows.filter(r=>r.status==='waiting').length;
  $('jobStatus').textContent=running?'正在执行：'+({analysis:'镜头解析',reverse:'提示词反推',planning:'AI 拆镜 / 调整',assets:'素材视觉分析'}[running.type]||running.type):tasksPaused?'任务队列已暂停':waiting?'等待队列：'+waiting+' 个任务':'任务队列空闲';
  refreshTaskResults();renderTaskCenter();

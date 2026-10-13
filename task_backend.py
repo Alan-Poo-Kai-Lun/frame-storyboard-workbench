@@ -11,6 +11,16 @@ def manager(s):
 def check_cancel(s,ident):
  m=_INSTANCES.get((str(s.DATA),s.TOKEN))
  if m and m.cancelled(ident):raise RuntimeError('任务已取消；不再回收或写入结果')
+
+def cancel_projects(s,keys):
+ m=_INSTANCES.get((str(s.DATA),s.TOKEN))
+ if not m:return
+ with m.lock:
+  for row in m.rows:
+   if row.get('projectId') not in keys:continue
+   if row['status']=='waiting':row.update(status='cancelled',stage='项目已删除，取消排队',finishedAt=now(),finishedMs=int(time.time()*1000))
+   elif row['status']=='running':row.update(cancelRequested=True,stage='项目已删除，停止跟踪；远端请求可能继续运行')
+  m.write();m.event.set()
 def stage(s,ident,label):
  m=_INSTANCES.get((str(s.DATA),s.TOKEN))
  if not m:return

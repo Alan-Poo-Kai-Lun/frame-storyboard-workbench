@@ -24,6 +24,8 @@ def inputs(root=ROOT):
      if entry.endswith('.json') and SECRET.search(z.read(entry).decode('utf-8')):raise ValueError('Possible credential in starter project')
   elif p.suffix.lower()=='.png' and p.parts[:3]==('docs','assets','screenshots'):
    if not file.read_bytes().startswith(b'\x89PNG\r\n\x1a\n'):raise ValueError('Invalid documentation PNG: '+name)
+  elif p.suffix.lower() in {'.jpg','.jpeg'} and p.parts[:3]==('docs','assets','screenshots'):
+   if not file.read_bytes().startswith(b'\xff\xd8\xff'):raise ValueError('Invalid documentation JPEG: '+name)
   else:
    raw=file.read_text('utf-8')
    if SECRET.search(raw):raise ValueError('Possible credential in '+name)

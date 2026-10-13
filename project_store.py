@@ -1,5 +1,5 @@
 """Multiple local projects; current project is written once, archived only on switches."""
-import hashlib,json,re,time,math
+import copy,hashlib,json,re,time,math
 
 def _write(path,value):
     path.parent.mkdir(parents=True,exist_ok=True);temp=path.with_suffix('.tmp');temp.write_text(json.dumps(value,ensure_ascii=False),'utf-8');temp.replace(path)
@@ -27,6 +27,7 @@ def index(data,state):
     _write(path,value);return value
 def before_save(data,state,p):
     _key(p.get('projectId'));value=index(data,state);previous=value.get('current')
+    if any(row['id']==p['projectId'] for row in value.get('trash',[])):raise ValueError('项目已删除，请从回收站恢复后再编辑')
     if previous and previous!=p['projectId'] and state.exists():
         folder=data/'projects';folder.mkdir(exist_ok=True);path=folder/(_key(previous)+'.json');temp=path.with_suffix('.tmp');temp.write_bytes(state.read_bytes());temp.replace(path)
 def after_save(data,state,p):
@@ -46,7 +47,7 @@ def open_project(data,state,key,expected,save):
     if p.get('projectId')!=key or p.get('version')!=1 or not isinstance(p.get('segments'),list) or not isinstance(p.get('media'),dict):raise ValueError('项目文件损坏，请从备份恢复')
     save(p);return p
 def recover(data,state):
-    value=index(data,state);known={row['id'] for row in value['projects']};count=0;skipped=0
+    value=index(data,state);known={row['id'] for row in value['projects']+value.get('trash',[])};count=0;skipped=0
     for path in sorted((data/'backups').glob('*.json'),key=lambda p:p.stat().st_mtime,reverse=True)[:100]:
         try:
             if path.is_symlink():raise ValueError('Linked backup')
@@ -56,3 +57,42 @@ def recover(data,state):
             folder=data/'projects';folder.mkdir(exist_ok=True);target=folder/(_key(key)+'.json');temp=target.with_suffix('.tmp');temp.write_bytes(path.read_bytes());temp.replace(target);row=_meta(p);row['updatedAt']=time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(path.stat().st_mtime));value['projects'].append(row);known.add(key);count+=1
         except (ValueError,TypeError,OSError,KeyError):skipped+=1
     _write(data/'projects-index.json',value);return {'recovered':count,'skipped':skipped,'projects':listing(data,state)}
+
+def trash_listing(data,state):
+    return sorted(index(data,state).get('trash',[]),key=lambda row:row['deletedAt'],reverse=True)
+
+def delete_projects(data,state,keys,expected,all_projects=False):
+    value=index(data,state)
+    if value.get('current')!=expected:raise ValueError('当前项目已变化，请刷新后删除')
+    if not isinstance(keys,list) or not keys:raise ValueError('请选择要删除的项目')
+    for key in keys:_key(key)
+    if len(keys)!=len(set(keys)):raise ValueError('项目编号重复')
+    known={row['id'] for row in value['projects']}
+    if not set(keys)<=known:raise ValueError('项目列表已变化，请刷新后删除')
+    if not isinstance(all_projects,bool) or all_projects and set(keys)!=known:raise ValueError('项目列表已变化，请重新核对清空范围')
+    current_deleted=value.get('current') in keys
+    if current_deleted and state.exists():
+        target=data/'projects'/(_key(value['current'])+'.json');target.parent.mkdir(parents=True,exist_ok=True)
+        temp=target.with_suffix('.tmp');temp.write_bytes(state.read_bytes());temp.replace(target)
+    updated=copy.deepcopy(value);updated.setdefault('trash',[])
+    updated['trash'].extend({**row,'deletedAt':time.strftime('%Y-%m-%d %H:%M:%S')} for row in value['projects'] if row['id'] in keys)
+    updated['projects']=[row for row in value['projects'] if row['id'] not in keys]
+    if current_deleted:updated['current']=''
+    _write(data/'projects-index.json',updated)
+    try:
+        if current_deleted:state.unlink(missing_ok=True)
+    except OSError:
+        _write(data/'projects-index.json',value);raise
+    return {'deleted':len(keys),'currentDeleted':current_deleted,'projects':listing(data,state)}
+
+def restore_project(data,state,key,expected):
+    value=index(data,state);_key(key)
+    if value.get('current')!=expected:raise ValueError('当前项目已变化，请刷新后恢复')
+    row=next((r for r in value.get('trash',[]) if r['id']==key),None)
+    if not row:raise ValueError('项目不在回收站')
+    path=data/'projects'/(_key(key)+'.json')
+    if not path.is_file() or path.is_symlink():raise ValueError('原项目文件缺失，请从项目备份恢复')
+    p=json.loads(path.read_text('utf-8'));meta=_meta(p)
+    if meta['id']!=key:raise ValueError('项目文件编号不匹配')
+    value['projects'].append(meta);value['trash']=[r for r in value['trash'] if r['id']!=key]
+    _write(data/'projects-index.json',value);return {'restored':key,'projects':listing(data,state)}

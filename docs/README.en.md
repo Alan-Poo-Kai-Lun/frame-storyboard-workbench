@@ -2,9 +2,9 @@
 
 A local planning workspace for assets, scripts, shot lists, H3 prompts and manually uploaded clip records.
 
-**V3.16 Beta 2. Publicly visible source. All rights reserved.** No open-source permission is granted at this time.
+**V3.18 Beta 1. Publicly visible source. All rights reserved.** No open-source permission is granted at this time.
 
-[Download Windows EXE — no Python required](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.16-beta.2/FRAME-Workbench-Windows-x64-v3.16-beta.2.exe) · [All releases](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases)
+[Download Windows EXE — no Python required](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.18-beta.1/FRAME-Workbench-Windows-x64-v3.18-beta.1.exe) · [All releases](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases)
 
 [Chinese step-by-step tutorial](quick-start.md) · [Troubleshooting](faq.md) · [Importable sample pack](../presets/starter-project.mmxpack.zip)
 
@@ -60,3 +60,8 @@ See the [Chinese README](../README.md), [release guide](releasing.md), [LICENSE]
 ## First-run flow in V3.16
 
 The home screen offers Try example, Create project, Import project, and Continue for an existing local project. The built-in Cyber Cultivation v5 project needs no AI to open. Simple mode follows Story → Assets → Shots; Professional mode exposes the full editor. Canvas appearance controls save background, node, highlight and grid colors, background pattern and grid size with the project. Reference-library media and reference packs have no file-size or total-capacity cap; available memory and disk still apply. AI tools prompt for Ollama or a compatible API only when needed. Save / handoff can download a complete `.frame.json` project backup without H3. H3 director-pack export still requires the separate AI Mixer ComfyUI node, workflow, and models.
+
+
+## V3.18
+
+Segment cards group reference assets, shots, prompts and output records. Save named layout presets and choose the default for new projects. The independent creator asset library supports editable names, notes, categories, favorites and image/audio/video previews; adding a reference copies its media into the project. Both libraries and Task Center are directly accessible from the canvas. Existing layouts remain unchanged until explicitly switched.

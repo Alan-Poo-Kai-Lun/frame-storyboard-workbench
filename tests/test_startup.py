@@ -77,8 +77,8 @@ class StartupChecks(unittest.TestCase):
    # The complete example now includes a video and its original portable archive.
    with urlopen(req,timeout=30) as response:return json.load(response)
   try:
-   with urlopen(base+'/',timeout=3) as response:self.assertIn(b'startup.js?v=3.16',response.read())
-   with urlopen(base+'/api/bootstrap',timeout=3) as response:self.assertEqual(json.load(response)['version'],'V3.16')
+   with urlopen(base+'/',timeout=3) as response:self.assertIn(b'startup.js?v=3.18',response.read())
+   with urlopen(base+'/api/bootstrap',timeout=3) as response:self.assertEqual(json.load(response)['version'],'V3.18')
    p=post('new-project',{'example':True});self.assertTrue(p['starterExample'])
    result=post('confirm-assets',{'projectId':p['projectId'],'assets':[{'id':a['id'],'signature':asset_analysis.signature(a,p['media'])} for a in p['assets']]});self.assertEqual(result['confirmed'],0);self.assertEqual(len(result['skipped']),2)
    restored=post('import-project',{'project':p});self.assertEqual(restored['media'],p['media'])
@@ -99,6 +99,23 @@ class StartupChecks(unittest.TestCase):
    call('visual-references',{'category':'size','title':'自定义参考','note':'面部特写','image':image});blob=call('visual-pack-export',raw=True);preview=call('visual-pack-preview',blob);self.assertEqual(preview['count'],1);self.assertEqual(call('visual-pack-apply',{**preview,'mode':'keep'})['skipped'],1)
    self.assertIsNone(call('visual-library-storage')['limit'])
    second=call('new-project',{'title':'第二个项目'});self.assertEqual(len(call('projects')),2);restored=call('project-open',{'projectId':p['projectId'],'currentProjectId':second['projectId']});self.assertEqual(restored['media'],p['media']);self.assertEqual(restored['overviewLayout'],layout)
+  finally:service.shutdown();service.server_close();thread.join(3)
+
+ def test_http_project_delete_restore_and_stale_autosave(self):
+  from urllib.error import HTTPError
+  service=server.ThreadingHTTPServer(('127.0.0.1',0),server.Handler);service.daemon_threads=False
+  thread=threading.Thread(target=service.serve_forever,daemon=True);thread.start();base='http://127.0.0.1:'+str(service.server_port)
+  def call(route,body=None):
+   req=Request(base+'/api/'+route,data=json.dumps(body).encode() if body is not None else None,headers={'X-Workbench-Token':server.TOKEN,'Content-Type':'application/json'})
+   with urlopen(req,timeout=5) as response:return json.load(response)
+  try:
+   a=call('new-project',{'title':'API A'});b=call('new-project',{'title':'API B'})
+   result=call('projects-delete',{'projectIds':[a['projectId'],b['projectId']],'currentProjectId':b['projectId'],'all':True})
+   self.assertTrue(result['currentDeleted']);self.assertEqual(call('projects'),[]);self.assertIsNone(call('project'));self.assertEqual(len(call('projects-trash')),2)
+   with self.assertRaises(HTTPError):call('project',b)
+   self.assertIsNone(call('project'))
+   call('project-restore',{'projectId':a['projectId'],'currentProjectId':''});restored=call('project-open',{'projectId':a['projectId'],'currentProjectId':''})
+   self.assertEqual(restored['title'],'API A');self.assertEqual(len(call('projects-trash')),1);self.assertEqual(call('projects-recover',{})['recovered'],0)
   finally:service.shutdown();service.server_close();thread.join(3)
 
 if __name__=='__main__':unittest.main()

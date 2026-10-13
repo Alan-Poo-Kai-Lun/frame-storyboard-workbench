@@ -12,7 +12,7 @@ async function fixture(existing=null,mode='simple',broken=false){
  const dom=new JSDOM(html,{url:'http://127.0.0.1:8787/',runScripts:'outside-only',pretendToBeVisual:true});
  const styles=dom.window.document.createElement('style');styles.textContent=fs.readFileSync(path.join(root,'web/startup.css'),'utf8');dom.window.document.head.append(styles);
  const w=dom.window;let project=existing&&copy(existing),config={ai:{provider:'ollama',endpoint:'http://127.0.0.1:11434',model:'',key:''},ui:{workbenchMode:mode}};
- let failRebuild=false;const projectSnapshots=new Map();if(project)projectSnapshots.set(project.projectId,copy(project));
+  let failRebuild=false,remoteTasks=[];const projectSnapshots=new Map(),projectTrash=new Map();if(project)projectSnapshots.set(project.projectId,copy(project));
  const calls=[],errors=[];w.addEventListener('error',e=>errors.push(e.error));w.structuredClone=copy;
  Object.defineProperty(w.crypto,'randomUUID',{value:require('node:crypto').randomUUID});
  Object.defineProperties(w.HTMLElement.prototype,{offsetWidth:{get(){if(this.classList.contains('overviewNode')){w._nodeMeasures=(w._nodeMeasures||0)+1;return parseFloat(this.style.width)||230}return 1000}},offsetHeight:{get(){if(this.classList.contains('overviewNode')){w._nodeMeasures=(w._nodeMeasures||0)+1;return parseFloat(this.style.height)||100}return 700}},clientWidth:{get(){return 1000}},clientHeight:{get(){return 700}}});
@@ -28,11 +28,16 @@ async function fixture(existing=null,mode='simple',broken=false){
   else if(route==='canvas-layout'){project.overviewLayout=copy(body.layout);projectSnapshots.set(project.projectId,copy(project));data={ok:true};}
   else if(route==='projects')data=[...projectSnapshots.values()].map(p=>({id:p.projectId,title:p.title,segments:p.segments.length,shots:p.segments.reduce((n,s)=>n+s.shots.length,0),assets:p.assets.length,current:p.projectId===project?.projectId,updatedAt:'2026-10-12'}));
   else if(route==='project-open'){project=copy(projectSnapshots.get(body.projectId));data=project;}
+  else if(route==='projects-trash')data=[...projectTrash.values()].map(p=>({id:p.projectId,title:p.title,segments:p.segments.length,shots:p.segments.reduce((n,s)=>n+s.shots.length,0),deletedAt:'2026-10-13'}));
+  else if(route==='projects-delete'){const currentDeleted=body.projectIds.includes(project?.projectId);for(const id of body.projectIds){projectTrash.set(id,projectSnapshots.get(id));projectSnapshots.delete(id)}if(currentDeleted)project=null;data={deleted:body.projectIds.length,currentDeleted};}
+  else if(route==='project-restore'){const p=projectTrash.get(body.projectId);projectSnapshots.set(p.projectId,p);projectTrash.delete(body.projectId);data={restored:body.projectId};}
+  else if(route==='asset-library')data={revision:'0',categories:['人物'],items:[]};
+  else if(route==='layout-presets'){const options={mode:'cards',assetPosition:'top',shotColumns:3,segmentColumns:2,gap:28,shotWidth:230,shotHeight:220,assetWidth:190,assetHeight:180,rolePositions:{},roleSizes:{}};data=body?.action==='validate'?{options:body.options}:{revision:'0',defaultId:'cards-top',items:[{id:'cards-top',name:'卡片',builtin:true,options}]};}
   else if(route==='settings')data=config;
   else if(route==='settings-patch'){for(const[k,v]of Object.entries(body))config[k]={...config[k],...v};data={ok:true};}
   else if(route==='check-updates')data={current:'v3.9-beta.1',latest:'v3.9-beta.2',available:true,message:'发现新版本',releaseUrl:'https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/tag/v3.9-beta.2',notes:'更新说明',assets:[{name:'FRAME-Workbench-Windows-x64-v3.9-beta.2.exe',url:'https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.9-beta.2/FRAME-Workbench-Windows-x64-v3.9-beta.2.exe'}]};
-  else if(route==='tasks')data={tasks:[],paused:false};
-  else if(route==='asset-analysis-status')data={assets:project.assets.filter(a=>!a.deleted).map(a=>({id:a.id,signature:'stamp-'+a.id}))};
+  else if(route==='tasks')data={tasks:remoteTasks,paused:false};
+  else if(route==='asset-analysis-status')data={assets:(project?.assets||[]).filter(a=>!a.deleted).map(a=>({id:a.id,signature:'stamp-'+a.id}))};
   else if(route==='confirm-assets'){for(const a of project.assets)if(body.assets.some(x=>x.id===a.id))a.confirmation={mode:'manual',source:[a.path||'',a.name||'',a.kind||'',a.description||'']};data={project,confirmed:body.assets.length,skipped:[]};}
   else if(route==='prompt-quality')data={segments:[]};
   else if(route==='visual-library-storage')data={used:0,limit:null};
@@ -52,7 +57,25 @@ async function fixture(existing=null,mode='simple',broken=false){
  };
  for(const match of html.matchAll(/<script src="([^"?]+)/g))require('node:vm').runInContext(fs.readFileSync(path.join(root,'web',match[1]),'utf8'),dom.getInternalVMContext(),{filename:match[1]});
  await pause();
- return {dom,w,calls,errors,set failRebuild(v){failRebuild=v},get project(){return project},get config(){return config},el:id=>w.document.getElementById(id)};
+ return {dom,w,calls,errors,set failRebuild(v){failRebuild=v},set tasks(v){remoteTasks=v},get project(){return project},get config(){return config},el:id=>w.document.getElementById(id)};
+}
+async function creativeCanvasChecks(){
+ const f=await fixture(sample,'professional');
+ const click=async selector=>{const el=f.w.document.querySelector(selector);assert(el,'Missing '+selector);el.click();await pause();await pause()};
+ try{
+ f.el('startResume').click();f.el('projectOverview').click();await pause();await pause();
+ const original=copy(f.w.eval('P.overviewLayout?.canvas37?.positions||{}'));
+ await click('[data-card-mode]');assert.equal(f.el('overviewDialog').dataset.layoutMode,'cards');assert.equal(f.w.document.querySelectorAll('.segmentLayoutCard').length,sample.segments.length);
+ assert(f.w.document.querySelector('[data-overview-select^="ca:"]'),'Segment asset aliases rendered');
+ const geometry=f.w.frameCardGeometry(sample,{assetPosition:'left',shotColumns:2,segmentColumns:1},s=>sample.assets);
+ assert.equal(geometry.cards.length,sample.segments.length);assert(geometry.cards[1].y>geometry.cards[0].y);assert(geometry.points.size>10);
+ await click('[data-layout-presets]');assert(f.el('layoutMode'));assert(f.el('layoutCapture'));f.w.close();
+ await click('[data-card-mode]');assert.equal(f.el('overviewDialog').dataset.layoutMode,'free');assert.deepEqual(copy(f.w.eval('P.overviewLayout.canvas37.positions')),original);
+ await click('[data-card-mode]');await click('[data-card-add-shot="'+sample.segments[0].id+'"]');assert.equal(f.project.segments[0].shots.length,sample.segments[0].shots.length+1);assert.equal(f.project.segments[0].shots[0].id,sample.segments[0].shots[0].id);
+ await click('.cardNewSegment');assert.equal(f.project.segments.at(-1).shots.length,1);
+ await click('[data-creator-library]');assert.match(f.el('modalTitle').textContent,/素材库/);f.el('creatorAdd').click();assert(f.el('creatorTitle'));assert(f.el('creatorNote'));assert(f.el('creatorEditCategory'));assert(f.el('creatorFile'));f.w.close();
+ assert.equal(f.errors.length,0);console.log('PASS: card geometry, asset aliases, mode restoration, full timeline add shot, one-shot segment, layout and asset library forms');
+ }finally{f.dom.window.close()}
 }
 async function overviewChecks(){
  const source=copy(sample);source.assets[1].pictureNumber=8;source.assets[2].pictureNumber=10;
@@ -207,6 +230,34 @@ async function multimediaAndGenerationChecks(){
   console.log('PASS: media roles, native control gesture safety, MIXED per-segment persistence, five edge styles, typography and animation settings');
  }finally{f.dom.window.close()}
 }
+async function blankPromptPlanningChecks(){
+ const source=copy(sample);source.segments[0].shots=[];source.segments[0].prompt='';source.segments[0].planning={summary:''};source.segments[0].storyText='';
+ const f=await fixture(source,'professional');try{
+  f.w.eval("cfg.ai.model='test-model'");f.el('startResume').click();await pause();await pause();const d=f.el('overviewDialog');
+  const input=(id,value)=>{const el=f.el(id);el.value=value;el.dispatchEvent(new f.w.Event('input',{bubbles:true}))};
+  const click=async action=>{d.querySelector('[data-canvas-action="'+action+'"]').click();for(let i=0;i<5;i++)await pause()};
+  input('canvas_story','@Picture 1 从入口走向柜台。');await click('plan');assert.equal(f.project.segments[0].storyText,'@Picture 1 从入口走向柜台。');assert(f.calls.some(c=>c.route==='plan-shots'),'Story-only segment can request AI planning with no prompt');assert(!d.querySelector('.canvasEditStatus').textContent.includes('失败'));
+  input('canvas_duration','20');await click('save');assert.equal(f.project.segments[0].duration,20);assert.equal(f.el('canvas_segmentPrompt').value,f.project.segments[0].prompt,'Derived prompt is synchronized after rebuilding');
+  input('canvas_story','@Picture 1 继续向柜台走去。');await click('save');assert.equal(f.project.segments[0].storyText,'@Picture 1 继续向柜台走去。','Untouched generated prompt is never treated as a new prompt edit');
+  await click('add-shot');d.querySelector('[data-overview-select="s:'+source.segments[0].id+'"]').click();await pause();await pause();const shotIds=f.project.segments[0].shots.map(h=>h.id),plans=f.calls.filter(c=>c.route==='plan-shots').length;
+  input('canvas_segmentPrompt','');input('canvas_story','@Picture 1 点头回应。');await click('plan');assert.equal(f.project.segments[0].prompt,'');assert.deepEqual(f.project.segments[0].shots.map(h=>h.id),shotIds,'Clearing a draft prompt does not delete shots');assert.equal(f.calls.filter(c=>c.route==='plan-shots').length,plans+1);assert.equal(f.errors.length,0);
+  console.log('PASS: story-only AI planning, empty prompt drafts, derived prompt synchronization and existing shot preservation');
+ }finally{f.dom.window.close()}
+}
+async function projectManagementChecks(){
+ const f=await fixture(sample,'professional');try{
+  const settle=async()=>{for(let i=0;i<6;i++)await pause()},confirm=async()=>{f.el('modalActions').lastElementChild.click();await settle()};
+  await settle();assert.equal(f.el('localProjectList').querySelectorAll('[data-delete-project]').length,1);const list=()=>f.el('localProjectList');
+  list().querySelector('[data-delete-project]').click();await settle();assert.match(f.el('modalTitle').textContent,/删除本机项目/);f.el('modalActions').firstElementChild.click();await settle();assert.equal(list().querySelectorAll('[data-local-project]').length,1,'Cancelling deletion changes nothing');
+  list().querySelector('[data-delete-project]').click();await settle();await confirm();assert.equal(f.project,null);assert.equal(f.w.eval('P'),null);assert.equal(list().querySelectorAll('[data-local-project]').length,0);assert.equal(f.el('clearLocalProjects').disabled,true);
+  f.el('localProjectTrash').click();await settle();assert.equal(f.el('modalBody').querySelectorAll('[data-restore-project]').length,1);f.el('modalBody').querySelector('[data-restore-project]').click();await settle();assert.equal(list().querySelectorAll('[data-local-project]').length,1);assert.equal(f.el('modalBody').querySelectorAll('[data-restore-project]').length,0);f.w.close();
+  list().querySelector('[data-local-project]').click();await settle();const d=f.el('overviewDialog');assert.equal(d.open,true);const quick=d.querySelector('.overviewHead').firstElementChild;assert(quick.classList.contains('canvasQuickNav'));assert(quick.querySelector('[data-canvas-home]'));assert(quick.querySelector('[data-canvas-tasks]'));assert(!d.querySelector('.canvasMore [data-canvas-tasks]'));
+  f.tasks=[{id:'queue-1',type:'planning',status:'waiting',projectId:sample.projectId,segmentId:sample.segments[0].id,title:'排队任务',createdMs:Date.now()}];await f.w.pollTasks();assert.equal(d.querySelector('[data-canvas-task-count]').textContent,'1');quick.querySelector('[data-canvas-tasks]').click();await settle();assert.match(f.el('modalTitle').textContent,/任务中心/);f.w.close();quick.querySelector('[data-canvas-home]').click();await settle();assert.equal(f.w.document.body.dataset.startupView,'home');
+  await f.w.createStartupProject(false,'第二个项目');await settle();d.querySelector('[data-canvas-home]').click();await settle();assert.equal(list().querySelectorAll('[data-local-project]').length,2);f.el('clearLocalProjects').click();await settle();assert.match(f.el('modalTitle').textContent,/清空全部/);await confirm();assert.equal(f.project,null);assert.equal(list().querySelectorAll('[data-local-project]').length,0);
+  f.el('localProjectTrash').click();await settle();assert.equal(f.el('modalBody').querySelectorAll('[data-restore-project]').length,2);assert.equal(f.errors.length,0);
+  console.log('PASS: direct left home/example and task count, individual project delete/cancel/restore and clear-all empty state');
+ }finally{f.dom.window.close()}
+}
 async function uninterruptedTypingChecks(){
  const f=await fixture(sample,'professional'),live=()=>f.w.eval('P');
  const wait=ms=>new Promise(r=>setTimeout(r,ms));
@@ -301,5 +352,8 @@ async function run(){
  await multimediaAndGenerationChecks();
  await inspectorWorkflowChecks();
  await uninterruptedTypingChecks();
+ await blankPromptPlanningChecks();
+ await projectManagementChecks();
+ await creativeCanvasChecks();
 }
 run().then(()=>process.exit(0)).catch(e=>{console.error(e);process.exit(1)});
