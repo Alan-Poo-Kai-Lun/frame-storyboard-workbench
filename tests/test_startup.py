@@ -16,7 +16,7 @@ class StartupChecks(unittest.TestCase):
   self.assertEqual(len(first['assets']),2);self.assertEqual(len(first['segments'][0]['shots']),3)
   self.assertTrue(all(asset_analysis.valid(a,first['media']) for a in first['assets']))
   self.assertTrue(first['starterExample']);self.assertNotEqual(first['projectId'],old['projectId'])
-  backups=[json.loads(p.read_text()) for p in (server.DATA/'backups').glob('*.json')]
+  backups=[json.loads(p.read_text(encoding="utf-8")) for p in (server.DATA/'backups').glob('*.json')]
   self.assertTrue(any(p['projectId']==old['projectId'] for p in backups))
   self.assertEqual(server.settings()['ai']['key'],'test-key')
   second=server.create_project(example=True)
