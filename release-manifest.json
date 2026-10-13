@@ -63,5 +63,11 @@
   "docs/release-v3.13-beta.1.md",
   "docs/release-v3.14-beta.1.md",
   "docs/install-and-data.md",
-  "docs/assets/screenshots/director-canvas-v3.14.png"
+  "docs/assets/screenshots/director-canvas-v3.14.png",
+  "generation_backend.py",
+  "web/generation-controls.js",
+  "web/canvas-style.js",
+  "docs/release-v3.16-beta.1.md",
+  "docs/assets/screenshots/director-canvas-v3.16.png",
+  "docs/assets/screenshots/canvas-settings-v3.16.png"
 ]

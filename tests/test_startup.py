@@ -77,8 +77,8 @@ class StartupChecks(unittest.TestCase):
    # The complete example now includes a video and its original portable archive.
    with urlopen(req,timeout=30) as response:return json.load(response)
   try:
-   with urlopen(base+'/',timeout=3) as response:self.assertIn(b'startup.js?v=3.14',response.read())
-   with urlopen(base+'/api/bootstrap',timeout=3) as response:self.assertEqual(json.load(response)['version'],'V3.14')
+   with urlopen(base+'/',timeout=3) as response:self.assertIn(b'startup.js?v=3.16',response.read())
+   with urlopen(base+'/api/bootstrap',timeout=3) as response:self.assertEqual(json.load(response)['version'],'V3.16')
    p=post('new-project',{'example':True});self.assertTrue(p['starterExample'])
    result=post('confirm-assets',{'projectId':p['projectId'],'assets':[{'id':a['id'],'signature':asset_analysis.signature(a,p['media'])} for a in p['assets']]});self.assertEqual(result['confirmed'],0);self.assertEqual(len(result['skipped']),2)
    restored=post('import-project',{'project':p});self.assertEqual(restored['media'],p['media'])

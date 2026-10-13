@@ -1,3 +1,4 @@
+import generation_backend
 """Reference pixels -> editable dossiers, with content-bound cache and stale-result guards."""
 import copy,hashlib,json,mimetypes,re,time
 FIELDS={'appearance':'人物 / 主体外观','costume':'服装与材质','layout':'场景布局与空间关系','landmarks':'固定物件与地面','lighting':'光线与配色','preserve':'需要保持的可见细节','uncertainties':'不确定项'}
@@ -45,7 +46,7 @@ def analyze_one(s,cfg,item):
 
 def items(s,p,segment):
  out=[]
- for n,a in enumerate(s.scoped_assets(p,segment),1):
+ for n,a in enumerate([a for a in s.scoped_assets(p,segment) if generation_backend.media_type(a)=='image'],1):
   if not p.get('media',{}).get(a['path']):raise ValueError('参考素材缺失，请先替换或恢复：'+a.get('name',a['path']))
   if not (mimetypes.guess_type(a['path'])[0] or '').startswith('image/'):raise ValueError('素材视觉分析仅支持图片：'+a.get('name',''))
   out.append({'number':n,'asset':copy.deepcopy(a),'signature':signature(a,p['media']),'b64':p['media'][a['path']]})

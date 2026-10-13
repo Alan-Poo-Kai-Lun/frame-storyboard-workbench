@@ -18,7 +18,7 @@
 - 从源码转 EXE：先关闭源码版，把 EXE 放入原目录再首次启动。目标用户数据为空时复制旧 `data/`；原目录保留。已有 EXE 数据时使用项目备份导入。
 - 更新检查是手动操作，不会上传项目、素材或模型密钥，也不会静默安装。Beta 更新通过版本列表提供。
 
-详见 [本次更新说明](release-v3.14-beta.1.md)与 [Windows EXE 数据迁移说明](release-v3.9-beta.1.md)。源码版端口占用时可使用 `--port 8788`；`--no-browser` 关闭自动打开浏览器。
+详见 [本次更新说明](release-v3.16-beta.1.md)与 [Windows EXE 数据迁移说明](release-v3.9-beta.1.md)。源码版端口占用时可使用 `--port 8788`；`--no-browser` 关闭自动打开浏览器。
 
 ### Ollama 配置
 

@@ -116,7 +116,7 @@ async function canvasInteractionChecks(){
   const v={...live().overviewLayout.canvas37.view};await pointer('pointerdown',map(),100,100,{button:1});await pointer('pointermove',map(),140,125,{button:1});await pointer('pointerup',map(),140,125,{button:1});assert.equal(live().overviewLayout.canvas37.view.x,v.x+40,'Middle mouse pans');
   map().dispatchEvent(new f.w.MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX:150,clientY:150}));await pause();const menu=dialog().querySelector('.canvasContextMenu');assert.equal(menu.hidden,false);assert(menu.querySelector('[data-menu-command="add-segment"]'));await key('Escape');assert.equal(menu.hidden,true);assert.equal(dialog().open,true,'Esc closes menu before canvas');
   await click('s:'+sid);await key('Delete');f.el('modalActions').lastElementChild.click();await pause();await pause();await f.w.flush();assert.equal(f.project.segments.length,1);await key('z',{ctrlKey:true});await f.w.flush();assert.equal(f.project.segments.length,2);assert.equal(f.project.media[sample.assets[0].path],sample.media[sample.assets[0].path]);
-  await key('a',{ctrlKey:true});await key('Delete');f.el('modalActions').lastElementChild.click();await pause();await pause();await f.w.flush();assert.equal(f.project.segments.length,0,'Deleting all segments leaves a usable project');assert.equal(f.project.assets.length,sample.assets.length);assert(f.el('canvas_title'),'Project remains editable');await key('z',{ctrlKey:true});await f.w.flush();assert.equal(f.project.segments.length,2,'Undo restores all segments');
+  await click('s:'+sample.segments[0].id);node('s:'+sample.segments[1].id).dispatchEvent(new f.w.MouseEvent('click',{bubbles:true,shiftKey:true}));await pause();await key('Delete');f.el('modalActions').lastElementChild.click();await pause();await pause();await f.w.flush();assert.equal(f.project.segments.length,0,'Deleting all segments leaves a usable project');assert.equal(f.project.assets.length,sample.assets.length);assert(f.el('canvas_title'),'Project remains editable');await key('z',{ctrlKey:true});await f.w.flush();assert.equal(f.project.segments.length,2,'Undo restores all segments');
   assert.equal(f.errors.length,0);console.log('PASS: overview default entry, keyboard text safety, multiselect drag, layout undo, box select, pan, menus, batch deletion and restore');
  }finally{f.dom.window.close()}
 }
@@ -140,21 +140,9 @@ async function optimizationAndLibraryChecks(){
  }finally{f.dom.window.close()}
 }
 async function appearanceChecks(){
- const f=await fixture(sample,'simple');
- try{
-  f.el('startResume').click();await pause();const d=f.el('overviewDialog');
-  d.querySelector('[data-canvas-appearance]').click();await pause();
-  const color=f.el('modalBody').querySelector('[data-appearance-color="highlight"]');color.value='#ff8800';color.dispatchEvent(new f.w.Event('input'));
-  const bg=f.el('modalBody').querySelector('[data-appearance-color="background"]');bg.value='#102030';bg.dispatchEvent(new f.w.Event('input'));
-  f.el('canvasPattern').value='lines';f.el('canvasPattern').dispatchEvent(new f.w.Event('change'));
-  f.el('canvasGridSize').value='48';f.el('canvasGridSize').dispatchEvent(new f.w.Event('input'));
-  assert.equal(d.style.getPropertyValue('--canvas-glow'),'#ff8800');assert.equal(d.dataset.canvasPattern,'lines');assert.equal(d.style.getPropertyValue('--canvas-grid-size'),'48px');
-  f.el('canvasGridSize').value='0';f.el('canvasGridSize').dispatchEvent(new f.w.Event('input'));assert.equal(d.style.getPropertyValue('--canvas-grid-size'),'48px');
-  f.el('modalActions').lastElementChild.click();await f.w.flush();assert.equal(f.project.overviewLayout.canvas37.appearance.background,'#102030');
-  d.querySelector('[data-overview-close]').click();await pause();f.w.openFrameOverview();await pause();assert.equal(d.style.getPropertyValue('--canvas-glow'),'#ff8800');
-  d.querySelector('[data-canvas-appearance]').click();await pause();f.el('modalActions').firstElementChild.click();await f.w.flush();assert.deepEqual(f.project.overviewLayout.canvas37.appearance,{});assert.equal(d.style.getPropertyValue('--canvas-glow'),'');assert.equal(d.dataset.canvasPattern,'dots');
-  assert.equal(f.errors.length,0);console.log('PASS: canvas appearance live changes, invalid size guard, persistence, reopen and reset');
- }finally{f.dom.window.close()}
+ const f=await fixture(sample,'simple');try{f.el('startResume').click();await pause();const d=f.el('overviewDialog');d.querySelector('[data-canvas-appearance]').click();await pause();const panel=d.querySelector('.canvasSettings');assert.equal(panel.hidden,false);assert.equal(f.el('modal').open,false,'Settings are persistent, not a modal');
+ const color=panel.querySelector('[data-appearance-color="highlight"]');color.value='#ff8800';color.dispatchEvent(new f.w.Event('input',{bubbles:true}));const bg=panel.querySelector('[data-appearance-color="background"]');bg.value='#102030';bg.dispatchEvent(new f.w.Event('input',{bubbles:true}));
+ const pattern=panel.querySelector('[data-appearance-select="pattern"]');pattern.value='lines';pattern.dispatchEvent(new f.w.Event('change',{bubbles:true}));const grid=panel.querySelector('[data-appearance-number="gridSize"]');grid.value='48';grid.dispatchEvent(new f.w.Event('input',{bubbles:true}));assert.equal(d.style.getPropertyValue('--canvas-glow'),'#ff8800');assert.equal(d.dataset.canvasPattern,'lines');assert.equal(d.style.getPropertyValue('--canvas-grid-size'),'48px');await f.w.flush();assert.equal(f.project.overviewLayout.canvas37.appearance.background,'#102030');d.querySelector('[data-overview-close]').click();await pause();await f.w.openFrameOverview();await pause();assert.equal(d.style.getPropertyValue('--canvas-glow'),'#ff8800');d.querySelector('[data-canvas-appearance]').click();await pause();d.querySelector('[data-reset-appearance]').click();await f.w.flush();assert.deepEqual(f.project.overviewLayout.canvas37.appearance,{});assert.equal(d.dataset.canvasPattern,'dots');assert.equal(f.errors.length,0);console.log('PASS: persistent Inspector settings, ranges, colors, persistence and reset');}finally{f.dom.window.close()}
 }
 async function canvasWorkflowChecks(){
  const source=copy(sample),f=await fixture(source,'professional'),live=()=>f.w.eval('P'),dialog=()=>f.el('overviewDialog'),map=()=>dialog().querySelector('.overviewMap');
@@ -197,6 +185,47 @@ async function canvasWorkflowChecks(){
   assert.equal(f.errors.length,0);console.log('PASS: canvas group/hidden-member movement, rename, resize, undo, persistence, pack entry and bulk confirmation');
  }finally{f.dom.window.close()}
 }
+async function multimediaAndGenerationChecks(){
+ const source=copy(sample),sid=source.segments[0].id;
+ while(source.segments.length<4){const extra=copy(source.segments[0]);extra.id='test-segment-'+source.segments.length;extra.title='测试片段 '+source.segments.length;source.segments.push(extra)}
+ source.assets.push({id:'voice',name:'声音参考',kind:'声音',mediaType:'audio',path:'extra/voice.wav',scope:'public',description:'声音参考'});source.media['extra/voice.wav']='UklGRg==';
+ source.assets.push({id:'refvideo',name:'运动参考',kind:'视频',mediaType:'video',path:'extra/ref.mp4',scope:'segment',segmentId:sid,description:'运动参考'});source.media['extra/ref.mp4']='AAAA';
+ const f=await fixture(source,'professional'),live=()=>f.w.eval('P');
+ try{
+  f.el('startResume').click();await pause();await pause();const dialog=f.el('overviewDialog');
+  assert.equal(f.w.availableAssets().length,sample.assets.length,'Picture numbering excludes audio/video');assert.equal(f.w.allScopedAssets().length,sample.assets.length+2);
+  assert(dialog.querySelector('[data-overview-select="a:voice"] audio[controls]'));assert(dialog.querySelector('[data-overview-select="a:refvideo"] video[controls]'));
+  const audio=dialog.querySelector('[data-overview-select="a:voice"] audio');let delivered=false;audio.addEventListener('click',()=>delivered=true);audio.dispatchEvent(new f.w.MouseEvent('click',{bubbles:true}));assert(delivered,'Canvas capture must allow native media controls');
+  await f.w.openGenerationSettings();f.el('generationTask').value='mixed';f.el('generationTask').dispatchEvent(new f.w.Event('change'));
+  const rows=[...f.el('generationSegments').children];const modes=['r2v','fl2v','i2v','t2v'];for(const [i,row]of rows.entries()){row.querySelector('[data-generation="taskType"]').value=modes[i];for(const key of ['genImage','startImage','endImage'])row.querySelector('[data-generation="'+key+'"]').value=source.assets[0].path;}
+  f.el('modalActions').lastElementChild.click();await pause();await pause();assert.equal(live().generation.taskType,'mixed');assert(live().generationManaged);assert.deepEqual(live().segments.map(s=>s.generation.taskType),modes);
+  dialog.querySelector('[data-canvas-appearance]').click();await pause();
+  for(const style of ['straight','curve','hidden','orthogonal','default']){const input=dialog.querySelector('.canvasSettings [data-appearance-select="lineStyle"]');input.value=style;input.dispatchEvent(new f.w.Event('change',{bubbles:true}));await pause();assert.equal(dialog.dataset.canvasLineStyle,style);if(style==='hidden')assert.equal(dialog.querySelector('.overviewEdges').style.display,'none');else assert.notEqual(dialog.querySelector('.overviewEdges').style.display,'none');}
+  const size=dialog.querySelector('.canvasSettings [data-appearance-number="bodySize"]');size.value='21';size.dispatchEvent(new f.w.Event('input',{bubbles:true}));assert.equal(dialog.style.getPropertyValue('--canvas-body-size'),'21px');
+  const flow=dialog.querySelector('[data-appearance-check="flow"]');flow.checked=false;flow.dispatchEvent(new f.w.Event('change',{bubbles:true}));assert.equal(dialog.dataset.canvasFlow,'off');
+  await f.w.flush();assert.equal(f.project.overviewLayout.canvas37.appearance.bodySize,21);assert.equal(f.errors.length,0);
+  console.log('PASS: media roles, native control gesture safety, MIXED per-segment persistence, five edge styles, typography and animation settings');
+ }finally{f.dom.window.close()}
+}
+async function inspectorWorkflowChecks(){
+ const source=copy(sample);source.segments[1].shots=[{...copy(source.segments[0].shots[0]),id:'drop-shot-second'}];
+ const f=await fixture(source,'professional'),live=()=>f.w.eval('P');try{
+ f.el('startResume').click();await pause();await pause();const d=f.el('overviewDialog'),map=d.querySelector('.overviewMap'),first=source.segments[0],second=source.segments[1];
+ const click=async id=>{d.querySelector('[data-overview-select="'+id+'"]').click();await pause();await pause()};
+ assert.equal(d.querySelectorAll('[data-inspector-tab]').length,3);assert(d.querySelector('[data-canvas-field="genTask"]'));assert(!d.querySelector('.canvasSegmentNavigation[open]'));
+ f.el('canvas_title').value='自动保存后的片段';f.el('canvas_title').dispatchEvent(new f.w.Event('input',{bubbles:true}));await new Promise(r=>setTimeout(r,1000));await f.w.flush();assert.equal(f.project.segments[0].title,'自动保存后的片段');assert.notEqual(live().generation?.taskType,'mixed','Ordinary edits must not switch generation mode');
+ f.el('canvas_genTask').value='i2v';f.el('canvas_genTask').dispatchEvent(new f.w.Event('change',{bubbles:true}));assert.equal(d.querySelector('[data-inline-input="genImage"]').hidden,false);d.querySelector('[data-canvas-field="gen_genImage"]').value=sample.assets[0].path;d.querySelector('[data-canvas-field="gen_genImage"]').dispatchEvent(new f.w.Event('change',{bubbles:true}));await new Promise(r=>setTimeout(r,1000));await f.w.flush();assert.equal(live().generation.taskType,'mixed');assert.equal(live().segments[0].generation.taskType,'i2v');assert.equal(live().segments[1].generation.taskType,'r2v');
+ await click('h:'+first.id+':'+first.shots[0].id);const prior=live().segments[0].shots[0].action;f.failRebuild=true;f.el('canvas_action').value='失败后保留的草稿';f.el('canvas_action').dispatchEvent(new f.w.Event('input',{bubbles:true}));await new Promise(r=>setTimeout(r,1000));assert.equal(live().segments[0].shots[0].action,prior);assert.equal(f.el('canvas_action').value,'失败后保留的草稿');assert.match(d.querySelector('.canvasEditStatus').textContent,/失败/);f.failRebuild=false;d.querySelector('[data-canvas-action="save"]').click();await pause();await pause();assert.equal(live().segments[0].shots[0].action,'失败后保留的草稿');
+ await click('project');assert(f.el('canvas_language'));assert(!f.el('canvas_fps'));assert.equal(f.el('canvas_language').closest('details'),null);assert.equal(live().fps,sample.fps);
+ const drop=async(target,name,type)=>{const file=new f.w.File([new Uint8Array([137,80,78,71,13,10,26,10,1])],name,{type});const e=new f.w.Event('drop',{bubbles:true,cancelable:true});Object.defineProperty(e,'dataTransfer',{value:{files:[file],types:['Files']}});Object.defineProperty(e,'clientX',{value:400});Object.defineProperty(e,'clientY',{value:350});target.dispatchEvent(e);for(let i=0;i<5;i++)await pause();await f.w.flush()};
+ await click('a:'+sample.assets[0].id);const oldPath=live().assets[0].path;await drop(map,'public.png','image/png');const pub=live().assets.at(-1);assert.equal(pub.scope,'public');assert.equal(live().assets[0].path,oldPath,'Blank drop adds even with existing asset selected');assert(live().overviewLayout.canvas37.positions['a:'+pub.id]);
+ await click('s:'+second.id);const shot=d.querySelector('[data-overview-select="h:'+second.id+':'+second.shots[0].id+'"]');const oldFrame=live().segments[1].shots[0].image;await drop(shot,'local.wav','audio/wav');const local=live().assets.at(-1);assert.equal(local.scope,'segment');assert.equal(local.segmentId,second.id);assert.equal(local.mediaType,'audio');assert.equal(live().segments[1].shots[0].image,oldFrame);assert(!f.w.allScopedAssets(live().segments[0]).includes(local));
+ const oldLocalPath=local.path,assetNode=d.querySelector('[data-overview-select="a:'+local.id+'"]');await drop(assetNode,'replacement.wav','audio/wav');assert.equal(live().assets.at(-1).id,local.id);assert.notEqual(live().assets.at(-1).path,oldLocalPath);
+ await click('a:'+pub.id);d.querySelector('[data-canvas-action="delete-asset"]').click();await pause();assert.match(f.el('modalTitle').textContent,/删除素材/);f.el('modalActions').lastElementChild.click();for(let i=0;i<4;i++)await pause();await f.w.flush();assert(live().assets.find(a=>a.id===pub.id).deleted);assert(live().media[pub.path]);d.querySelector('[data-restore-asset="'+pub.id+'"]').click();for(let i=0;i<4;i++)await pause();assert.equal(live().assets.find(a=>a.id===pub.id).deleted,false);
+ d.querySelector('[data-canvas-appearance]').click();await pause();for(const style of ['pcb','orthogonal','straight','curve','hidden']){const select=d.querySelector('[data-appearance-select="lineStyle"]');select.value=style;select.dispatchEvent(new f.w.Event('change',{bubbles:true}));await pause();assert.equal(d.dataset.canvasLineStyle,style)}
+ const route=f.w.frameCanvasEdge.path('pcb',0,0,200,100);assert(!route.includes('NaN'));assert.match(route,/L86,0 L100,14/);for(const type of ['chevron2','chevron3','diamond','crosshair','chiseled','pulse'])assert(f.w.frameCanvasEdge.shape(type));assert.equal(f.errors.length,0);console.log('PASS: Inspector tabs, autosave, inline MIXED, visible language, drop routing/replacement, reversible asset deletion and PCB geometry');
+ }finally{f.dom.window.close()}
+}
 async function run(){
  let f=await fixture();
  try{
@@ -232,5 +261,7 @@ async function run(){
  await optimizationAndLibraryChecks();
  await appearanceChecks();
  await canvasWorkflowChecks();
+ await multimediaAndGenerationChecks();
+ await inspectorWorkflowChecks();
 }
 run().then(()=>process.exit(0)).catch(e=>{console.error(e);process.exit(1)});

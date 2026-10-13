@@ -1,3 +1,4 @@
+import generation_backend
 """Reference normalization and visible diagnostics, not a claim of model-level guarantees."""
 import re
 REF=re.compile(r'@?<?@?Picture[ \t]*(\d+)(?![0-9A-Za-z_])(?:[ \t]*>)?',re.I)
@@ -77,7 +78,7 @@ def outcome_targets(value):
 
 def quality(s,p,segment):
  """Deterministic checks with explicit severity and location. No silent rewrites."""
- active=s.scoped_assets(p,segment);issues=[]
+ active=[a for a in s.scoped_assets(p,segment) if generation_backend.media_type(a)=='image'];issues=[]
  def add(code,message,level='warning',shot=None):
   item={'code':code,'severity':level,'message':message}
   if shot is not None:item['shotIndex']=shot
@@ -136,7 +137,7 @@ def enforce(s,p):
  if errors:raise ValueError('导出检查未通过：\n'+'\n'.join(errors[:12])+'\n请在 H3 Prompt 检查中定位并修改；不需要重新分析素材。')
 def warnings(s,p,segment):
  import asset_analysis as assets
- notes=[];active=s.scoped_assets(p,segment)
+ notes=[];active=[a for a in s.scoped_assets(p,segment) if generation_backend.media_type(a)=='image']
  for a in active:
   if not assets.valid(a,p.get('media',{})):notes.append('素材说明未确认或确认已失效：'+a.get('name','未命名'))
  if not segment.get('planning'):notes.append('本片段尚未生成文字分镜；旧提示词不会自动修正')

@@ -2,6 +2,7 @@
 """Local storyboard workbench. Python 3.10+, no third-party dependencies."""
 import base64,copy,hashlib,io,json,math,mimetypes,os,re,secrets,threading,time,uuid,webbrowser,zipfile
 import sys
+import generation_backend
 import task_backend as tasks
 import studio_backend as studio
 import reverse_backend as reverse
@@ -183,6 +184,7 @@ def readzip(blob):
                 if (path or ref.get('imageB64')) and not any(a.get('path')==path and a.get('segmentId')==segment['id'] for a in project['assets']):
                     project['assets'].append({**ref,'id':uid(),'name':f'Picture {ref.get("index",len(project["assets"]))+1}','kind':'场景','path':path,'locked':False,'description':'','scope':'segment','segmentId':segment['id']})
     recover_pack_images(project,shared,timeline)
+    generation_backend.imported(project,pack,timeline,shared,files,side)
     return project
 def recover_pack_images(project, shared, timeline):
     """Resolve archived image paths without guessing between duplicate filenames."""
@@ -326,10 +328,15 @@ def scoped_assets(project, segment=None):
     return public+local
 
 def scoped_prompt(project, segment):
+    for asset in project.get('assets',[]):
+        if not asset.get('deleted') or generation_backend.media_type(asset)=='image':continue
+        for scope in asset.get('deletedReferenceScopes',[]):
+            if scope.get('segmentId')==segment['id'] and re.search(r'(?<!\w)'+re.escape(scope.get('label',''))+r'\b',segment.get('prompt',''),re.I):
+                raise ValueError(segment['title']+' 仍引用已删除素材 '+asset.get('name','')+'，请恢复素材或移除该引用')
     if project.get('dialogueLanguage') or any(sh.get('dialogueLanguage') for sh in segment.get('shots',[])):
         segment={**segment,'prompt':rebuild({**segment,'defaultDialogueLanguage':project.get('dialogueLanguage','')})}
     if not project.get('assetsManaged'): return segment['prompt']
-    assets=project.get('assets',[]);active=scoped_assets(project,segment)
+    assets=project.get('assets',[]);active=[a for a in scoped_assets(project,segment) if generation_backend.media_type(a)=='image']
     indices={a.get('pictureNumber',assets.index(a)+1):i+1 for i,a in enumerate(active)}
     def replace(m):
         n=int(m.group(2))
@@ -375,15 +382,18 @@ def portable_pack_media(files, project):
         entries=[(a,'shared_params',i) for i,a in enumerate(public)]
         for n,segment in enumerate(project['segments']):
             active=scoped_assets(project,segment)
-            if len(active)>9: raise ValueError(f'{segment["title"]} 的公共 + 本组参考图片最多 9 张，请减少素材后导出')
+            for kind, (_, _, _, limit) in generation_backend.FIELDS.items():
+                if sum(generation_backend.media_type(a)==kind for a in active)>limit: raise ValueError(f'{segment["title"]} 的 {kind} 参考超出 {limit} 个')
             folder=str(Path(segment.get('groupPath',f'asset_groups/{n+1:02d}/group.json')).parent)
             entries.extend((a,folder,i) for i,a in enumerate(active) if a.get('scope')=='segment')
         for a,folder,i in entries:
             name=a['path'];ext=Path(name).suffix.lower()
             if ext=='.jpeg': ext='.jpg'
-            if ext not in {'.png','.jpg','.webp','.bmp','.gif','.tif','.tiff'}: raise ValueError('不支持的参考图片格式：'+a.get('name',name))
+            kind=generation_backend.media_type(a)
+            allowed={'image':{'.png','.jpg','.webp','.bmp','.gif','.tif','.tiff'},'audio':{'.wav','.mp3','.flac','.ogg','.m4a','.aac'},'video':{'.mp4','.webm','.mov','.mkv'}}
+            if ext not in allowed[kind]: raise ValueError('不支持的参考素材格式：'+a.get('name',name))
             if name not in source: raise ValueError('缺少素材图片：'+a.get('name',name)+'。请替换该素材后重新导出')
-            mapping.setdefault(name,f'{folder}/Picture{i+1}{ext}')
+            mapping.setdefault(name,f'{folder}/Picture{i+1}{ext}' if kind=='image' else f'{folder}/{generation_backend.FIELDS[kind][2]}_{hashlib.sha256(name.encode()).hexdigest()[:12]}{ext}')
     for name in project.get('media',{}):
         if name not in mapping and (not name.startswith(H3_MEDIA_PREFIXES) or not re.fullmatch(r'[A-Za-z0-9_./]+',name)):
             ext=Path(name).suffix.lower()
@@ -500,24 +510,24 @@ def export_pack(p,force=False):
     files['pack.json']=json.dumps(pack,ensure_ascii=False,indent=2).encode()
     files['timeline.json']=json.dumps(tl,ensure_ascii=False,indent=2).encode()
     if 'shared_params/shared_params.json' not in files:
-        refs=[{'index':i,'imageFile':a['path'],'fileName':Path(a['path']).name,'type':'input','subfolder':str(Path(a['path']).parent),'imageB64':''} for i,a in enumerate(p.get('assets',[])) if a.get('path')]
+        refs=[{'index':i,'imageFile':a['path'],'fileName':Path(a['path']).name,'type':'input','subfolder':str(Path(a['path']).parent),'imageB64':''} for i,a in enumerate(p.get('assets',[])) if a.get('path') and generation_backend.media_type(a)=='image']
         shared={'commonEnabled':True,'prompt':'','refs':refs,'refAudios':[],'refVideos':[]}; files['shared_params/shared_params.json']=json.dumps(shared).encode(); tl['global'].update(shared); files['timeline.json']=json.dumps(tl,ensure_ascii=False,indent=2).encode()
     shared=json.loads(files['shared_params/shared_params.json'])
     existing=shared.get('refs',[])
     for asset in p.get('assets',[]):
-        if asset.get('kind')=='人物' and asset.get('path') and not any(r.get('imageFile')==asset['path'] for r in existing):
+        if asset.get('kind')=='人物' and generation_backend.media_type(asset)=='image' and asset.get('path') and not any(r.get('imageFile')==asset['path'] for r in existing):
             name=asset['path']; index=max([r.get('index',-1) for r in existing]+[-1])+1
             existing.append({'index':index,'imageFile':name,'fileName':Path(name).name,'type':'input','subfolder':str(Path(name).parent),'imageB64':''})
     if p.get('assetsManaged'):
         def ref(a,i): return {'index':i,'imageFile':a['path'],'fileName':Path(a['path']).name,'type':'input','subfolder':str(Path(a['path']).parent),'imageB64':''}
-        public=scoped_assets(p)
+        public=[a for a in scoped_assets(p) if generation_backend.media_type(a)=='image']
         if len(public)>9: raise ValueError('H3 公共参考图片最多 9 张')
         existing=[ref(a,i) for i,a in enumerate(public)]
         shared['commonEnabled']=True
         tl.setdefault('global',{})['commonEnabled']=True
         if workspace is not None: workspace.setdefault('globalCommon',{})['commonEnabled']=True
         for n,s in enumerate(p['segments']):
-            active=scoped_assets(p,s)
+            active=[a for a in scoped_assets(p,s) if generation_backend.media_type(a)=='image']
             if len(active)>9: raise ValueError(f'{s["title"]} 的公共 + 本组参考图片最多 9 张')
             output[n]['refs']=[ref(a,i) for i,a in enumerate(active) if a.get('scope')=='segment']
             gp=s.get('groupPath',f'asset_groups/{n+1:02d}/group.json')
@@ -528,14 +538,18 @@ def export_pack(p,force=False):
     tl.setdefault('global',{})['refs']=copy.deepcopy(existing)
     if workspace is not None: workspace.setdefault('globalCommon',{})['refs']=copy.deepcopy(existing)
     files['timeline.json']=json.dumps(tl,ensure_ascii=False,indent=2).encode()
-    side={k:p.get(k) for k in ['version','title','script','aspect','assets','assetsManaged','assetsCollapsed','nextPictureNumber','showDeletedAssets','groupAssetsCollapsed','intent','dialogueLanguage','storySeparated','directorGuide','overviewLayout']}
+    generation_backend.export(files,p,pack,tl,scoped_assets)
+    side={k:p.get(k) for k in ['generation','generationManaged','sourceVideo','sourceVideoClips','version','title','script','aspect','assets','assetsManaged','assetsCollapsed','nextPictureNumber','showDeletedAssets','groupAssetsCollapsed','intent','dialogueLanguage','storySeparated','directorGuide','overviewLayout']}
     side['directorGuide']=guide_settings(p,pack.get('output',{}))
-    side['segments']=[{**{k:s[k] for k in ['id','title','shots','storyText','storyHistory','videos','planning','promptHistory','continuity','guideFromPrev','shotHistory'] if k in s},'workingPrompt':s['prompt'],'promptHash':digest(output[i]['prompt'])} for i,s in enumerate(p['segments'])]
+    side['segments']=[{**{k:s[k] for k in ['generation','id','title','shots','storyText','storyHistory','videos','planning','promptHistory','continuity','guideFromPrev','shotHistory'] if k in s},'workingPrompt':s['prompt'],'promptHash':digest(output[i]['prompt'])} for i,s in enumerate(p['segments'])]
     files['storyboard.json']=json.dumps(side,ensure_ascii=False,indent=2).encode()
     # Remove previously bundled manual clips; export only current segment records.
     for name in list(files):
         if name.startswith('extra/segment_videos/'):del files[name]
     active={v.get('path') for s in p['segments'] for v in s.get('videos',[])}
+    active.update(a['path'] for a in p.get('assets',[]) if a.get('path') and not a.get('deleted'))
+    if p.get('sourceVideo',{}).get('videoFile'):active.add(p['sourceVideo']['videoFile'])
+    active.update(v['videoFile'] for v in p.get('sourceVideoClips',[]) if v.get('videoFile'))
     p={**p,'media':{k:v for k,v in p.get('media',{}).items() if not k.startswith('extra/segment_videos/') or k in active}}
     for path in active:
         if not p['media'].get(path):raise ValueError('片段视频文件缺失：'+str(path))
