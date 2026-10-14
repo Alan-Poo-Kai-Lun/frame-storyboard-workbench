@@ -1,18 +1,18 @@
 /* Geometry contains semantic roles, never project content or persistent asset IDs. */
 function frameInitialShots(duration=15){return P?.overviewLayout?.canvas37?.mode==='cards'?[{id:newId(),start:0,end:Math.min(3,duration),action:'',camera:'',dialogue:'',sound:'',expression:'',image:'',locks:{}}]:[]}
-function frameCardGeometry(project,options,scoped){
+function frameCardGeometry(project,options,scoped,state={}){
  const o={assetPosition:'top',shotColumns:3,segmentColumns:2,gap:28,shotWidth:230,shotHeight:220,assetWidth:190,assetHeight:180,rolePositions:{},roleSizes:{},...options},cards=[],points=new Map(),sizes=new Map(),roles=new Map();for(const[k,lo,hi]of [['shotColumns',1,8],['segmentColumns',1,4],['gap',12,100],['shotWidth',160,500],['shotHeight',120,500],['assetWidth',120,400],['assetHeight',100,400]])o[k]=Math.max(lo,Math.min(hi,Math.round(Number(o[k])||lo)));let y=0;
  for(let row=0;row<project.segments.length;row+=o.segmentColumns){let x=260,rowHeight=0;
   for(const s of project.segments.slice(row,row+o.segmentColumns)){
    const assets=scoped(s),members=[],shotArea=o.shotColumns*(o.shotWidth+o.gap)-o.gap,assetCols=o.assetPosition==='left'?1:Math.max(1,Math.floor(shotArea/(o.assetWidth+o.gap))),assetRows=Math.ceil(assets.length/assetCols),assetH=assetRows*(o.assetHeight+o.gap),left=o.assetPosition==='left'&&assets.length?o.assetWidth+o.gap:0,shotsY=150+(o.assetPosition==='top'?assetH:0);let w=Math.max(420,shotArea+left+60),h=0;
    const put=(id,role,px,py,nw,nh)=>{const pos=o.rolePositions?.[role]||{x:px,y:py},size=o.roleSizes?.[role]||{w:nw,h:nh};points.set(id,{x:x+pos.x,y:y+pos.y});sizes.set(id,size);roles.set(id,{segmentId:s.id,role});members.push(id);w=Math.max(w,pos.x+size.w+30);h=Math.max(h,pos.y+size.h+30)};
-   put('s:'+s.id,'segment',25,20,Math.max(260,shotArea),100);
+   put('s:'+s.id,'segment',25,45,Math.max(260,shotArea),100);
    assets.forEach((a,i)=>put('ca:'+s.id+':'+a.id,'asset:'+i,30+(i%assetCols)*(o.assetWidth+o.gap),150+Math.floor(i/assetCols)*(o.assetHeight+o.gap),o.assetWidth,o.assetHeight));
    s.shots.forEach((a,i)=>put('h:'+s.id+':'+a.id,'shot:'+i,30+left+(i%o.shotColumns)*(o.shotWidth+o.gap),shotsY+Math.floor(i/o.shotColumns)*(o.shotHeight+o.gap),o.shotWidth,o.shotHeight));
    const bottom=Math.max(shotsY+Math.max(1,Math.ceil(s.shots.length/o.shotColumns))*(o.shotHeight+o.gap),150+(o.assetPosition==='left'?assetH:0));
    put('p:'+s.id,'prompt',30+left,bottom,Math.max(260,shotArea),110);put('o:'+s.id,'output',30+left,bottom+130,Math.max(260,shotArea),190);
    (s.videos||[]).forEach((v,i)=>put('v:'+s.id+':'+v.id,'video:'+i,30+left,bottom+340+i*230,Math.max(260,shotArea),210));
-   const card={id:s.id,s,x,y,w,h:h+60,members};cards.push(card);rowHeight=Math.max(rowHeight,card.h);x+=card.w+o.gap*2;
+   const collapsed=!!state.collapsedCards?.[s.id],origin=state.cardOrigins?.[s.id],cx=Number.isFinite(origin?.x)?origin.x:x,cy=Number.isFinite(origin?.y)?origin.y:y;for(const id of members){const p=points.get(id);p.x+=cx-x;p.y+=cy-y}const card={id:s.id,s,x:cx,y:cy,w:collapsed?360:w,h:collapsed?190:h+60,members,collapsed};if(collapsed)sizes.set('s:'+s.id,{w:310,h:110});cards.push(card);rowHeight=Math.max(rowHeight,card.h);x+=card.w+o.gap*2;
   }y+=rowHeight+o.gap*2;
  }
  return {cards,points,sizes,roles};

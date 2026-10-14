@@ -78,5 +78,11 @@
   "docs/release-v3.18-beta.1.md",
   "docs/assets/screenshots/director-cards-v3.18.jpg",
   "docs/assets/screenshots/asset-library-v3.18.jpg",
-  "docs/assets/screenshots/layout-options-v3.18.jpg"
+  "docs/assets/screenshots/layout-options-v3.18.jpg",
+  "web/i18n.js",
+  "docs/release-v3.19-beta.1.md",
+  "prompt_translation.py",
+  "web/prompt-translations.js",
+  "docs/release-v3.19-beta.2.md",
+  "docs/assets/screenshots/bilingual-prompt-v3.19.jpg"
 ]

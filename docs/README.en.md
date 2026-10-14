@@ -2,13 +2,19 @@
 
 A local planning workspace for assets, scripts, shot lists, H3 prompts and manually uploaded clip records.
 
-**V3.18 Beta 1. Publicly visible source. All rights reserved.** No open-source permission is granted at this time.
+**V3.19 Beta 2. Publicly visible source. All rights reserved.** No open-source permission is granted at this time.
 
-[Download Windows EXE — no Python required](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.18-beta.1/FRAME-Workbench-Windows-x64-v3.18-beta.1.exe) · [All releases](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases)
+[Download Windows EXE — no Python required](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.19-beta.2/FRAME-Workbench-Windows-x64-v3.19-beta.2.exe) · [All releases](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases)
 
 [Chinese step-by-step tutorial](quick-start.md) · [Troubleshooting](faq.md) · [Importable sample pack](../presets/starter-project.mmxpack.zip)
 
 The README shows the actual V3.16 canvas with inline segment generation settings and a persistent inspector. The built-in Cyber Cultivation v5 sample includes two reference images, four segments, twelve shots and one existing video. Opening it needs no AI connection and backs up the current project. Director-pack export retains the media and storyboard.
+
+## V3.19 updates
+
+Chinese / English interface switching works across canvas and detailed editing. On-demand AI translation keeps the original prompt plus Chinese and English copies; choose the Director Pack export language explicitly. Timeline tokens, reference identifiers and spoken lines remain unchanged. Stale copies require translation again. Translation workflow tests use a mock model; review real translations before exporting.
+
+Output warnings are highlighted, manual prompt guidance is available, and segment cards can collapse and move as a group.
 
 ## Export target
 

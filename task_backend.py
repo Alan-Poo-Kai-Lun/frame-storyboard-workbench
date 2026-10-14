@@ -60,7 +60,7 @@ class Manager:
     if row.get('stageHistory') and not row['stageHistory'][-1].get('endedMs'):
      step=row['stageHistory'][-1];step['endedMs']=row['finishedMs'];step['elapsedSeconds']=round((step['endedMs']-step['startedMs'])/1000,1)
   for row in self.rows:
-   if row['type'] not in ['planning','analysis','reverse','assets'] and row['status'] not in TERMINAL:row.update(status='cancelled',error='精简版已移除该任务功能，旧记录保留',finishedAt=now())
+   if row['type'] not in ['planning','analysis','reverse','assets','translation'] and row['status'] not in TERMINAL:row.update(status='cancelled',error='精简版已移除该任务功能，旧记录保留',finishedAt=now())
   self.write();threading.Thread(target=self.worker,daemon=True).start()
  def store_input(self,ident,value):
   folder=self.s.DATA/'task-inputs';folder.mkdir(parents=True,exist_ok=True)
@@ -84,10 +84,10 @@ class Manager:
  def add(self,kind,payload,cfg=None,snapshot=None,ident=None):
   p=self.s.load_project()
   if not p or p['projectId']!=payload.get('projectId'):raise ValueError('项目已切换，任务未提交')
-  if kind not in ['planning','analysis','reverse','assets']:raise ValueError('精简版仅支持拆镜、镜头解析和提示词反推')
+  if kind not in ['planning','analysis','reverse','assets','translation']:raise ValueError('精简版仅支持拆镜、镜头解析和提示词反推')
   with self.lock:
    if sum(r['status'] not in TERMINAL for r in self.rows)>=100:raise ValueError('最多排队 100 个任务')
-   row={'id':ident or self.s.uid(),'type':kind,'status':'waiting','projectId':p['projectId'],'projectTitle':p['title'],'segmentId':payload.get('segmentId',''),'shotId':payload.get('shotId',''),'title':payload.get('title') or payload.get('name') or {'analysis':'AI 镜头解析','reverse':'提示词反推','planning':'AI 拆镜 / 调整','assets':'素材视觉分析'}[kind],'createdAt':now(),'createdMs':int(time.time()*1000),'stage':'等待本机队列','payload':copy.deepcopy(payload),'config':copy.deepcopy(cfg or {})}
+   row={'id':ident or self.s.uid(),'type':kind,'status':'waiting','projectId':p['projectId'],'projectTitle':p['title'],'segmentId':payload.get('segmentId',''),'shotId':payload.get('shotId',''),'title':payload.get('title') or payload.get('name') or {'analysis':'AI 镜头解析','reverse':'提示词反推','planning':'AI 拆镜 / 调整','assets':'素材视觉分析','translation':'提示词双语翻译'}[kind],'createdAt':now(),'createdMs':int(time.time()*1000),'stage':'等待本机队列','payload':copy.deepcopy(payload),'config':copy.deepcopy(cfg or {})}
    if kind=='analysis':row['strategy']=payload.get('strategy','overwrite')
    if snapshot is not None:self.store_input(row['id'],snapshot)
    self.rows.append(row);self.write();self.event.set();return copy.deepcopy(row)
@@ -162,6 +162,9 @@ class Manager:
     elif row['type']=='assets':
      import asset_analysis
      result=asset_analysis.analyze(s,row['config'],self.input(row),{**payload,'_taskId':ident})
+    elif row['type']=='translation':
+     import prompt_translation
+     stage(s,ident,'翻译最终提示词（锁定结构与对白）');result=prompt_translation.analyze(s,row['config'],self.input(row),payload)
     elif row['type']=='reverse':
      import reverse_backend as reverse
      stage(s,ident,'视觉模型反推提示词');result=reverse.analyze(s,row['config'],self.input(row),payload)

@@ -31,6 +31,9 @@ async function fixture(existing=null,mode='simple',broken=false){
   else if(route==='projects-trash')data=[...projectTrash.values()].map(p=>({id:p.projectId,title:p.title,segments:p.segments.length,shots:p.segments.reduce((n,s)=>n+s.shots.length,0),deletedAt:'2026-10-13'}));
   else if(route==='projects-delete'){const currentDeleted=body.projectIds.includes(project?.projectId);for(const id of body.projectIds){projectTrash.set(id,projectSnapshots.get(id));projectSnapshots.delete(id)}if(currentDeleted)project=null;data={deleted:body.projectIds.length,currentDeleted};}
   else if(route==='project-restore'){const p=projectTrash.get(body.projectId);projectSnapshots.set(p.projectId,p);projectTrash.delete(body.projectId);data={restored:body.projectId};}
+  else if(route==='prompt-translations')data={original:project.segments.find(s=>s.id===body.segmentId).prompt,versions:{zh:'中文副本',en:'English copy'},stale:false,exportLanguage:'original'};
+  else if(route==='prompt-export-language'){project.segments.find(s=>s.id===body.segmentId).promptExportLanguage=body.language;data={project};}
+  else if(route==='prompt-translate')data={id:'translation-task'};
   else if(route==='asset-library')data={revision:'0',categories:['人物'],items:[]};
   else if(route==='layout-presets'){const options={mode:'cards',assetPosition:'top',shotColumns:3,segmentColumns:2,gap:28,shotWidth:230,shotHeight:220,assetWidth:190,assetHeight:180,rolePositions:{},roleSizes:{}};data=body?.action==='validate'?{options:body.options}:{revision:'0',defaultId:'cards-top',items:[{id:'cards-top',name:'卡片',builtin:true,options}]};}
   else if(route==='settings')data=config;
@@ -67,7 +70,7 @@ async function creativeCanvasChecks(){
  const original=copy(f.w.eval('P.overviewLayout?.canvas37?.positions||{}'));
  await click('[data-card-mode]');assert.equal(f.el('overviewDialog').dataset.layoutMode,'cards');assert.equal(f.w.document.querySelectorAll('.segmentLayoutCard').length,sample.segments.length);
  assert(f.w.document.querySelector('[data-overview-select^="ca:"]'),'Segment asset aliases rendered');
- const geometry=f.w.frameCardGeometry(sample,{assetPosition:'left',shotColumns:2,segmentColumns:1},s=>sample.assets);
+ const geometry=f.w.frameCardGeometry(sample,{assetPosition:'left',shotColumns:2,segmentColumns:1},s=>sample.assets);const many={...sample,segments:Array.from({length:20},(_,i)=>({...copy(sample.segments[0]),id:'stress'+i}))},compact=f.w.frameCardGeometry(many,{segmentColumns:4},s=>sample.assets,{collapsedCards:Object.fromEntries(many.segments.map(s=>[s.id,true]))});assert.equal(compact.cards.length,20);assert(compact.cards.every(c=>c.h===190&&c.w===360));assert.equal(compact.cards[19].y,4*(190+56));
  assert.equal(geometry.cards.length,sample.segments.length);assert(geometry.cards[1].y>geometry.cards[0].y);assert(geometry.points.size>10);
  await click('[data-layout-presets]');assert(f.el('layoutMode'));assert(f.el('layoutCapture'));f.w.close();
  await click('[data-card-mode]');assert.equal(f.el('overviewDialog').dataset.layoutMode,'free');assert.deepEqual(copy(f.w.eval('P.overviewLayout.canvas37.positions')),original);
@@ -75,6 +78,29 @@ async function creativeCanvasChecks(){
  await click('.cardNewSegment');assert.equal(f.project.segments.at(-1).shots.length,1);
  await click('[data-creator-library]');assert.match(f.el('modalTitle').textContent,/素材库/);f.el('creatorAdd').click();assert(f.el('creatorTitle'));assert(f.el('creatorNote'));assert(f.el('creatorEditCategory'));assert(f.el('creatorFile'));f.w.close();
  assert.equal(f.errors.length,0);console.log('PASS: card geometry, asset aliases, mode restoration, full timeline add shot, one-shot segment, layout and asset library forms');
+ }finally{f.dom.window.close()}
+}
+async function v319Checks(){
+ const source=copy(sample);source.segments[0].planning={warnings:['测试提醒：人物场景需要核对'],summary:'故事'};source.assets[0].name='素材';source.segments[0].shots[0].action='故事';
+ const f=await fixture(source,'professional'),sid=source.segments[0].id,live=()=>f.w.eval('P');
+ const click=async selector=>{const el=f.w.document.querySelector(selector);assert(el,'Missing '+selector);el.click();await pause();await pause()};
+ const pointer=async(type,target,x,y)=>{target.dispatchEvent(new f.w.MouseEvent(type,{clientX:x,clientY:y,button:0,bubbles:true,cancelable:true}));await pause()};
+ try{
+ f.el('startResume').click();await pause();await pause();assert(f.w.document.querySelector('.canvasOutputCheck.hasWarnings'));assert.equal(f.w.document.querySelector('.canvasOutputCheck').getAttribute('role'),'alert');
+ await click('[data-card-mode]');await click('[data-overview-select="s:'+sid+'"]');
+ const prompt=f.el('canvas_segmentPrompt'),oldShots=copy(live().segments[0].shots);prompt.value='简单剧情';prompt.dispatchEvent(new f.w.Event('input',{bubbles:true}));await click('[data-canvas-action="save"]');assert.match(f.w.document.querySelector('.canvasEditStatus').textContent,/未找到有效时间线/);assert.deepEqual(copy(live().segments[0].shots),oldShots);
+ f.el('canvas_duration').value='5';f.el('canvas_duration').dispatchEvent(new f.w.Event('input',{bubbles:true}));await click('[data-manual-prompt-template]');assert.match(f.el('canvas_segmentPrompt').value,/0.00s–5.00s/);await click('[data-canvas-action="save"]');assert.equal(f.project.segments[0].duration,5);assert.equal(f.project.segments[0].shots.at(-1).end,5);
+ const card=()=>f.w.document.querySelector('[data-segment-card="'+sid+'"]'),map=f.w.document.querySelector('.overviewMap'),node=()=>f.w.document.querySelector('[data-overview-select="s:'+sid+'"]');
+ await click('[data-card-toggle="'+sid+'"]');assert.equal(live().overviewLayout.canvas37.collapsedCards[sid],true);assert.equal(card().querySelector('[data-card-toggle]').getAttribute('aria-expanded'),'false');assert(!f.w.document.querySelector('[data-overview-select="p:'+sid+'"]'));
+ const before=copy(live().overviewLayout.canvas37.positions),startX=parseFloat(node().style.left);await pointer('pointerdown',card().querySelector('[data-card-drag]'),100,100);await pointer('pointermove',map,160,140);await pointer('pointerup',map,160,140);await f.w.flush();assert(parseFloat(node().style.left)>startX);const after=copy(live().overviewLayout.canvas37.positions);for(const id of Object.keys(before).filter(id=>id.includes(sid)))assert(Math.abs((after[id].x-before[id].x)-(after['s:'+sid].x-before['s:'+sid].x))<.001,'Hidden members move with card');
+ await click('[data-card-toggle="'+sid+'"]');assert(f.w.document.querySelector('[data-overview-select="p:'+sid+'"]'));await click('[data-cards-collapse]');assert.equal(f.w.document.querySelectorAll('.overviewNode').length,source.segments.length+1);await click('[data-cards-expand]');assert(f.w.document.querySelectorAll('.overviewNode').length>source.segments.length+1);
+ // Language changes never render again, replace input values, change option values or save project content.
+ await click('[data-overview-select="s:'+sid+'"]');const story=f.el('canvas_story');story.focus();story.value='故事、素材、提示词保持中文';story.setSelectionRange(3,5);story.dispatchEvent(new f.w.Event('input',{bubbles:true}));const projectBefore=JSON.stringify(live()),saves=f.calls.filter(c=>c.route==='project'&&c.body).length;
+ const languageControl=f.w.document.querySelector('.canvasQuickNav [data-ui-language]');languageControl.value='en';const marker=f.w.document.createElement('span');marker.textContent='任务中心';f.w.document.body.append(marker);await pause();assert.equal(languageControl.value,'en','Background UI refresh must not reset a pending native selection');languageControl.dispatchEvent(new f.w.Event('input',{bubbles:true}));await pause();assert.equal(f.w.document.documentElement.lang,'en');assert.equal(f.w.document.querySelector('[data-canvas-tasks]').textContent.trim(),'Task Center 0');assert.match(f.el('startCreate').textContent,/Create a project/);assert.equal(story.value,'故事、素材、提示词保持中文');assert.equal(story.selectionStart,3);assert.equal(JSON.stringify(live()),projectBefore);assert.equal(f.calls.filter(c=>c.route==='project'&&c.body).length,saves);assert.equal(f.el('canvas_genTask').value,'r2v');assert.equal(f.w.localStorage.getItem('frame-ui-language'),'en');
+ const select=f.w.document.createElement('select');select.innerHTML='<option>人物</option><option>场景</option>';f.w.document.body.append(select);await pause();assert.equal(select.options[0].textContent,'Character');assert.equal(select.options[0].value,'人物');
+ const detailLanguage=f.w.document.querySelector('header [data-ui-language]');detailLanguage.value='zh';detailLanguage.dispatchEvent(new f.w.Event('change',{bubbles:true}));await pause();assert.equal(select.options[0].textContent,'人物');assert.equal(story.value,'故事、素材、提示词保持中文');assert.equal(JSON.stringify(live()),projectBefore);assert.equal(f.errors.length,0);
+ await click('[data-canvas-action="bilingual"]');assert(f.el('promptLanguageView'));assert.equal(f.el('translatedPromptText').value,f.project.segments[0].prompt);f.el('promptLanguageView').value='en';f.el('promptLanguageView').dispatchEvent(new f.w.Event('change',{bubbles:true}));assert.equal(f.el('translatedPromptText').value,'English copy');assert.equal(f.project.segments[0].promptExportLanguage,undefined);f.w.close();
+ console.log('PASS: highlighted warnings, valid manual template/current duration, invalid drafts preserved, collapsed card/hidden-member drag, all-collapse, locale draft/data/option safety');
  }finally{f.dom.window.close()}
 }
 async function overviewChecks(){
@@ -355,5 +381,6 @@ async function run(){
  await blankPromptPlanningChecks();
  await projectManagementChecks();
  await creativeCanvasChecks();
+ await v319Checks();
 }
 run().then(()=>process.exit(0)).catch(e=>{console.error(e);process.exit(1)});

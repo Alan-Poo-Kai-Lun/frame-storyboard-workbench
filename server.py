@@ -173,6 +173,8 @@ def readzip(blob):
         segment['videos']=record.get('videos',[])
         if record.get('planning'):segment['planning']=record['planning']
         if record.get('promptHistory'):segment['promptHistory']=record['promptHistory']
+        for key in ['promptTranslations','promptExportLanguage']:
+            if key in record:segment[key]=record[key]
         segment['guideFromPrev']=record.get('guideFromPrev',segment['continuity'])
         if 'continuity' in record:segment['continuity']=record['continuity']
         if record.get('shotHistory'):segment['shotHistory']=record['shotHistory']
@@ -332,7 +334,7 @@ def scoped_assets(project, segment=None):
     local=[a for a in assets if a.get('scope')=='segment' and segment and a.get('segmentId')==segment['id']]
     return public+local
 
-def scoped_prompt(project, segment):
+def original_scoped_prompt(project, segment):
     for asset in project.get('assets',[]):
         if not asset.get('deleted') or generation_backend.media_type(asset)=='image':continue
         for scope in asset.get('deletedReferenceScopes',[]):
@@ -374,6 +376,13 @@ def scoped_prompt(project, segment):
         guide='参考用途：人物图片仅约束人物身份与服装，不沿用设定板的背景、排版或展示站姿；每镜头仅使用其明确绑定的场景，不混合其他参考场景。视频环境由场景参考与已确认布局决定。未显示的入口和通路不自行补造。'
         text='subject_definitions:\n'+'\n'.join(definitions)+'\n'+guide+'\n\n'+text
     return text
+
+def scoped_prompt(project, segment):
+    source=original_scoped_prompt(project,segment);lang=segment.get('promptExportLanguage','original')
+    if lang=='original':return source
+    versions=segment.get('promptTranslations',{})
+    if lang not in ['zh','en'] or versions.get('sourceHash')!=digest(source) or not versions.get(lang):raise ValueError('提示词翻译已过期，请重新翻译或切回原文后导出')
+    return versions[lang]
 
 def portable_pack_media(files, project):
     """Use paths recognized by H3's import prefix rewrite, keeping JSON mirrors in sync."""
@@ -546,7 +555,7 @@ def export_pack(p,force=False):
     generation_backend.export(files,p,pack,tl,scoped_assets)
     side={k:p.get(k) for k in ['generation','generationManaged','sourceVideo','sourceVideoClips','version','title','script','aspect','assets','assetsManaged','assetsCollapsed','nextPictureNumber','showDeletedAssets','groupAssetsCollapsed','intent','dialogueLanguage','storySeparated','directorGuide','overviewLayout']}
     side['directorGuide']=guide_settings(p,pack.get('output',{}))
-    side['segments']=[{**{k:s[k] for k in ['generation','id','title','shots','storyText','storyHistory','videos','planning','promptHistory','continuity','guideFromPrev','shotHistory'] if k in s},'workingPrompt':s['prompt'],'promptHash':digest(output[i]['prompt'])} for i,s in enumerate(p['segments'])]
+    side['segments']=[{**{k:s[k] for k in ['generation','id','title','shots','storyText','storyHistory','videos','planning','promptHistory','continuity','guideFromPrev','shotHistory','promptTranslations','promptExportLanguage'] if k in s},'workingPrompt':s['prompt'],'promptHash':digest(output[i]['prompt'])} for i,s in enumerate(p['segments'])]
     files['storyboard.json']=json.dumps(side,ensure_ascii=False,indent=2).encode()
     # Remove previously bundled manual clips; export only current segment records.
     for name in list(files):
@@ -759,12 +768,16 @@ class Handler(BaseHTTPRequestHandler):
                     if not p or p.get('projectId')!=body.get('projectId'):raise ValueError('项目已切换，请刷新后再修复')
                     count=restore_pack_images(p);save(p)
                 return self.respond({'project':p,'recovered':count})
+            if route in ['/api/prompt-translate','/api/prompt-translations','/api/prompt-translation-save','/api/prompt-export-language']:
+                import prompt_translation as translation
+                action={'/api/prompt-translate':translation.enqueue,'/api/prompt-translations':translation.info,'/api/prompt-translation-save':translation.save_result,'/api/prompt-export-language':translation.choose}[route]
+                return self.respond(action(sys.modules[__name__],body))
             if route=='/api/compiled-prompt':
                 p=load_project()
                 if not p or p.get('projectId')!=body.get('projectId'):raise ValueError('项目已切换，请刷新')
                 segment=next((v for v in p['segments'] if v['id']==body.get('segmentId')),None)
                 if segment is None:raise ValueError('片段不存在')
-                return self.respond({'prompt':scoped_prompt(p,segment),'warnings':prompt_review.warnings(sys.modules[__name__],p,segment),'issues':prompt_review.quality(sys.modules[__name__],p,segment)})
+                return self.respond({'prompt':original_scoped_prompt(p,segment),'warnings':prompt_review.warnings(sys.modules[__name__],p,segment),'issues':prompt_review.quality(sys.modules[__name__],p,segment)})
             if route=='/api/export-force':
                 with LOCK:
                     p=load_project()

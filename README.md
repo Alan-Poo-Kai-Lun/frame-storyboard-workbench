@@ -2,9 +2,9 @@
 
 **把故事、参考素材、分镜和成片记录，整理在同一张导演画布里。**
 
-Windows · 本地运行 · V3.18 Beta 1 · 基础分镜无需 AI
+Windows · 本地运行 · V3.19 Beta 2 · 基础分镜无需 AI
 
-### [⬇ 下载 Windows 版（EXE，无需 Python）](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.18-beta.1/FRAME-Workbench-Windows-x64-v3.18-beta.1.exe)
+### [⬇ 下载 Windows 版（EXE，无需 Python）](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.19-beta.2/FRAME-Workbench-Windows-x64-v3.19-beta.2.exe)
 
 [所有版本与更新包](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases) · [新手教程](docs/quick-start.md) · [常见问题](docs/faq.md) · [English](docs/README.en.md)
 
@@ -17,6 +17,17 @@ Windows · 本地运行 · V3.18 Beta 1 · 基础分镜无需 AI
 3. **点片段写故事，点镜头编辑**；准备好后保存项目备份，或导出导演包交给 ComfyUI H3 导演台。
 
 无需先安装 Ollama 或配置 API。AI 分析素材、拆镜和审查可以之后再设置。
+
+## V3.19 有什么变化
+
+- **界面中英切换**：画布与详细编辑共用语言设置，修复后台刷新重置选择的问题；项目原文保留。
+- **双语提示词**：按需调用配置的文本 AI，生成中文、英文副本；任务中心预览后保存，明确选择导演包导出语言。时间线、素材编号和对白保持原文，过期副本需重新翻译。
+- **输出检查更醒目**，并提供手动提示词引导与模板。
+- **片段卡片可折叠、整体拖动**，展开状态与位置随布局保存。
+
+![V3.19 双语提示词：原文预览与导出语言选择](docs/assets/screenshots/bilingual-prompt-v3.19.jpg)
+
+截图来自隔离测试项目。翻译流程通过模拟模型验证，实际译文质量需用自己的模型审阅。详见 [V3.19 Beta 2 更新说明](docs/release-v3.19-beta.2.md)。
 
 ## V3.18 有什么变化
 
