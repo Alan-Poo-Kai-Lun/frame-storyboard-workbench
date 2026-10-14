@@ -80,6 +80,14 @@ async function creativeCanvasChecks(){
  assert.equal(f.errors.length,0);console.log('PASS: card geometry, asset aliases, mode restoration, full timeline add shot, one-shot segment, layout and asset library forms');
  }finally{f.dom.window.close()}
 }
+async function repairAndInspectorChecks(){
+ const p=copy(sample);p.segments[0].planning={warnings:['海浪影响未明确']};const f=await fixture(p,'pro');
+ try{await f.w.openFrameOverview(p.segments[0].id);await pause();const d=f.el('projectOverviewDialog')||f.w.document.querySelector('.directorCanvas37');
+ const toggle=d.querySelector('[data-inspector-toggle]');assert(toggle);toggle.click();await pause();assert(d.classList.contains('inspectorCollapsed'));assert.equal(toggle.getAttribute('aria-expanded'),'false');await f.w.flush();assert.equal(f.project.overviewLayout.canvas37.inspectorCollapsed,true);
+ toggle.click();await pause();assert(!d.classList.contains('inspectorCollapsed'));assert(d.querySelector('[data-canvas-action="repair"]'));
+ const before=copy(f.project);const result={smartRepair:true,comparisonBefore:[{action:'原动作',camera:'固定'}],comparisonSummary:'原摘要',summary:'新摘要',shots:[{start:0,end:15,action:'新动作',camera:'固定'}]};const comparison=f.w.planningComparison(result);assert.match(comparison,/原动作/);assert.match(comparison,/新动作/);assert.match(comparison,/原摘要/);assert.deepEqual(f.project,before);assert.equal(f.errors.length,0);
+ console.log('PASS: Inspector collapse persistence and safe repair comparison preview');}finally{f.w.close()}
+}
 async function v319Checks(){
  const source=copy(sample);source.segments[0].planning={warnings:['测试提醒：人物场景需要核对'],summary:'故事'};source.assets[0].name='素材';source.segments[0].shots[0].action='故事';
  const f=await fixture(source,'professional'),sid=source.segments[0].id,live=()=>f.w.eval('P');
@@ -381,6 +389,6 @@ async function run(){
  await blankPromptPlanningChecks();
  await projectManagementChecks();
  await creativeCanvasChecks();
- await v319Checks();
+ await repairAndInspectorChecks();await v319Checks();
 }
 run().then(()=>process.exit(0)).catch(e=>{console.error(e);process.exit(1)});

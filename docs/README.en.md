@@ -2,13 +2,17 @@
 
 A local planning workspace for assets, scripts, shot lists, H3 prompts and manually uploaded clip records.
 
-**V3.19 Beta 2. Publicly visible source. All rights reserved.** No open-source permission is granted at this time.
+**V3.20 Beta 1. Publicly visible source. All rights reserved.** No open-source permission is granted at this time.
 
-[Download Windows EXE — no Python required](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.19-beta.2/FRAME-Workbench-Windows-x64-v3.19-beta.2.exe) · [All releases](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases)
+[Download Windows EXE — no Python required](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.20-beta.1/FRAME-Workbench-Windows-x64-v3.20-beta.1.exe) · [All releases](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases)
 
 [Chinese step-by-step tutorial](quick-start.md) · [Troubleshooting](faq.md) · [Importable sample pack](../presets/starter-project.mmxpack.zip)
 
 The README shows the actual V3.16 canvas with inline segment generation settings and a persistent inspector. The built-in Cyber Cultivation v5 sample includes two reference images, four segments, twelve shots and one existing video. Opening it needs no AI connection and backs up the current project. Director-pack export retains the media and storyboard.
+
+## V3.20 updates
+
+Fixed stale imported media overwriting replaced reference images during Director Pack export. Output warnings can request AI repair with a before/after comparison and explicit application; previous shots and prompts remain recoverable. The Inspector can collapse and expand from its edge, with the state saved per project. AI workflow validation uses a mock model; review real suggestions before applying.
 
 ## V3.19 updates
 

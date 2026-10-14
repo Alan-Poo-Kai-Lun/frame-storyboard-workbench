@@ -84,5 +84,7 @@
   "prompt_translation.py",
   "web/prompt-translations.js",
   "docs/release-v3.19-beta.2.md",
-  "docs/assets/screenshots/bilingual-prompt-v3.19.jpg"
+  "docs/assets/screenshots/bilingual-prompt-v3.19.jpg",
+  "docs/release-v3.20-beta.1.md",
+  "docs/assets/screenshots/repair-comparison-v3.20.jpg"
 ]

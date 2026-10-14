@@ -2,9 +2,9 @@
 
 **把故事、参考素材、分镜和成片记录，整理在同一张导演画布里。**
 
-Windows · 本地运行 · V3.19 Beta 2 · 基础分镜无需 AI
+Windows · 本地运行 · V3.20 Beta 1 · 基础分镜无需 AI
 
-### [⬇ 下载 Windows 版（EXE，无需 Python）](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.19-beta.2/FRAME-Workbench-Windows-x64-v3.19-beta.2.exe)
+### [⬇ 下载 Windows 版（EXE，无需 Python）](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.20-beta.1/FRAME-Workbench-Windows-x64-v3.20-beta.1.exe)
 
 [所有版本与更新包](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases) · [新手教程](docs/quick-start.md) · [常见问题](docs/faq.md) · [English](docs/README.en.md)
 
@@ -17,6 +17,16 @@ Windows · 本地运行 · V3.19 Beta 2 · 基础分镜无需 AI
 3. **点片段写故事，点镜头编辑**；准备好后保存项目备份，或导出导演包交给 ComfyUI H3 导演台。
 
 无需先安装 Ollama 或配置 API。AI 分析素材、拆镜和审查可以之后再设置。
+
+## V3.20 有什么变化
+
+- **修复导出旧图片**：残留旧媒体不会再覆盖当前参考图；保留原有编号，无需删除重建素材，使用原项目重新导出即可。
+- **AI 帮忙修改**：输出检查提醒可提交局部修正；先查看修改前 / 修改后，确认才应用，旧镜头和提示词留档可撤销。
+- **右侧属性面板整体收起 / 展开**：边缘箭头扩大画布空间，状态随项目保存。
+
+![V3.20 AI 修改前后对比](docs/assets/screenshots/repair-comparison-v3.20.jpg)
+
+截图来自隔离示例和模拟模型，实际 AI 建议仍须人工核对。详见 [V3.20 更新说明](docs/release-v3.20-beta.1.md)。
 
 ## V3.19 有什么变化
 

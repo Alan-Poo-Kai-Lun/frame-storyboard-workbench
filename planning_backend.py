@@ -125,9 +125,10 @@ def smart_repair(s,body):
  seg=next((v for v in p['segments'] if v['id']==body.get('segmentId')),None)
  if not seg:raise ValueError('片段不存在')
  issues=quality(s,p,seg)
- if not issues:raise ValueError('本片段没有待修复的检查项')
+ warnings=[w for w in seg.get('planning',{}).get('warnings',[]) if isinstance(w,str) and w.strip()]
+ if not issues and not warnings:raise ValueError('本片段没有待修复的检查项')
  if not seg.get('shots'):raise ValueError('本片段没有镜头，请先拆镜')
- instruction='智能修复当前导出检查。以用户故事原文和明确 Picture 编号为最高依据，只修冲突摘要、动作和起止状态；保留镜头数量、时间、对白、音效、素材、视频和故事原文。没有明确依据时保留原内容并列出待人工确认问题，不猜测角色对象或空间位置。摘要必须与修复后的时间线一致。检查项：\n'+'\n'.join(i['message'] for i in issues)
+ instruction='智能修复当前导出检查。以用户故事原文和明确 Picture 编号为最高依据，只修冲突摘要、动作和起止状态；保留镜头数量、时间、对白、音效、素材、视频和故事原文。没有明确依据时保留原内容并列出待人工确认问题，不猜测角色对象或空间位置。摘要必须与修复后的时间线一致。检查项：\n'+'\n'.join(dict.fromkeys([i['message'] for i in issues]+warnings))
  return enqueue(s,{**body,'mode':'review','instruction':instruction,'smartRepair':True})
 
 def decode(raw):
@@ -262,7 +263,7 @@ def analyze(s,cfg,snapshot,payload):
  issues=quality(s,local,local_seg)
  warnings.extend(('需修复：' if i['severity']=='error' else '需核对：')+i['message'] for i in issues)
  if not snapshot['refNumbers']:warnings.append('本片段没有参考素材，按纯文字规划')
- return {'shots':shots,'summary':str(obj.get('summary',''))[:10000],'warnings':[str(w)[:4000] for w in warnings[:40]],'issues':issues,'refNumbers':snapshot['refNumbers'],'duration':snapshot['duration'],'sourceSignature':snapshot['sourceSignature'],'sourceDocument':snapshot.get('sourceDocument'),'smartRepair':bool(snapshot.get('smartRepair')),'textOnly':True,'reviewed':review,'mode':snapshot['mode']}
+ return {'shots':shots,'summary':str(obj.get('summary',''))[:10000],'warnings':[str(w)[:4000] for w in warnings[:40]],'issues':issues,'refNumbers':snapshot['refNumbers'],'duration':snapshot['duration'],'sourceSignature':snapshot['sourceSignature'],'sourceDocument':snapshot.get('sourceDocument'),'comparisonBefore':copy.deepcopy(context.get('existingShots',[])),'comparisonSummary':context.get('summary',''),'smartRepair':bool(snapshot.get('smartRepair')),'textOnly':True,'reviewed':review,'mode':snapshot['mode']}
 
 def apply(s,body):
  import task_backend as tasks

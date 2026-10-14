@@ -1,6 +1,15 @@
 /* UI localization only. Never translates project values, prompts or editable content. */
 (()=>{
  const pairs=`
+收起右侧面板|Collapse Inspector
+展开右侧面板|Expand Inspector
+AI 帮忙修改 · 预览 / 对比|AI repair · Preview / Compare
+确认应用修改|Confirm and apply changes
+修改前 / 修改后对比|Before / After comparison
+修改前|Before
+修改后|After
+本镜头内容未改变|This shot is unchanged
+当前项目尚未修改|The current project is unchanged
 分镜工作台|Storyboard Workbench
 检查更新|Check for updates
 画布模式|Canvas

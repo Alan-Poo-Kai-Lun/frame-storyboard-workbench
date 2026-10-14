@@ -14,6 +14,28 @@ import server
 
 
 class GenerationChecks(unittest.TestCase):
+    def test_replaced_reference_cannot_be_overwritten_by_imported_media(self):
+        p = self.project()
+        p['assets'] = p['assets'][:1]
+        p['generationManaged'] = False
+        p['segments'][0]['generation'] = {}
+        old = 'shared_params/Picture1.png'
+        new = 'uploads/current-image.png'
+        original = base64.b64decode(p['media'][p['assets'][0]['path']])
+        # Distinct real image bytes, with the old image retained by an imported project.
+        replacement = original + b'CURRENT-REFERENCE'
+        p['media'][old] = base64.b64encode(original).decode()
+        p['media'][new] = base64.b64encode(replacement).decode()
+        p['assets'][0]['path'] = new
+        out = server.export_pack(p, force=True)
+        with zipfile.ZipFile(io.BytesIO(out)) as z:
+            self.assertEqual(z.read(old), replacement)
+            refs = json.loads(z.read('shared_params/shared_params.json'))['refs']
+            self.assertEqual(refs[0]['imageFile'], old)
+        restored = server.readzip(out)
+        with zipfile.ZipFile(io.BytesIO(server.export_pack(restored, force=True))) as z:
+            self.assertEqual(z.read(old), replacement)
+
     def project(self):
         p = server.readzip((ROOT / 'presets/starter-project.mmxpack.zip').read_bytes())
         p['overviewLayout']['canvas37']['appearance']={'lineStyle':'pcb','lineEffect':'dual','arrowType':'chevron3','hierarchy':True,'bodySize':18,'gridSize':25}

@@ -413,9 +413,11 @@ def portable_pack_media(files, project):
             ext=Path(name).suffix.lower()
             if ext=='.jpeg': ext='.jpg'
             mapping[name]='extra/media_'+hashlib.sha256(name.encode()).hexdigest()[:16]+ext
+    # Current references own their destinations; stale imported media must never overwrite them.
+    targets=set(mapping.values())
     for name,target in mapping.items(): files[target]=source[name]
     for name in project.get('media',{}):
-        if name not in mapping: files[name]=source[name]
+        if name not in mapping and name not in targets: files[name]=source[name]
     media_keys=('imageFile','image_file','audioFile','audio_file','videoFile','video_file','previewImageFile','preview_image_file','pairedAudioFile','paired_audio_file')
     def rewrite(value):
         if isinstance(value,list): return [rewrite(v) for v in value]
