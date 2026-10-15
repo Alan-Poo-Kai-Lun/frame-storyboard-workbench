@@ -4,7 +4,7 @@ A local planning workspace for assets, scripts, shot lists, H3 prompts and manua
 
 **V3.24 Beta 1. Publicly visible source. All rights reserved.** No open-source permission is granted at this time.
 
-[Download Windows EXE — no Python required](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.24-beta.1/FRAME-Workbench-Windows-x64-v3.24-beta.1.exe) · [All releases](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases)
+[Download Windows EXE — no Python required](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.24-beta.1/FRAME-Workbench-Windows-x64-v3.24-beta.1.exe) · [All releases](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases) · [Complete changelog, V2.1–V3.24](../CHANGELOG.md)
 
 [Chinese step-by-step tutorial](quick-start.md) · [Troubleshooting](faq.md) · [Importable sample pack](../presets/starter-project.mmxpack.zip)
 
@@ -19,6 +19,14 @@ Create, rename, edit, order and remove text presets, assign Alt+Shift+1–9 with
 This public version also includes whole-story AI planning with preview-before-append, reusable writing rules, detailed prompt syntax colors, six root-node shapes and nested context menus from V3.21–V3.23. It does not directly execute Codex skills or add a ComfyUI queue bridge. Local checks passed: 57 backend tests, 20 DOM integration groups and an isolated Windows EXE self-test. Real AI output quality and GPU rendering were not tested in this update.
 
 ![V3.24 text presets](assets/screenshots/editor-presets-v3.24.jpg)
+
+## V3.23, V3.22 and V3.21 history
+
+- **V3.23:** movable/resizable floating editors, Inspector docking, shot paging, duration calculation and explicit next-shot alignment. [Details](release-v3.23-beta.1.md)
+- **V3.22:** detailed syntax colors in segment/final prompts, six root shapes and expandable context-menu submenus. [Details](release-v3.22-beta.1.md)
+- **V3.21:** whole-story segment planning, reusable writing rules, segment dialogue languages and highlighted AI context actions. [Details](release-v3.21-beta.1.md)
+
+These were local iterations first published together with V3.24. The release list jumping from V3.20 to V3.24 is intentional; no missing installers or fabricated Git history are implied. The [complete changelog](../CHANGELOG.md) also preserves earlier documented changes back to V2.1, without inventing unavailable release dates.
 
 ## V3.20 updates
 

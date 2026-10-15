@@ -6,7 +6,7 @@ Windows · 本地运行 · V3.24 Beta 1 · 基础分镜无需 AI
 
 ### [⬇ 下载 Windows 版（EXE，无需 Python）](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.24-beta.1/FRAME-Workbench-Windows-x64-v3.24-beta.1.exe)
 
-[所有版本与更新包](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases) · [新手教程](docs/quick-start.md) · [常见问题](docs/faq.md) · [English](docs/README.en.md)
+[完整更新日志（V2.1–V3.24）](CHANGELOG.md) · [所有版本与更新包](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases) · [新手教程](docs/quick-start.md) · [常见问题](docs/faq.md) · [English](docs/README.en.md)
 
 ![FRAME V3.18 实际界面：片段卡片画布](docs/assets/screenshots/director-cards-v3.18.jpg)
 
@@ -32,6 +32,29 @@ Windows · 本地运行 · V3.24 Beta 1 · 基础分镜无需 AI
 ![V3.24 编辑面板全部折叠](docs/assets/screenshots/collapsed-sections-v3.24.jpg)
 
 截图来自隔离示例项目。57 项后端测试、20 组界面检查和 Windows EXE 自检通过；本轮没有调用真实 AI，也没有验证 GPU 视频生成。详见 [V3.24 更新说明](docs/release-v3.24-beta.1.md)。该公开版本包含此前的 [V3.21](docs/release-v3.21-beta.1.md)、[V3.22](docs/release-v3.22-beta.1.md) 和 [V3.23](docs/release-v3.23-beta.1.md) 本地更新。
+
+## V3.23：浮动编辑与镜头流转
+
+- 片段、镜头、素材和最终提示词可在浮动面板编辑，支持标题栏拖动、右下角拉伸和右侧停靠，记忆模式与位置。
+- 前后镜头翻页、`Ctrl + ← / →`、时长计算、显式对齐下一镜开始时间；保存失败保留当前输入。
+
+[详细记录](docs/release-v3.23-beta.1.md)
+
+## V3.22：提示词高亮与画布外观
+
+- 本段及最终提示词分别高亮 Camera、Expression、Sound、Spatial start/end 等字段，保留引用与时间码显示。
+- 项目根节点提供六种形状；右键菜单改为可展开子菜单，支持键盘操作和边缘反向展开。
+
+[详细记录](docs/release-v3.22-beta.1.md)
+
+## V3.21：整篇规划与写作辅助
+
+- 整体剧情可指定段数和每段秒数，AI 结果先预览再确认追加；写作规则支持内置摘要和自定义条目。
+- 片段级对白语言与标准英文标签、右键高亮 AI 拆镜 / 素材分析、提示词复制与输出检查收纳。
+
+[详细记录](docs/release-v3.21-beta.1.md)
+
+V3.21–V3.23 为本地迭代，首次随 V3.24 一并公开，并非漏发了三个 GitHub 安装包。更早版本请查看[完整更新日志](CHANGELOG.md)。
 
 ## V3.20 有什么变化
 
