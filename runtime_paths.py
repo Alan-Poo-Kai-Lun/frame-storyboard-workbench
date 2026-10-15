@@ -18,7 +18,7 @@ def migrate_legacy_data(source,target):
  if source==target or not source.is_dir():return False
  if source in target.parents or target in source.parents:raise ValueError('旧数据目录与目标目录不能互相包含')
  if target.exists() and any(target.iterdir()):return False
- if not any((source/name).exists() for name in ['project.json','settings.json','tasks.json','visual-references.json','reference-media','asset-library.json','canvas-presets.json']):return False
+ if not any((source/name).exists() for name in ['project.json','settings.json','tasks.json','visual-references.json','reference-media','asset-library.json','canvas-presets.json','editor-presets.json']):return False
  if source.is_symlink() or any(p.is_symlink() for p in source.rglob('*')):raise ValueError('旧数据含符号链接，请先使用项目备份导入，原数据未改动')
  target.parent.mkdir(parents=True,exist_ok=True)
  staging=Path(tempfile.mkdtemp(prefix='.frame-migrate-',dir=target.parent))

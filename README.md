@@ -2,9 +2,9 @@
 
 **把故事、参考素材、分镜和成片记录，整理在同一张导演画布里。**
 
-Windows · 本地运行 · V3.20 Beta 1 · 基础分镜无需 AI
+Windows · 本地运行 · V3.24 Beta 1 · 基础分镜无需 AI
 
-### [⬇ 下载 Windows 版（EXE，无需 Python）](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.20-beta.1/FRAME-Workbench-Windows-x64-v3.20-beta.1.exe)
+### [⬇ 下载 Windows 版（EXE，无需 Python）](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.24-beta.1/FRAME-Workbench-Windows-x64-v3.24-beta.1.exe)
 
 [所有版本与更新包](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases) · [新手教程](docs/quick-start.md) · [常见问题](docs/faq.md) · [English](docs/README.en.md)
 
@@ -17,6 +17,21 @@ Windows · 本地运行 · V3.20 Beta 1 · 基础分镜无需 AI
 3. **点片段写故事，点镜头编辑**；准备好后保存项目备份，或导出导演包交给 ComfyUI H3 导演台。
 
 无需先安装 Ollama 或配置 API。AI 分析素材、拆镜和审查可以之后再设置。
+
+## V3.24：浮动编辑与自定义快捷预设
+
+- **浮动编辑**：片段、镜头、素材和最终提示词使用同一套编辑与保存流程。拖动标题栏移动、拖右下角拉伸，也可停靠右侧；镜头支持前后翻页与 `Ctrl + ← / →`。
+- **自定义快捷预设**：故事、画面动作、摄影机等文字字段支持名称、内容、排序、编辑、删除及 `Alt + Shift + 1–9`；在对应字段内插入到光标位置。
+- **绑定参考库**：将视觉参考库或素材库条目绑定为标签，使用时读取最新文字说明。不会自动添加媒体，Picture 编号仍需按当前片段核对。
+- **面板全部折叠 / 展开**：按功能分区，收起保留输入并记忆状态。输出检查收起后仍显示黄色提醒与数量。
+- **更清晰的提示词与画布**：本段及最终提示词细分字段高亮，项目根节点可选六种形状，右键使用展开子菜单。
+- **整篇剧情规划与写作规则**：设定段数和每段时长，由已配置的 AI 规划，预览确认后追加；规则库支持自定义。没有直接执行本机 Codex 技能或新增 ComfyUI 直连。
+
+![V3.24 自定义快捷预设和参考库绑定](docs/assets/screenshots/editor-presets-v3.24.jpg)
+
+![V3.24 编辑面板全部折叠](docs/assets/screenshots/collapsed-sections-v3.24.jpg)
+
+截图来自隔离示例项目。57 项后端测试、20 组界面检查和 Windows EXE 自检通过；本轮没有调用真实 AI，也没有验证 GPU 视频生成。详见 [V3.24 更新说明](docs/release-v3.24-beta.1.md)。该公开版本包含此前的 [V3.21](docs/release-v3.21-beta.1.md)、[V3.22](docs/release-v3.22-beta.1.md) 和 [V3.23](docs/release-v3.23-beta.1.md) 本地更新。
 
 ## V3.20 有什么变化
 

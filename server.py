@@ -173,7 +173,7 @@ def readzip(blob):
         segment['videos']=record.get('videos',[])
         if record.get('planning'):segment['planning']=record['planning']
         if record.get('promptHistory'):segment['promptHistory']=record['promptHistory']
-        for key in ['promptTranslations','promptExportLanguage']:
+        for key in ['promptTranslations','promptExportLanguage','dialogueLanguage','writingRuleIds']:
             if key in record:segment[key]=record[key]
         segment['guideFromPrev']=record.get('guideFromPrev',segment['continuity'])
         if 'continuity' in record:segment['continuity']=record['continuity']
@@ -182,7 +182,7 @@ def readzip(blob):
             path=video.get('path','')
             if path in files:media[path]=base64.b64encode(files[path]).decode()
     shared=json.loads(files.get('shared_params/shared_params.json',b'{}'))
-    project={'overviewLayout':side.get('overviewLayout',{}),'storySeparated':side.get('storySeparated',False),'dialogueLanguage':side.get('dialogueLanguage',''),'intent':side.get('intent',{}),'groupAssetsCollapsed':side.get('groupAssetsCollapsed',{}),'nextPictureNumber':side.get('nextPictureNumber',1),'showDeletedAssets':side.get('showDeletedAssets',False),'assetsManaged':side.get('assetsManaged',False),'assetsCollapsed':side.get('assetsCollapsed',False),'version':1,'projectId':uid(),'title':side.get('title','导入的导演项目'),'script':side.get('script',''),'aspect':side.get('aspect',aspect_from_output(pack.get('output',{}))),'fps':timeline.get('frameRate',24),'segments':segs,'assets':side.get('assets') or [{**r,'id':uid(),'name':f'Picture {r.get("index",i)+1}','kind':'人物','path':r.get('imageFile',''),'locked':True} for i,r in enumerate(shared.get('refs',[]))],'media':media,'originalZip':base64.b64encode(blob).decode()}
+    project={'overviewLayout':side.get('overviewLayout',{}),'storySeparated':side.get('storySeparated',False),'dialogueLanguage':side.get('dialogueLanguage',''),'writingRuleIds':side.get('writingRuleIds',[]),'intent':side.get('intent',{}),'groupAssetsCollapsed':side.get('groupAssetsCollapsed',{}),'nextPictureNumber':side.get('nextPictureNumber',1),'showDeletedAssets':side.get('showDeletedAssets',False),'assetsManaged':side.get('assetsManaged',False),'assetsCollapsed':side.get('assetsCollapsed',False),'version':1,'projectId':uid(),'title':side.get('title','导入的导演项目'),'script':side.get('script',''),'aspect':side.get('aspect',aspect_from_output(pack.get('output',{}))),'fps':timeline.get('frameRate',24),'segments':segs,'assets':side.get('assets') or [{**r,'id':uid(),'name':f'Picture {r.get("index",i)+1}','kind':'人物','path':r.get('imageFile',''),'locked':True} for i,r in enumerate(shared.get('refs',[]))],'media':media,'originalZip':base64.b64encode(blob).decode()}
     project['directorGuide']=guide_settings({'directorGuide':side.get('directorGuide',{})},pack.get('output',{}))
     if not side.get('assetsManaged'):
         for segment in segs:
@@ -283,7 +283,9 @@ def normalize_prompt_sections(text):
 def dialogue_language(value):
     if value is None: return ''
     if not isinstance(value,str) or len(value)>120 or re.search(r'[\x00-\x1f]',value): raise ValueError('对白语言必须是 120 字内的单行名称')
-    return value.strip()
+    value=value.strip()
+    names={'中文':'Mandarin','中文（普通话）':'Mandarin','普通话':'Mandarin','英语':'English','英语（English）':'English','英文':'English','粤语':'Cantonese','广东话':'Cantonese','马来文':'Malay','马来语':'Malay','马来语（Bahasa Melayu）':'Malay','泰米尔语（தமிழ்）':'Tamil','印地语':'Hindi','混合语言（按台词）':'Mixed languages (as written)','日语':'Japanese','韩语':'Korean','泰语':'Thai','印尼语':'Indonesian','福建话':'Hokkien','法语':'French','德语':'German','西班牙语':'Spanish','无对白':'No dialogue'}
+    return names.get(value,value)
 
 def rebuild(s):
     old=s['prompt']; matches=list(re.finditer(r'\[(\d+(?:\.\d+)?)\s*s?\s*[–—\-~到]\s*(\d+(?:\.\d+)?)\s*s?\]',old))
@@ -303,13 +305,13 @@ def rebuild(s):
     for sh in s['shots']:
         lines=[f'[{sh["start"]:.2f}s–{sh["end"]:.2f}s]',bind_reference_roles(sh.get('action',''),s.get('assetReferences',[]))]
         language=dialogue_language(sh.get('dialogueLanguage') or s.get('defaultDialogueLanguage'))
-        silent=language=='无对白'
+        silent=language=='No dialogue'
         for key,label in [('camera','Camera'),('expression','Expression'),('dialogue','Dialogue'),('sound','Sound')]:
             if key=='dialogue' and silent: continue
             if sh.get(key):
                 if key=='dialogue':lines.extend(label+': '+line for line in sh[key].splitlines())
                 else:lines.append(label+': '+bind_reference_roles(sh[key],s.get('assetReferences',[])))
-        if silent: lines.append('Dialogue language: 无对白。No spoken dialogue or narration. Preserve environmental sound effects.')
+        if silent: lines.append('Dialogue language: No dialogue。No spoken dialogue or narration. Preserve environmental sound effects.')
         elif language:
             instruction='Use the specified language for spoken dialogue. Preserve the exact written lines; do not translate or invent new lines.' if sh.get('dialogue') else 'No spoken lines are specified. Do not invent dialogue or narration.'
             lines.append('Dialogue language: '+language+'。'+instruction)
@@ -340,8 +342,8 @@ def original_scoped_prompt(project, segment):
         for scope in asset.get('deletedReferenceScopes',[]):
             if scope.get('segmentId')==segment['id'] and re.search(r'(?<!\w)'+re.escape(scope.get('label',''))+r'\b',segment.get('prompt',''),re.I):
                 raise ValueError(segment['title']+' 仍引用已删除素材 '+asset.get('name','')+'，请恢复素材或移除该引用')
-    if project.get('dialogueLanguage') or any(sh.get('dialogueLanguage') for sh in segment.get('shots',[])):
-        segment={**segment,'prompt':rebuild({**segment,'defaultDialogueLanguage':project.get('dialogueLanguage','')})}
+    if segment.get('dialogueLanguage') or project.get('dialogueLanguage') or any(sh.get('dialogueLanguage') for sh in segment.get('shots',[])):
+        segment={**segment,'prompt':rebuild({**segment,'defaultDialogueLanguage':segment.get('dialogueLanguage',project.get('dialogueLanguage',''))})}
     if not project.get('assetsManaged'): return segment['prompt']
     assets=project.get('assets',[]);active=[a for a in scoped_assets(project,segment) if generation_backend.media_type(a)=='image']
     indices={a.get('pictureNumber',assets.index(a)+1):i+1 for i,a in enumerate(active)}
@@ -555,9 +557,9 @@ def export_pack(p,force=False):
     if workspace is not None: workspace.setdefault('globalCommon',{})['refs']=copy.deepcopy(existing)
     files['timeline.json']=json.dumps(tl,ensure_ascii=False,indent=2).encode()
     generation_backend.export(files,p,pack,tl,scoped_assets)
-    side={k:p.get(k) for k in ['generation','generationManaged','sourceVideo','sourceVideoClips','version','title','script','aspect','assets','assetsManaged','assetsCollapsed','nextPictureNumber','showDeletedAssets','groupAssetsCollapsed','intent','dialogueLanguage','storySeparated','directorGuide','overviewLayout']}
+    side={k:p.get(k) for k in ['generation','generationManaged','sourceVideo','sourceVideoClips','version','title','script','aspect','assets','assetsManaged','assetsCollapsed','nextPictureNumber','showDeletedAssets','groupAssetsCollapsed','intent','writingRuleIds','dialogueLanguage','storySeparated','directorGuide','overviewLayout']}
     side['directorGuide']=guide_settings(p,pack.get('output',{}))
-    side['segments']=[{**{k:s[k] for k in ['generation','id','title','shots','storyText','storyHistory','videos','planning','promptHistory','continuity','guideFromPrev','shotHistory','promptTranslations','promptExportLanguage'] if k in s},'workingPrompt':s['prompt'],'promptHash':digest(output[i]['prompt'])} for i,s in enumerate(p['segments'])]
+    side['segments']=[{**{k:s[k] for k in ['generation','id','title','shots','storyText','storyHistory','videos','planning','promptHistory','continuity','guideFromPrev','shotHistory','dialogueLanguage','writingRuleIds','promptTranslations','promptExportLanguage'] if k in s},'workingPrompt':s['prompt'],'promptHash':digest(output[i]['prompt'])} for i,s in enumerate(p['segments'])]
     files['storyboard.json']=json.dumps(side,ensure_ascii=False,indent=2).encode()
     # Remove previously bundled manual clips; export only current segment records.
     for name in list(files):
@@ -770,6 +772,13 @@ class Handler(BaseHTTPRequestHandler):
                     if not p or p.get('projectId')!=body.get('projectId'):raise ValueError('项目已切换，请刷新后再修复')
                     count=restore_pack_images(p);save(p)
                 return self.respond({'project':p,'recovered':count})
+            if route=='/api/editor-presets':
+                import editor_presets
+                return self.respond(editor_presets.library(sys.modules[__name__],body))
+            if route in ['/api/writing-rules','/api/story-plan','/api/story-apply']:
+                import writing_backend as writing
+                action={'/api/writing-rules':writing.library,'/api/story-plan':writing.enqueue,'/api/story-apply':writing.apply}[route]
+                return self.respond(action(sys.modules[__name__],body))
             if route in ['/api/prompt-translate','/api/prompt-translations','/api/prompt-translation-save','/api/prompt-export-language']:
                 import prompt_translation as translation
                 action={'/api/prompt-translate':translation.enqueue,'/api/prompt-translations':translation.info,'/api/prompt-translation-save':translation.save_result,'/api/prompt-export-language':translation.choose}[route]

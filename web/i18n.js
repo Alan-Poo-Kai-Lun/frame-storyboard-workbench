@@ -1,6 +1,54 @@
 /* UI localization only. Never translates project values, prompts or editable content. */
 (()=>{
  const pairs=`
+全部折叠|Collapse all
+全部展开|Expand all
+管理快捷预设|Manage text presets
+我的快捷预设|My text presets
+生成配置与参考素材|Generation and references
+片段基本信息|Segment basics
+镜头时间|Shot timing
+本片段素材与管理|Segment references and management
+创作工具|Creation tools
+快捷预设|Text presets
+自定义快捷预设|Custom text preset
+保存快捷预设|Save text preset
+保存预设修改|Save preset changes
+取消编辑|Cancel editing
+绑定为快捷标签|Bind as shortcut
+已绑定|Bound
+前移|Move up
+后移|Move down
+移除|Remove
+插入内容|Insert text
+不设置|Not assigned
+绑定参考|Linked reference
+全部分类|All categories
+绑定使用库中最新文字说明，不添加媒体；素材编号请按当前片段核对。快捷键 Alt+Shift+1–9 在对应编辑字段内使用。|Bindings insert the latest library text without adding media. Check reference numbers against this segment. Use Alt+Shift+1–9 within the matching field.
+快捷预设独立保存；插入后按原有流程保存项目|Presets are saved separately; inserted text uses the normal project save flow.
+快捷预设读取中…|Loading text presets…
+已插入快捷预设 · 按原有流程保存|Preset inserted; save through the normal workflow.
+
+浮动节点编辑|Floating node editor
+节点编辑|Node editor
+上一镜|Previous shot
+下一镜|Next shot
+右侧编辑|Dock to Inspector
+关闭编辑面板|Close editor
+编辑方式 · 浮动|Editor · Floating
+编辑方式 · 右侧|Editor · Inspector
+画布设置|Canvas settings
+摄影机快捷预设|Camera presets
+对齐下一镜开始时间|Align next shot start
+下一镜当前从|Next shot starts at
+开始须小于结束，且不能超出本段|Start must precede end within segment duration
+当前结束已达到下一镜末尾，无法对齐|Current end reaches the next shot end; cannot align
+输入 @ 选择本片段素材；↑ ↓ 选择，Enter 插入，Esc 关闭。|Type @ for segment assets; ↑ ↓ to select, Enter to insert, Esc to close.
+缓慢推近|Slow push-in
+绕圈环拍|Orbit
+极速俯冲|Fast dive
+POV 视角|POV
+
 收起右侧面板|Collapse Inspector
 展开右侧面板|Expand Inspector
 AI 帮忙修改 · 预览 / 对比|AI repair · Preview / Compare
@@ -10,6 +58,39 @@ AI 帮忙修改 · 预览 / 对比|AI repair · Preview / Compare
 修改后|After
 本镜头内容未改变|This shot is unchanged
 当前项目尚未修改|The current project is unchanged
+整篇剧情规划|Whole-story planning
+整篇规划|Plan whole story
+写作技能库|Writing skills library
+写作技能|Writing skills
+本段对白语言|Segment dialogue language
+对白语言 · 当前片段|Dialogue language · Current segment
+本段默认对白语言|Segment default dialogue language
+AI 规划 · 先预览|AI planning · Preview first
+确认追加片段|Confirm and append segments
+复制最终提示词|Copy final prompt
+编辑与生成|Edit and generate
+展开与视图|View and navigation
+管理与导出|Manage and export
+危险操作|Danger zone
+AI 分析|AI analysis
+片段数量|Segment count
+每段秒数|Seconds per segment
+整体剧情|Whole story
+整篇规划预览|Whole-story preview
+应用选择|Apply selection
+自定义规则|Custom rules
+项目根节点|Project root node
+根节点形状|Root node shape
+圆形|Circle
+圆角矩形|Rounded rectangle
+方形|Square
+菱形|Diamond
+六边形|Hexagon
+科技切角框|Chiseled frame
+更多编辑|More editing
+视图与选择|View and selection
+布局与编组|Layout and grouping
+复制本段提示词|Copy segment prompt
 分镜工作台|Storyboard Workbench
 检查更新|Check for updates
 画布模式|Canvas
@@ -733,7 +814,7 @@ AI 生成中文与英文副本|Generate Chinese and English copies with AI
  let language='zh';try{language=localStorage.getItem('frame-ui-language')==='en'?'en':'zh'}catch{}
  const textSources=new WeakMap(),attrSources=new WeakMap();let running=false,scheduled=false;
  // User text and machine-readable values remain intact, even if they match a UI label.
- const protectedSelector='textarea,input,datalist,script,style,[contenteditable], [data-user-content],.mentionMirror,.canvasDetailHeading h2,.canvasProjectHeading h2,.localProjectCard b,.creatorAsset b,.creatorAsset p,.creatorAsset small,#startupResumeTitle,#segmentTitle,#professionalSummary,#viewerTitle,#prompt,#taskResult,.taskResult,.taskRowHead b,.taskRow>small,pre,code,.referenceCard,.shotbody p,#reverseRendered,#planningReviewNotes,.canvasSegmentLink,.generationSegment h3,#assetMentions span,.canvasEditableRefs small,#segments b';
+ const protectedSelector='textarea,input,datalist,script,style,[contenteditable], [data-user-content],.mentionMirror,.canvasDetailHeading h2,[data-floating-title],.canvasProjectHeading h2,.localProjectCard b,.creatorAsset b,.creatorAsset p,.creatorAsset small,#startupResumeTitle,#segmentTitle,#professionalSummary,#viewerTitle,#prompt,#taskResult,.taskResult,.taskRowHead b,.taskRow>small,pre,code,.referenceCard,.shotbody p,#reverseRendered,#planningReviewNotes,.canvasSegmentLink,.generationSegment h3,#assetMentions span,.canvasEditableRefs small,#segments b';
  const keys=Object.keys(dict).filter(k=>k.length>1).sort((a,b)=>b.length-a.length),pattern=new RegExp(keys.map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|'),'g');
  function translate(text){if(language!=='en')return text;const trim=text.trim();if(dict[trim])return text.replace(trim,dict[trim]);return text.replace(/(\d+(?:\.\d+)?)(\s*)(?:个)?(片段|镜头|素材|视频(?!版本)|秒|条历史)/g,(_,n,space,unit)=>n+' '+({片段:'segments',镜头:'shots',素材:'assets',视频:'videos',秒:'s',条历史:'history entries'})[unit]).replace(pattern,key=>dict[key])}
  function apply(root=document.body){if(running||!root)return;running=true;try{

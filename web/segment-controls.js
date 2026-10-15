@@ -3,9 +3,9 @@ let segmentDrag=null,segmentUndo=null;
 const DIALOGUE_LANGUAGES=['中文（普通话）','马来语（Bahasa Melayu）','英语（English）','粤语','福建话','泰米尔语（தமிழ்）','印地语','日语','韩语','印尼语','泰语','混合语言（按台词）','无对白'];
 $('dialogueLanguages').innerHTML=DIALOGUE_LANGUAGES.map(v=>`<option value="${esc(v)}">`).join('');
 function syncDialogueLanguage(){
- $('projectDialogueLanguage').value=P?.dialogueLanguage||'';
+ $('projectDialogueLanguage').value=seg()?.dialogueLanguage??P?.dialogueLanguage??'';
  $('shotDialogueLanguage').value=shot()?.dialogueLanguage||'';
- $('dialogueLanguageStatus').textContent='当前有效语言：'+(shot()?.dialogueLanguage||P?.dialogueLanguage||'未指定 · 按原台词')+(shot()?.dialogueLanguage?'（镜头指定）':'（项目默认）');
+ $('dialogueLanguageStatus').textContent='当前有效语言：'+(shot()?.dialogueLanguage||seg()?.dialogueLanguage||P?.dialogueLanguage||'未指定 · 按原台词')+(shot()?.dialogueLanguage?'（镜头指定）':'（片段默认）');
 }
 function renderSegmentList(){
  const rows=P?.segments||[];
@@ -58,10 +58,6 @@ $('segments').ondrop=e=>safe(async()=>{
  document.querySelectorAll('.segmentRow.dropTarget').forEach(el=>el.classList.remove('dropTarget'));const bounds=row.getBoundingClientRect();await moveSegment(drag.id,row.dataset.segmentRow,e.clientY>=bounds.top+bounds.height/2);
 });
 function cleanDialogueLanguage(value){const text=String(value||'').trim();if(text.length>120||/[\r\n\x00-\x1f]/.test(text))throw Error('对白语言请填写 120 字内的单行名称');return text}
-$('projectDialogueLanguage').onchange=()=>safe(async()=>{
- if(!ready)return;if(!P)ensure();const project=P,pid=P.projectId,language=cleanDialogueLanguage($('projectDialogueLanguage').value),results=[];
- for(const s of project.segments){const refs=availableAssets(s).map(a=>({index:assetNumber(a),name:a.name,kind:a.kind,description:a.description||''}));results.push([s,(await api('rebuild',{...s,defaultDialogueLanguage:language,assetReferences:refs})).prompt])}
- if(P!==project||P.projectId!==pid)throw Error('项目已切换，语言未应用');P.dialogueLanguage=language;for(const [s,text] of results)s.prompt=text;changed();render();await flush();toast('已保存项目默认对白语言；已有台词保持原文');
-});
+$('projectDialogueLanguage').onchange=()=>safe(async()=>{if(!seg())return;const s=seg();s.dialogueLanguage=cleanDialogueLanguage($('projectDialogueLanguage').value);await updatePrompt();await flush();render();toast('已保存本段对白语言；对白原文保留')});
 $('shotDialogueLanguage').onchange=()=>safe(async()=>{if(!shot())return;shot().dialogueLanguage=cleanDialogueLanguage($('shotDialogueLanguage').value);await edited();await flush()});
 if(ready){renderSegmentList();syncDialogueLanguage()}

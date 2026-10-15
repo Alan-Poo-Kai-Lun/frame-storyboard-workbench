@@ -86,5 +86,16 @@
   "docs/release-v3.19-beta.2.md",
   "docs/assets/screenshots/bilingual-prompt-v3.19.jpg",
   "docs/release-v3.20-beta.1.md",
-  "docs/assets/screenshots/repair-comparison-v3.20.jpg"
+  "docs/assets/screenshots/repair-comparison-v3.20.jpg",
+  "writing_backend.py",
+  "web/writing-tools.js",
+  "docs/release-v3.21-beta.1.md",
+  "docs/release-v3.22-beta.1.md",
+  "web/floating-editor.js",
+  "docs/release-v3.23-beta.1.md",
+  "web/editor-presets.js",
+  "editor_presets.py",
+  "docs/release-v3.24-beta.1.md",
+  "docs/assets/screenshots/editor-presets-v3.24.jpg",
+  "docs/assets/screenshots/collapsed-sections-v3.24.jpg"
 ]

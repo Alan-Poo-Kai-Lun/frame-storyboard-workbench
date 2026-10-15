@@ -12,7 +12,7 @@ async function fixture(existing=null,mode='simple',broken=false){
  const dom=new JSDOM(html,{url:'http://127.0.0.1:8787/',runScripts:'outside-only',pretendToBeVisual:true});
  const styles=dom.window.document.createElement('style');styles.textContent=fs.readFileSync(path.join(root,'web/startup.css'),'utf8');dom.window.document.head.append(styles);
  const w=dom.window;let project=existing&&copy(existing),config={ai:{provider:'ollama',endpoint:'http://127.0.0.1:11434',model:'',key:''},ui:{workbenchMode:mode}};
-  let failRebuild=false,remoteTasks=[];const projectSnapshots=new Map(),projectTrash=new Map();if(project)projectSnapshots.set(project.projectId,copy(project));
+  let failRebuild=false,remoteTasks=[],visualRows=[],libraryRows=[],presetRevision=0,presets=['中景','特写','广角','POV 视角','缓慢推近','绕圈环拍','极速俯冲'].map((name,i)=>({id:'camera-'+i,field:'camera',name,content:name,shortcut:'',binding:null}));const projectSnapshots=new Map(),projectTrash=new Map();if(project)projectSnapshots.set(project.projectId,copy(project));
  const calls=[],errors=[];w.addEventListener('error',e=>errors.push(e.error));w.structuredClone=copy;
  Object.defineProperty(w.crypto,'randomUUID',{value:require('node:crypto').randomUUID});
  Object.defineProperties(w.HTMLElement.prototype,{offsetWidth:{get(){if(this.classList.contains('overviewNode')){w._nodeMeasures=(w._nodeMeasures||0)+1;return parseFloat(this.style.width)||230}return 1000}},offsetHeight:{get(){if(this.classList.contains('overviewNode')){w._nodeMeasures=(w._nodeMeasures||0)+1;return parseFloat(this.style.height)||100}return 700}},clientWidth:{get(){return 1000}},clientHeight:{get(){return 700}}});
@@ -34,7 +34,10 @@ async function fixture(existing=null,mode='simple',broken=false){
   else if(route==='prompt-translations')data={original:project.segments.find(s=>s.id===body.segmentId).prompt,versions:{zh:'中文副本',en:'English copy'},stale:false,exportLanguage:'original'};
   else if(route==='prompt-export-language'){project.segments.find(s=>s.id===body.segmentId).promptExportLanguage=body.language;data={project};}
   else if(route==='prompt-translate')data={id:'translation-task'};
-  else if(route==='asset-library')data={revision:'0',categories:['人物'],items:[]};
+  else if(route==='writing-rules')data={revision:'0',items:[{id:'fight',name:'动作导演',category:'动作',description:'动作规则',rules:'保持因果',builtin:true}]};
+  else if(route==='story-plan')data={id:'story-task'};
+  else if(route==='editor-presets'){if(body?.action){if(body.action==='save'){const row={...body,id:body.id||'preset'+(++presetRevision)};presets=body.id?presets.map(r=>r.id===body.id?row:r):presets.concat(row)}else if(body.action==='delete')presets=presets.filter(r=>r.id!==body.id);else if(body.action==='move'){const i=presets.findIndex(r=>r.id===body.id),j=i+(body.direction==='up'?-1:1);if(j>=0&&j<presets.length)[presets[i],presets[j]]=[presets[j],presets[i]]}presetRevision++;}data={revision:String(presetRevision),items:presets};}
+  else if(route==='asset-library')data={revision:'0',categories:['人物'],items:libraryRows};
   else if(route==='layout-presets'){const options={mode:'cards',assetPosition:'top',shotColumns:3,segmentColumns:2,gap:28,shotWidth:230,shotHeight:220,assetWidth:190,assetHeight:180,rolePositions:{},roleSizes:{}};data=body?.action==='validate'?{options:body.options}:{revision:'0',defaultId:'cards-top',items:[{id:'cards-top',name:'卡片',builtin:true,options}]};}
   else if(route==='settings')data=config;
   else if(route==='settings-patch'){for(const[k,v]of Object.entries(body))config[k]={...config[k],...v};data={ok:true};}
@@ -47,7 +50,7 @@ async function fixture(existing=null,mode='simple',broken=false){
   else if(route==='visual-pack-preview')data={token:'test-preview',revision:'test-revision',count:1,conflicts:1,bytes:100,entries:[{title:'人物参考',category:'size',media:true,conflict:true}]};
   else if(route==='visual-pack-cancel')data={ok:true};
   else if(route==='visual-pack-apply')data={rows:[],imported:1,skipped:0};
-  else if(route==='visual-references')data=[];
+  else if(route==='visual-references')data=visualRows;
   else if(route==='reverse-templates')data={};
   else if(route==='new-project'){if(project)projectSnapshots.set(project.projectId,copy(project));project=body.example?copy(sample):{version:1,projectId:'new-project',title:body.title||'新导演项目',script:'',aspect:'16:9',fps:24,segments:[{id:'s1',title:'片段 01',duration:15,shots:[],refs:[]}],assets:[],media:{},originalZip:''};projectSnapshots.set(project.projectId,copy(project));data=project;}
   else if(route==='import-project'){project=copy(body.project);data=project;}
@@ -60,7 +63,7 @@ async function fixture(existing=null,mode='simple',broken=false){
  };
  for(const match of html.matchAll(/<script src="([^"?]+)/g))require('node:vm').runInContext(fs.readFileSync(path.join(root,'web',match[1]),'utf8'),dom.getInternalVMContext(),{filename:match[1]});
  await pause();
- return {dom,w,calls,errors,set failRebuild(v){failRebuild=v},set tasks(v){remoteTasks=v},get project(){return project},get config(){return config},el:id=>w.document.getElementById(id)};
+ return {dom,w,calls,errors,set visualRows(v){visualRows=v},set libraryRows(v){libraryRows=v},set failRebuild(v){failRebuild=v},set tasks(v){remoteTasks=v},get project(){return project},get config(){return config},el:id=>w.document.getElementById(id)};
 }
 async function creativeCanvasChecks(){
  const f=await fixture(sample,'professional');
@@ -79,6 +82,23 @@ async function creativeCanvasChecks(){
  await click('[data-creator-library]');assert.match(f.el('modalTitle').textContent,/素材库/);f.el('creatorAdd').click();assert(f.el('creatorTitle'));assert(f.el('creatorNote'));assert(f.el('creatorEditCategory'));assert(f.el('creatorFile'));f.w.close();
  assert.equal(f.errors.length,0);console.log('PASS: card geometry, asset aliases, mode restoration, full timeline add shot, one-shot segment, layout and asset library forms');
  }finally{f.dom.window.close()}
+}
+async function v322Checks(){
+ const f=await fixture(copy(sample),'pro');try{await f.w.openFrameOverview();await pause();const d=f.el('overviewDialog');const input=f.el('canvas_segmentPrompt');assert(input.closest('.highlightPrompt'));const text='Camera: 机位\nExpression: 表情\nSound: 音效\nSpatial start: 起点\nSpatial end: 终点\nDialogue: 原文对白\nDialogue language: Cantonese';input.value=text;input.setSelectionRange(3,7);input.dispatchEvent(new f.w.Event('input',{bubbles:true}));for(const name of ['camera','expression','sound','start','end','dialogue','language'])assert(input.closest('.highlightPrompt').querySelector('.syntax-'+name));assert.equal(input.value,text);assert.equal(input.selectionStart,3);assert.equal(input.selectionEnd,7);input.scrollTop=37;input.dispatchEvent(new f.w.Event('scroll'));assert.equal(input.closest('.highlightPrompt').querySelector('pre').scrollTop,37);
+ input.value=sample.segments[0].prompt;input.dispatchEvent(new f.w.Event('input',{bubbles:true}));d.querySelector('[data-inspector-tab="settings"]').click();await pause();const select=d.querySelector('[data-appearance-select="projectShape"]');assert(select);for(const shape of ['circle','rounded','square','diamond','hexagon','chamfer']){select.value=shape;select.dispatchEvent(new f.w.Event('change',{bubbles:true}));assert.equal(d.dataset.projectShape,shape)}await f.w.flush();assert.equal(f.project.overviewLayout.canvas37.appearance.projectShape,'chamfer');d.querySelector('[data-inspector-tab="segment"]').click();await pause();await pause();assert.equal(d.querySelector('.overviewDetail').hidden,false);assert(f.el('canvas_segmentPrompt'));
+ d.querySelector('[data-overview-select="s:'+sample.segments[0].id+'"]').dispatchEvent(new f.w.MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX:950,clientY:600}));await pause();await pause();const open=d.querySelector('[data-submenu-open="view"]'),panel=d.querySelector('[data-submenu="view"]');assert(panel.hidden);open.click();assert(!panel.hidden);assert.equal(open.getAttribute('aria-expanded'),'true');open.dispatchEvent(new f.w.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true}));panel.querySelector('button').dispatchEvent(new f.w.KeyboardEvent('keydown',{key:'ArrowLeft',bubbles:true}));assert(panel.hidden);const manage=d.querySelector('[data-submenu-open="manage"]');manage.dispatchEvent(new f.w.Event('pointerover',{bubbles:true}));assert(!d.querySelector('[data-submenu="manage"]').hidden);assert.equal(f.errors.length,0);console.log('PASS: detailed field colors, segment prompt input/selection/scroll safety, six persistent shapes and click/hover/keyboard submenus');}finally{f.w.close()}
+}
+async function v321Checks(){
+ const p=copy(sample);p.segments[0].planning={warnings:['测试提醒']};const f=await fixture(p,'pro');
+ try{await f.w.openFrameOverview();await pause();const d=f.el('overviewDialog'),map=d.querySelector('.overviewMap'),s=p.segments[0];
+ assert(!d.querySelector('[data-canvas-appearance]'));assert(!d.querySelector('[data-group-command]'));assert.equal(d.querySelector('.projectOrb').textContent,p.title);assert.equal(d.querySelector('.overviewNode.project .nodeLabel b'),null);
+ const right=async node=>{node.dispatchEvent(new f.w.MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX:20,clientY:20}));await pause();await pause()};
+ await right(d.querySelector('[data-overview-select="s:'+s.id+'"]'));assert(d.querySelector('[data-menu-command="plan"].primary'));assert(!d.querySelector('[data-menu-command="group"]'));assert.equal([...d.querySelectorAll('.canvasContextMenu button')].at(-1).dataset.menuCommand,'delete');assert(d.querySelector('[data-menu-command="all"] kbd'));
+ await right(d.querySelector('[data-overview-select="a:'+p.assets[0].id+'"]'));assert(d.querySelector('[data-menu-command="analyze-asset"].primary'));await right(map);assert(!d.querySelector('[data-menu-command="group"]'));
+ d.querySelector('[data-overview-select="s:'+s.id+'"]').click();await pause();assert(f.el('canvas_language'));const check=d.querySelector('.canvasOutputCheck details');assert(check);assert(check.open);check.open=false;check.dispatchEvent(new f.w.Event('toggle'));assert.equal(f.w.localStorage.getItem('frame-check:'+p.projectId+':'+s.id+':测试提醒'),'closed');
+ d.querySelector('[data-overview-select="p:'+s.id+'"]').click();await pause();await pause();const input=f.el('canvas_prompt'),original=input.value;assert(d.querySelector('.promptCopyIcon'));assert(d.querySelector('.promptSyntax'));input.value='<Subject 1> from <Picture 1>\n[0s–15s]\nCamera: 静止';input.dispatchEvent(new f.w.Event('input',{bubbles:true}));assert(d.querySelector('.syntax-subject'));assert(d.querySelector('.syntax-reference'));assert.equal(input.value,'<Subject 1> from <Picture 1>\n[0s–15s]\nCamera: 静止');input.value=original;input.dispatchEvent(new f.w.Event('input',{bubbles:true}));
+ await f.w.openWritingRules();assert(f.el('ruleName'));assert(f.el('ruleText'));f.el('modalActions').firstElementChild.click();await f.w.openStoryPlanner();assert(f.el('wholeStory'));f.el('wholeCount').value='3';f.el('wholeCount').dispatchEvent(new f.w.Event('input'));assert.match(f.el('wholeTotal').textContent,/45/);assert.equal(f.errors.length,0);console.log('PASS: context AI actions and hierarchy, project title, language scope, collapsible checks, syntax preservation, rules and story planner');
+ }finally{f.w.close()}
 }
 async function repairAndInspectorChecks(){
  const p=copy(sample);p.segments[0].planning={warnings:['海浪影响未明确']};const f=await fixture(p,'pro');
@@ -197,9 +217,9 @@ async function optimizationAndLibraryChecks(){
  }finally{f.dom.window.close()}
 }
 async function appearanceChecks(){
- const f=await fixture(sample,'simple');try{f.el('startResume').click();await pause();const d=f.el('overviewDialog');d.querySelector('[data-canvas-appearance]').click();await pause();const panel=d.querySelector('.canvasSettings');assert.equal(panel.hidden,false);assert.equal(f.el('modal').open,false,'Settings are persistent, not a modal');
+ const f=await fixture(sample,'simple');try{f.el('startResume').click();await pause();const d=f.el('overviewDialog');d.querySelector('[data-inspector-tab="settings"]').click();await pause();const panel=d.querySelector('.canvasSettings');assert.equal(panel.hidden,false);assert.equal(f.el('modal').open,false,'Settings are persistent, not a modal');
  const color=panel.querySelector('[data-appearance-color="highlight"]');color.value='#ff8800';color.dispatchEvent(new f.w.Event('input',{bubbles:true}));const bg=panel.querySelector('[data-appearance-color="background"]');bg.value='#102030';bg.dispatchEvent(new f.w.Event('input',{bubbles:true}));
- const pattern=panel.querySelector('[data-appearance-select="pattern"]');pattern.value='lines';pattern.dispatchEvent(new f.w.Event('change',{bubbles:true}));const grid=panel.querySelector('[data-appearance-number="gridSize"]');grid.value='48';grid.dispatchEvent(new f.w.Event('input',{bubbles:true}));assert.equal(d.style.getPropertyValue('--canvas-glow'),'#ff8800');assert.equal(d.dataset.canvasPattern,'lines');assert.equal(d.style.getPropertyValue('--canvas-grid-size'),'48px');await f.w.flush();assert.equal(f.project.overviewLayout.canvas37.appearance.background,'#102030');d.querySelector('[data-overview-close]').click();await pause();await f.w.openFrameOverview();await pause();assert.equal(d.style.getPropertyValue('--canvas-glow'),'#ff8800');d.querySelector('[data-canvas-appearance]').click();await pause();d.querySelector('[data-reset-appearance]').click();await f.w.flush();assert.deepEqual(f.project.overviewLayout.canvas37.appearance,{});assert.equal(d.dataset.canvasPattern,'dots');assert.equal(f.errors.length,0);console.log('PASS: persistent Inspector settings, ranges, colors, persistence and reset');}finally{f.dom.window.close()}
+ const pattern=panel.querySelector('[data-appearance-select="pattern"]');pattern.value='lines';pattern.dispatchEvent(new f.w.Event('change',{bubbles:true}));const grid=panel.querySelector('[data-appearance-number="gridSize"]');grid.value='48';grid.dispatchEvent(new f.w.Event('input',{bubbles:true}));assert.equal(d.style.getPropertyValue('--canvas-glow'),'#ff8800');assert.equal(d.dataset.canvasPattern,'lines');assert.equal(d.style.getPropertyValue('--canvas-grid-size'),'48px');await f.w.flush();assert.equal(f.project.overviewLayout.canvas37.appearance.background,'#102030');d.querySelector('[data-overview-close]').click();await pause();await f.w.openFrameOverview();await pause();assert.equal(d.style.getPropertyValue('--canvas-glow'),'#ff8800');d.querySelector('[data-inspector-tab="settings"]').click();await pause();d.querySelector('[data-reset-appearance]').click();await f.w.flush();assert.deepEqual(f.project.overviewLayout.canvas37.appearance,{});assert.equal(d.dataset.canvasPattern,'dots');assert.equal(f.errors.length,0);console.log('PASS: persistent Inspector settings, ranges, colors, persistence and reset');}finally{f.dom.window.close()}
 }
 async function canvasWorkflowChecks(){
  const source=copy(sample),f=await fixture(source,'professional'),live=()=>f.w.eval('P'),dialog=()=>f.el('overviewDialog'),map=()=>dialog().querySelector('.overviewMap');
@@ -256,7 +276,7 @@ async function multimediaAndGenerationChecks(){
   await f.w.openGenerationSettings();f.el('generationTask').value='mixed';f.el('generationTask').dispatchEvent(new f.w.Event('change'));
   const rows=[...f.el('generationSegments').children];const modes=['r2v','fl2v','i2v','t2v'];for(const [i,row]of rows.entries()){row.querySelector('[data-generation="taskType"]').value=modes[i];for(const key of ['genImage','startImage','endImage'])row.querySelector('[data-generation="'+key+'"]').value=source.assets[0].path;}
   f.el('modalActions').lastElementChild.click();await pause();await pause();assert.equal(live().generation.taskType,'mixed');assert(live().generationManaged);assert.deepEqual(live().segments.map(s=>s.generation.taskType),modes);
-  dialog.querySelector('[data-canvas-appearance]').click();await pause();
+  dialog.querySelector('[data-inspector-tab="settings"]').click();await pause();
   for(const style of ['straight','curve','hidden','orthogonal','default']){const input=dialog.querySelector('.canvasSettings [data-appearance-select="lineStyle"]');input.value=style;input.dispatchEvent(new f.w.Event('change',{bubbles:true}));await pause();assert.equal(dialog.dataset.canvasLineStyle,style);if(style==='hidden')assert.equal(dialog.querySelector('.overviewEdges').style.display,'none');else assert.notEqual(dialog.querySelector('.overviewEdges').style.display,'none');}
   const size=dialog.querySelector('.canvasSettings [data-appearance-number="bodySize"]');size.value='21';size.dispatchEvent(new f.w.Event('input',{bubbles:true}));assert.equal(dialog.style.getPropertyValue('--canvas-body-size'),'21px');
   const flow=dialog.querySelector('[data-appearance-check="flow"]');flow.checked=false;flow.dispatchEvent(new f.w.Event('change',{bubbles:true}));assert.equal(dialog.dataset.canvasFlow,'off');
@@ -338,13 +358,13 @@ async function inspectorWorkflowChecks(){
  f.el('canvas_title').value='自动保存后的片段';f.el('canvas_title').dispatchEvent(new f.w.Event('input',{bubbles:true}));await new Promise(r=>setTimeout(r,1000));await f.w.flush();assert.equal(f.project.segments[0].title,'自动保存后的片段');assert.notEqual(live().generation?.taskType,'mixed','Ordinary edits must not switch generation mode');
  f.el('canvas_genTask').value='i2v';f.el('canvas_genTask').dispatchEvent(new f.w.Event('change',{bubbles:true}));assert.equal(d.querySelector('[data-inline-input="genImage"]').hidden,false);d.querySelector('[data-canvas-field="gen_genImage"]').value=sample.assets[0].path;d.querySelector('[data-canvas-field="gen_genImage"]').dispatchEvent(new f.w.Event('change',{bubbles:true}));await new Promise(r=>setTimeout(r,1000));await f.w.flush();assert.equal(live().generation.taskType,'mixed');assert.equal(live().segments[0].generation.taskType,'i2v');assert.equal(live().segments[1].generation.taskType,'r2v');
  await click('h:'+first.id+':'+first.shots[0].id);const prior=live().segments[0].shots[0].action;f.failRebuild=true;f.el('canvas_action').value='失败后保留的草稿';f.el('canvas_action').dispatchEvent(new f.w.Event('input',{bubbles:true}));await new Promise(r=>setTimeout(r,1000));assert.equal(live().segments[0].shots[0].action,prior);assert.equal(f.el('canvas_action').value,'失败后保留的草稿');assert.match(d.querySelector('.canvasEditStatus').textContent,/失败/);f.failRebuild=false;d.querySelector('[data-canvas-action="save"]').click();await pause();await pause();assert.equal(live().segments[0].shots[0].action,'失败后保留的草稿');
- await click('project');assert(f.el('canvas_language'));assert(!f.el('canvas_fps'));assert.equal(f.el('canvas_language').closest('details'),null);assert.equal(live().fps,sample.fps);
+ await click('project');assert(!f.el('canvas_language'));assert(!f.el('canvas_fps'));await click('s:'+first.id);assert(f.el('canvas_language'));assert.equal(f.el('canvas_language').closest('details').dataset.editorSection,'basic');assert.equal(live().fps,sample.fps);
  const drop=async(target,name,type)=>{const file=new f.w.File([new Uint8Array([137,80,78,71,13,10,26,10,1])],name,{type});const e=new f.w.Event('drop',{bubbles:true,cancelable:true});Object.defineProperty(e,'dataTransfer',{value:{files:[file],types:['Files']}});Object.defineProperty(e,'clientX',{value:400});Object.defineProperty(e,'clientY',{value:350});target.dispatchEvent(e);for(let i=0;i<5;i++)await pause();await f.w.flush()};
  await click('a:'+sample.assets[0].id);const oldPath=live().assets[0].path;await drop(map,'public.png','image/png');const pub=live().assets.at(-1);assert.equal(pub.scope,'public');assert.equal(live().assets[0].path,oldPath,'Blank drop adds even with existing asset selected');assert(live().overviewLayout.canvas37.positions['a:'+pub.id]);
  await click('s:'+second.id);const shot=d.querySelector('[data-overview-select="h:'+second.id+':'+second.shots[0].id+'"]');const oldFrame=live().segments[1].shots[0].image;await drop(shot,'local.wav','audio/wav');const local=live().assets.at(-1);assert.equal(local.scope,'segment');assert.equal(local.segmentId,second.id);assert.equal(local.mediaType,'audio');assert.equal(live().segments[1].shots[0].image,oldFrame);assert(!f.w.allScopedAssets(live().segments[0]).includes(local));
  const oldLocalPath=local.path,assetNode=d.querySelector('[data-overview-select="a:'+local.id+'"]');await drop(assetNode,'replacement.wav','audio/wav');assert.equal(live().assets.at(-1).id,local.id);assert.notEqual(live().assets.at(-1).path,oldLocalPath);
  await click('a:'+pub.id);d.querySelector('[data-canvas-action="delete-asset"]').click();await pause();assert.match(f.el('modalTitle').textContent,/删除素材/);f.el('modalActions').lastElementChild.click();for(let i=0;i<4;i++)await pause();await f.w.flush();assert(live().assets.find(a=>a.id===pub.id).deleted);assert(live().media[pub.path]);d.querySelector('[data-restore-asset="'+pub.id+'"]').click();for(let i=0;i<4;i++)await pause();assert.equal(live().assets.find(a=>a.id===pub.id).deleted,false);
- d.querySelector('[data-canvas-appearance]').click();await pause();for(const style of ['pcb','orthogonal','straight','curve','hidden']){const select=d.querySelector('[data-appearance-select="lineStyle"]');select.value=style;select.dispatchEvent(new f.w.Event('change',{bubbles:true}));await pause();assert.equal(d.dataset.canvasLineStyle,style)}
+ d.querySelector('[data-inspector-tab="settings"]').click();await pause();for(const style of ['pcb','orthogonal','straight','curve','hidden']){const select=d.querySelector('[data-appearance-select="lineStyle"]');select.value=style;select.dispatchEvent(new f.w.Event('change',{bubbles:true}));await pause();assert.equal(d.dataset.canvasLineStyle,style)}
  const route=f.w.frameCanvasEdge.path('pcb',0,0,200,100);assert(!route.includes('NaN'));assert.match(route,/L86,0 L100,14/);for(const type of ['chevron2','chevron3','diamond','crosshair','chiseled','pulse'])assert(f.w.frameCanvasEdge.shape(type));assert.equal(f.errors.length,0);console.log('PASS: Inspector tabs, autosave, inline MIXED, visible language, drop routing/replacement, reversible asset deletion and PCB geometry');
  }finally{f.dom.window.close()}
 }
@@ -389,6 +409,47 @@ async function run(){
  await blankPromptPlanningChecks();
  await projectManagementChecks();
  await creativeCanvasChecks();
- await repairAndInspectorChecks();await v319Checks();
+ await presetAndDisclosureChecks();await floatingEditorChecks();await v322Checks();await v321Checks();await repairAndInspectorChecks();await v319Checks();
+}
+async function presetAndDisclosureChecks(){
+ const f=await fixture(sample,'professional');
+ const click=async selector=>{const el=f.w.document.querySelector(selector);assert(el,'Missing '+selector);el.click();await pause();await pause()};
+ const edit=(id,value)=>{const el=f.el(id);el.value=value;el.dispatchEvent(new f.w.Event('input',{bubbles:true}));};
+ try{await f.w.openFrameOverview();await pause();await pause();const d=f.el('overviewDialog'),s=sample.segments[0],story=f.el('canvas_story');story.value='草稿未丢失';story.dispatchEvent(new f.w.Event('input',{bubbles:true}));
+  await click('[data-editor-fold="close"]');assert([...d.querySelectorAll('.canvasEditFields details')].every(el=>!el.open));assert.equal(f.el('canvas_story'),story);assert.equal(story.value,'草稿未丢失');
+  await click('[data-editor-fold="open"]');assert([...d.querySelectorAll('.canvasEditFields details')].every(el=>el.open));
+  await click('[data-manage-preset="story"]');f.el('presetName').value='剧情模板';f.el('presetContent').value='新剧情';f.el('presetShortcut').value='Alt+Shift+1';await click('#presetSave');assert(f.calls.some(c=>c.route==='editor-presets'&&c.body?.name==='剧情模板'));f.w.close();
+  story.focus();story.setSelectionRange(story.value.length,story.value.length);story.dispatchEvent(new f.w.KeyboardEvent('keydown',{code:'Digit1',key:'1',altKey:true,shiftKey:true,bubbles:true,cancelable:true}));await pause();await pause();assert.match(story.value,/新剧情/);
+  await click('[data-overview-select="h:'+s.id+':'+s.shots[0].id+'"]');await click('[data-manage-preset="action"]');f.visualRows=[{id:'custom-action',category:'action',title:'自定义挥手',note:'抬手打招呼'}];await click('#presetRefresh');await click('[data-preset-source="visual"]');f.el('presetCategory').value='action';f.el('presetCategory').dispatchEvent(new f.w.Event('change'));const rows=[...f.el('presetRows').querySelectorAll('article')];rows.find(r=>r.querySelector('b').textContent==='自定义挥手').querySelector('button').click();await pause();await pause();f.w.close();
+  f.visualRows=[{id:'custom-action',category:'action',title:'自定义挥手',note:'使用最新库内容'}];const chip=[...d.querySelectorAll('[data-preset-field="action"] [data-preset-id]')].find(el=>el.textContent==='自定义挥手');chip.click();await pause();await pause();assert.match(f.el('canvas_action').value,/使用最新库内容/);
+  f.visualRows=[];await f.w.frameEditorPresets.reload();await click('[data-floating-next]');await click('[data-floating-prev]');const missing=[...d.querySelectorAll('[data-preset-field="action"] [data-preset-id]')].find(el=>el.textContent==='自定义挥手');assert(missing.disabled,'Deleted library binding is disabled');
+  await click('[data-editor-fold="close"]');await click('[data-floating-next]');assert([...d.querySelectorAll('details[data-editor-section]')].every(el=>!el.open));assert.equal(f.errors.length,0);console.log('PASS: section folding retains live drafts, persisted fold state, custom shortcuts, live library binding and deleted reference handling');
+ }finally{f.dom.window.close()}
+}
+async function floatingEditorChecks(){
+ const f=await fixture(sample,'professional');
+ const click=async selector=>{const el=f.w.document.querySelector(selector);assert(el,'Missing '+selector);el.click();await pause();await pause()};
+ const edit=(id,value)=>{const el=f.el(id);el.value=value;el.dispatchEvent(new f.w.Event('input',{bubbles:true}));};
+ try{
+  await f.w.openFrameOverview();await pause();const d=f.el('overviewDialog'),s=sample.segments[0];
+  await click('[data-overview-select="h:'+s.id+':'+s.shots[0].id+'"]');
+  assert(d.classList.contains('floatingEditorMode'));assert.equal(f.el('canvas_action').closest('.canvasFloatingEditor')!==null,true);
+  const handle=d.querySelector('.floatingEditorHandle');handle.setPointerCapture=()=>{};
+  const pointer=(type,x,y)=>{const e=new f.w.MouseEvent(type,{bubbles:true,clientX:x,clientY:y,button:0});Object.defineProperty(e,'pointerId',{value:1});handle.dispatchEvent(e)};
+  pointer('pointerdown',10,10);pointer('pointermove',50,65);assert.equal(d.querySelector('.canvasFloatingEditor').style.top,'55px');pointer('pointerup',50,65);
+  const firstEnd=Number(f.el('canvas_end').value);edit('canvas_action','floating draft');f.el('canvas_action').focus();
+  f.failRebuild=true;await click('[data-floating-next]');assert.equal(f.el('canvas_action').value,'floating draft');assert.match(d.querySelector('.canvasEditStatus').textContent,/保存失败/);
+  await click('[data-floating-close]');assert.equal(d.querySelector('.canvasFloatingEditor').hidden,false,'Failed saves keep editor open');
+  f.failRebuild=false;await click('[data-floating-next]');assert.equal(f.project.segments[0].shots[0].action,'floating draft');assert.equal(d.querySelector('[data-floating-count]').textContent,'2 / '+s.shots.length);
+  await click('[data-floating-prev]');assert.equal(f.el('canvas_action').value,'floating draft');
+  edit('canvas_end',String(firstEnd+0.1));assert.match(d.querySelector('.floatingShotDuration').textContent,/秒/);assert.equal(d.querySelector('.floatingTimeSuggestion').hidden,false);
+  await click('.floatingTimeSuggestion button');assert.equal(f.project.segments[0].shots[1].start,firstEnd+0.1);
+  const camera=f.el('canvas_camera');camera.setSelectionRange(camera.value.length,camera.value.length);await click('.floatingCameraChips button');assert.match(f.el('canvas_camera').value,/中景/);
+  await click('[data-editor-mode]');assert.equal(d.classList.contains('floatingEditorMode'),false);assert(f.el('canvas_action').closest('.canvasInspector'));assert.equal(JSON.parse(f.w.localStorage.getItem('frame.editor.v1')).mode,'side');
+  await click('[data-editor-mode]');assert(f.el('canvas_action').closest('.canvasFloatingEditor'));await click('[data-floating-close]');assert(d.querySelector('.canvasFloatingEditor').hidden);
+  await click('[data-overview-select="h:'+s.id+':'+s.shots[0].id+'"]');assert.equal(d.querySelector('.canvasFloatingEditor').hidden,false);
+  d.dispatchEvent(new f.w.KeyboardEvent('keydown',{key:'ArrowRight',ctrlKey:true,bubbles:true,cancelable:true}));await pause();await pause();assert.match(d.querySelector('[data-floating-count]').textContent,/^2/);
+  assert.equal(f.errors.length,0);console.log('PASS: floating drag, pager, failed-save navigation/close protection, duration, explicit next-shot alignment, camera chips, shared docking and mode memory');
+ }finally{f.dom.window.close()}
 }
 run().then(()=>process.exit(0)).catch(e=>{console.error(e);process.exit(1)});

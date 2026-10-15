@@ -36,7 +36,7 @@ def previous(s,p,segment):
  return {'segmentId':prev['id'],'title':prev['title'],'story':convert(prev.get('storyText','')),'lastShots':[{k:(map_dialogue_speakers(sh.get(k,''),lambda n:mapping[n] if mapping.get(n) else '未绑定素材 '+str(n)) if k=='dialogue' else convert(sh.get(k,''))) if k in FIELDS else sh.get(k,'') for k in ['start','end',*FIELDS]} for sh in prev.get('shots',[])[-3:]],'endState':convert(last[0].get('endState','')) if last else '', 'uncertainty':'以实际已有镜头文本推导承接；未写明的位置不得视为已确认。缺少上一段素材绑定时提示用户。'}
 def source_document(s,p,segment):
  # No derived planning metadata: survives application, changes with editable sources.
- return canonical_numbers({'story':segment.get('storyText',p.get('script','')),'duration':segment['duration'],'aspect':p.get('aspect'),'intent':p.get('intent') or {},'dialogueLanguage':p.get('dialogueLanguage') or '', 'continuity':bool(segment.get('continuity')),'shots':shot_data(segment),'previous':previous(s,p,segment),'assets':[{'id':a['id'],'number':a.get('pictureNumber',p['assets'].index(a)+1),'signature':assets.signature(a,p['media'])} for a in s.scoped_assets(p,segment)]})
+ return canonical_numbers({'story':segment.get('storyText',p.get('script','')),'duration':segment['duration'],'aspect':p.get('aspect'),'writingRuleIds':segment.get('writingRuleIds',p.get('writingRuleIds',[])),'intent':p.get('intent') or {},'dialogueLanguage':segment.get('dialogueLanguage',p.get('dialogueLanguage')) or '', 'continuity':bool(segment.get('continuity')),'shots':shot_data(segment),'previous':previous(s,p,segment),'assets':[{'id':a['id'],'number':a.get('pictureNumber',p['assets'].index(a)+1),'signature':assets.signature(a,p['media'])} for a in s.scoped_assets(p,segment)]})
 def source_signature(s,p,segment):return hashlib.sha256(text(source_document(s,p,segment)).encode()).hexdigest()
 def legacy_matches(s,p,segment,signature):
  # V2.5/2.6 used JSON numeric representation in the hash. Test the known
@@ -108,7 +108,9 @@ def enqueue(s,body,cached_snapshot=None):
  mode=body.get('mode','quick')
  if mode not in ['quick','review']:raise ValueError('未知拆镜模式')
  if mode=='review' and not seg.get('shots'):raise ValueError('请先生成分镜，再选择深度审查')
- snap={'pipelineVersion':25,'smartRepair':bool(body.get('smartRepair')),'mode':mode,'instruction':instruction,'duration':duration,'sourceSignature':source_signature(s,p,seg),'context':{'request':convert(instruction),'story':convert(seg.get('storyText',p.get('script',''))),'aspect':p.get('aspect'),'segmentTitle':seg['title'],'existingShots':existing,'summary':convert(seg.get('planning',{}).get('summary','')),'intent':p.get('intent',{}),'dialogueLanguage':p.get('dialogueLanguage',''),'previousSegment':previous(s,p,seg),'referenceDescriptions':[{'picture':n,'name':a['name'],'kind':a['kind'],'description':convert(generation_description(a)['generation']),'uncertainties':generation_description(a)['uncertainties'],'confirmedBy':a['confirmation']['mode'],'sceneLayout':{k:convert(v) for k,v in scene_layout(a).items()}} for n,a in enumerate(active,1)]},'originalShots':copy.deepcopy(seg.get('shots',[])) if mode=='review' else [],'refNumbers':[a.get('pictureNumber',p['assets'].index(a)+1) for a in active]}
+ snap={'pipelineVersion':25,'smartRepair':bool(body.get('smartRepair')),'mode':mode,'instruction':instruction,'duration':duration,'sourceSignature':source_signature(s,p,seg),'context':{'request':convert(instruction),'story':convert(seg.get('storyText',p.get('script',''))),'aspect':p.get('aspect'),'segmentTitle':seg['title'],'existingShots':existing,'summary':convert(seg.get('planning',{}).get('summary','')),'intent':p.get('intent',{}),'dialogueLanguage':seg.get('dialogueLanguage',p.get('dialogueLanguage','')),'previousSegment':previous(s,p,seg),'referenceDescriptions':[{'picture':n,'name':a['name'],'kind':a['kind'],'description':convert(generation_description(a)['generation']),'uncertainties':generation_description(a)['uncertainties'],'confirmedBy':a['confirmation']['mode'],'sceneLayout':{k:convert(v) for k,v in scene_layout(a).items()}} for n,a in enumerate(active,1)]},'originalShots':copy.deepcopy(seg.get('shots',[])) if mode=='review' else [],'refNumbers':[a.get('pictureNumber',p['assets'].index(a)+1) for a in active]}
+ import writing_backend
+ snap['context']['writingRules']=writing_backend.selected(s,p,seg)
  snap['sourceDocument']=source_document(s,p,seg)
  if cached_snapshot and cached_snapshot.get('modelResponse'):
   if cached_snapshot.get('sourceSignature')!=snap['sourceSignature'] or cached_snapshot.get('mode')!=mode:raise ValueError('来源已变化，不能复用旧输出；请核对后通过 AI 拆镜提交新任务')
@@ -208,6 +210,7 @@ def analyze(s,cfg,snapshot,payload):
  p=s.load_project();seg=next((v for v in p.get('segments',[]) if v['id']==payload.get('segmentId')),None) if p and p['projectId']==payload.get('projectId') else None
  if not seg or (source_signature(s,p,seg)!=snapshot['sourceSignature'] and not (not snapshot.get('sourceDocument') and legacy_matches(s,p,seg,snapshot['sourceSignature']))):raise ValueError('剧本、素材说明或上一段已改变，请重新提交')
  context=copy.deepcopy(snapshot['context']);context.update(duration=snapshot['duration'],request=context.get('request',snapshot['instruction']))
+ context['rulePolicy']='Writing rules are style guidance only. Story, dialogue, timing, reference numbering and required output schema have priority.'
  for item in context.get('referenceDescriptions',[]):
   projection=generation_description(item)
   item['description']=projection['generation']
@@ -290,7 +293,7 @@ def apply(s,body):
   seg['prompt']=''
   seg['shots']=shots;seg['planning']={'summary':normalize(result['summary'],lambda n:numbers[n-1]),'warnings':result['warnings'],'mode':result['mode'],'reviewedAt':__import__('time').strftime('%Y-%m-%d %H:%M:%S')}
   refs=[{'index':a.get('pictureNumber',p['assets'].index(a)+1),'name':a['name'],'kind':a['kind'],'description':a.get('description','')} for a in s.scoped_assets(p,seg)]
-  seg['prompt']=s.rebuild({**seg,'defaultDialogueLanguage':p.get('dialogueLanguage',''),'assetReferences':refs})
+  seg['prompt']=s.rebuild({**seg,'defaultDialogueLanguage':seg.get('dialogueLanguage',p.get('dialogueLanguage','')),'assetReferences':refs})
   seg['planning']['sourceSignature']=source_signature(s,p,seg);s.save(p)
  m.patch(row['id'],appliedAt=__import__('time').strftime('%Y-%m-%d %H:%M:%S'))
  blocked=any(i['severity']=='error' for i in quality(s,p,seg))

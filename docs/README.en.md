@@ -2,13 +2,23 @@
 
 A local planning workspace for assets, scripts, shot lists, H3 prompts and manually uploaded clip records.
 
-**V3.20 Beta 1. Publicly visible source. All rights reserved.** No open-source permission is granted at this time.
+**V3.24 Beta 1. Publicly visible source. All rights reserved.** No open-source permission is granted at this time.
 
-[Download Windows EXE — no Python required](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.20-beta.1/FRAME-Workbench-Windows-x64-v3.20-beta.1.exe) · [All releases](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases)
+[Download Windows EXE — no Python required](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.24-beta.1/FRAME-Workbench-Windows-x64-v3.24-beta.1.exe) · [All releases](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases)
 
 [Chinese step-by-step tutorial](quick-start.md) · [Troubleshooting](faq.md) · [Importable sample pack](../presets/starter-project.mmxpack.zip)
 
-The README shows the actual V3.16 canvas with inline segment generation settings and a persistent inspector. The built-in Cyber Cultivation v5 sample includes two reference images, four segments, twelve shots and one existing video. Opening it needs no AI connection and backs up the current project. Director-pack export retains the media and storyboard.
+The Chinese README includes actual V3.24 floating-editor and preset-management screenshots. The built-in Cyber Cultivation v5 sample includes two reference images, four segments, twelve shots and one existing video. Opening it needs no AI connection and backs up the current project. Director-pack export retains the media and storyboard.
+
+## V3.24 updates
+
+Drag and resize a floating editor for segments, shots, assets and final prompts, or dock it to the Inspector. Previous/next controls and Ctrl+Left/Right switch shots with save-failure protection.
+
+Create, rename, edit, order and remove text presets, assign Alt+Shift+1–9 within the matching field, and bind visual-reference or asset-library entries. Insertion reads the latest library text without adding media. Check reference-number meaning against the current segment. Collapsible sections retain live drafts and remember their state; collapsed output checks keep a warning count.
+
+This public version also includes whole-story AI planning with preview-before-append, reusable writing rules, detailed prompt syntax colors, six root-node shapes and nested context menus from V3.21–V3.23. It does not directly execute Codex skills or add a ComfyUI queue bridge. Local checks passed: 57 backend tests, 20 DOM integration groups and an isolated Windows EXE self-test. Real AI output quality and GPU rendering were not tested in this update.
+
+![V3.24 text presets](assets/screenshots/editor-presets-v3.24.jpg)
 
 ## V3.20 updates
 
