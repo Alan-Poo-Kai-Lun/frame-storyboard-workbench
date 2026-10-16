@@ -16,7 +16,7 @@ function refreshMentionEditors(){
       const update=()=>{
         const cs=getComputedStyle(input);for(const k of ['fontFamily','fontSize','fontWeight','lineHeight','letterSpacing','paddingTop','paddingRight','paddingBottom','paddingLeft','textAlign'])mirror.style[k]=cs[k];
         mirror.style.top=(input.offsetTop+1)+'px';mirror.style.left=(input.offsetLeft+1)+'px';mirror.style.width=input.clientWidth+'px';mirror.style.height=input.clientHeight+'px';
-        mirror.innerHTML='<div>'+highlightMentions(input.value,'group')+'\n</div>';
+        mirror.innerHTML='<div>'+highlightMentions(input.value,input.dataset.mentionContext==='project'?'workspace':'group')+'\n</div>';
         mirror.firstElementChild.style.transform=`translate(${-input.scrollLeft}px,${-input.scrollTop}px)`;
       };
       input._mentionUpdate=update;input.addEventListener('input',update);input.addEventListener('scroll',update);if(typeof ResizeObserver!=='undefined'){input._mentionObserver=new ResizeObserver(update);input._mentionObserver.observe(input)}

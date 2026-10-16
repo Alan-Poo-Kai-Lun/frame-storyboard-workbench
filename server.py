@@ -72,7 +72,8 @@ def archive_shots(segment,reason):
 def load_project():
     with LOCK:
         if not STATE.exists(): return None
-        p=json.loads(STATE.read_text('utf-8'))
+        import asset_lifecycle
+        p=asset_lifecycle.normalize(json.loads(STATE.read_text('utf-8')))
         if not p.get('projectId'): p['projectId']=uid(); save(p)
         return p
 def backup_project():
@@ -104,10 +105,11 @@ def create_project(example=False,title=''):
 def import_project(p):
     """Read the portable FRAME JSON backup before replacing the current project."""
     if not isinstance(p,dict) or p.get('version')!=1:raise ValueError('项目备份格式无效')
-    p=copy.deepcopy(p)
+    import asset_lifecycle
+    p=asset_lifecycle.normalize(copy.deepcopy(p))
     if not isinstance(p.get('title'),str) or not isinstance(p.get('script'),str) or not isinstance(p.get('aspect'),str):raise ValueError('项目基础字段无效')
     segments=p.get('segments');assets=p.get('assets');media=p.get('media')
-    if not isinstance(segments,list) or not segments or len(segments)>500 or not isinstance(assets,list) or len(assets)>2000 or not isinstance(media,dict):raise ValueError('项目片段、素材或媒体格式无效')
+    if not isinstance(segments,list) or len(segments)>500 or not isinstance(assets,list) or len(assets)>2000 or not isinstance(media,dict):raise ValueError('项目片段、素材或媒体格式无效')
     if isinstance(p.get('fps'),bool) or not isinstance(p.get('fps'),(int,float)) or not math.isfinite(p['fps']) or not 1<=p['fps']<=120:raise ValueError('项目帧率无效')
     ids=set()
     def identity(obj):
@@ -182,7 +184,7 @@ def readzip(blob):
             path=video.get('path','')
             if path in files:media[path]=base64.b64encode(files[path]).decode()
     shared=json.loads(files.get('shared_params/shared_params.json',b'{}'))
-    project={'overviewLayout':side.get('overviewLayout',{}),'storySeparated':side.get('storySeparated',False),'dialogueLanguage':side.get('dialogueLanguage',''),'writingRuleIds':side.get('writingRuleIds',[]),'intent':side.get('intent',{}),'groupAssetsCollapsed':side.get('groupAssetsCollapsed',{}),'nextPictureNumber':side.get('nextPictureNumber',1),'showDeletedAssets':side.get('showDeletedAssets',False),'assetsManaged':side.get('assetsManaged',False),'assetsCollapsed':side.get('assetsCollapsed',False),'version':1,'projectId':uid(),'title':side.get('title','导入的导演项目'),'script':side.get('script',''),'aspect':side.get('aspect',aspect_from_output(pack.get('output',{}))),'fps':timeline.get('frameRate',24),'segments':segs,'assets':side.get('assets') or [{**r,'id':uid(),'name':f'Picture {r.get("index",i)+1}','kind':'人物','path':r.get('imageFile',''),'locked':True} for i,r in enumerate(shared.get('refs',[]))],'media':media,'originalZip':base64.b64encode(blob).decode()}
+    project={'overviewLayout':side.get('overviewLayout',{}),'storySeparated':side.get('storySeparated',False),'dialogueLanguage':side.get('dialogueLanguage',''),'writingRuleIds':side.get('writingRuleIds',[]),'storyPlans':side.get('storyPlans',[]),'intent':side.get('intent',{}),'groupAssetsCollapsed':side.get('groupAssetsCollapsed',{}),'nextPictureNumber':side.get('nextPictureNumber',1),'showDeletedAssets':side.get('showDeletedAssets',False),'assetsManaged':side.get('assetsManaged',False),'assetsCollapsed':side.get('assetsCollapsed',False),'version':1,'projectId':uid(),'title':side.get('title','导入的导演项目'),'script':side.get('script',''),'aspect':side.get('aspect',aspect_from_output(pack.get('output',{}))),'fps':timeline.get('frameRate',24),'segments':segs,'assets':side.get('assets') or [{**r,'id':uid(),'name':f'Picture {r.get("index",i)+1}','kind':'人物','path':r.get('imageFile',''),'locked':True} for i,r in enumerate(shared.get('refs',[]))],'media':media,'originalZip':base64.b64encode(blob).decode()}
     project['directorGuide']=guide_settings({'directorGuide':side.get('directorGuide',{})},pack.get('output',{}))
     if not side.get('assetsManaged'):
         for segment in segs:
@@ -557,7 +559,7 @@ def export_pack(p,force=False):
     if workspace is not None: workspace.setdefault('globalCommon',{})['refs']=copy.deepcopy(existing)
     files['timeline.json']=json.dumps(tl,ensure_ascii=False,indent=2).encode()
     generation_backend.export(files,p,pack,tl,scoped_assets)
-    side={k:p.get(k) for k in ['generation','generationManaged','sourceVideo','sourceVideoClips','version','title','script','aspect','assets','assetsManaged','assetsCollapsed','nextPictureNumber','showDeletedAssets','groupAssetsCollapsed','intent','writingRuleIds','dialogueLanguage','storySeparated','directorGuide','overviewLayout']}
+    side={k:p.get(k) for k in ['generation','generationManaged','sourceVideo','sourceVideoClips','version','title','script','aspect','assets','assetsManaged','assetsCollapsed','nextPictureNumber','showDeletedAssets','groupAssetsCollapsed','intent','writingRuleIds','dialogueLanguage','storySeparated','directorGuide','overviewLayout','storyPlans']}
     side['directorGuide']=guide_settings(p,pack.get('output',{}))
     side['segments']=[{**{k:s[k] for k in ['generation','id','title','shots','storyText','storyHistory','videos','planning','promptHistory','continuity','guideFromPrev','shotHistory','dialogueLanguage','writingRuleIds','promptTranslations','promptExportLanguage'] if k in s},'workingPrompt':s['prompt'],'promptHash':digest(output[i]['prompt'])} for i,s in enumerate(p['segments'])]
     files['storyboard.json']=json.dumps(side,ensure_ascii=False,indent=2).encode()
@@ -611,6 +613,9 @@ def _unload_model(cfg):
 def save(p):
     import project_store
     with LOCK:
+        import asset_lifecycle
+        previous=json.loads(STATE.read_text('utf-8')) if STATE.exists() else None
+        asset_lifecycle.normalize(p,previous)
         project_store.before_save(DATA,STATE,p)
         temp=STATE.with_suffix('.tmp');temp.write_text(json.dumps(p,ensure_ascii=False),'utf-8');temp.replace(STATE)
         project_store.after_save(DATA,STATE,p)
@@ -673,11 +678,26 @@ class Handler(BaseHTTPRequestHandler):
                     if not row:raise ValueError('参考媒体不存在')
                     raw=(DATA/'reference-media'/name).read_bytes()
                 return self.respond(raw,mime=row['mime'],inline=True)
+            if route=='/example-thumbnail':
+                import project_hub
+                with LOCK:
+                    example=readzip((ROOT/'presets/starter-project.mmxpack.zip').read_bytes());url=project_hub.thumbnail(DATA,example)
+                    if not url:raise ValueError('示例封面不可用')
+                    return self.respond((DATA/'project-thumbnails'/url.rsplit('/',1)[-1]).read_bytes(),mime='image/jpeg',inline=True)
+            if route.startswith('/project-thumbnail/'):
+                name=route.removeprefix('/project-thumbnail/')
+                if not re.fullmatch(r'[a-f0-9]{64}\.jpg',name):raise ValueError('缩略图地址无效')
+                path=DATA/'project-thumbnails'/name
+                if path.is_symlink():raise ValueError('缩略图路径无效')
+                return self.respond(path.read_bytes(),mime='image/jpeg',inline=True)
             if route.startswith('/asset-library-media/'):
                 import creative_library
                 with LOCK:raw,mime=creative_library.media_file(DATA,route.removeprefix('/asset-library-media/'))
                 return self.respond(raw,mime=mime,inline=True)
             if route.startswith('/api/') and not self.valid(): return self.respond({'error':'请求验证失败'},403)
+            if route=='/api/appearance-presets':
+                import appearance_presets
+                with LOCK:return self.respond(appearance_presets.listing(DATA))
             if route in ['/api/asset-library','/api/layout-presets']:
                 import creative_library
                 with LOCK:return self.respond(creative_library.library(DATA) if route.endswith('asset-library') else creative_library.presets(DATA))
@@ -723,17 +743,31 @@ class Handler(BaseHTTPRequestHandler):
                 import reference_packs
                 with LOCK:return self.respond(reference_packs.preview(DATA,raw))
             body=json.loads(raw or b'{}')
+            if route=='/api/appearance-presets':
+                import appearance_presets
+                with LOCK:return self.respond(appearance_presets.update(DATA,body))
             if route in ['/api/asset-library','/api/asset-library-apply','/api/layout-presets']:
                 import creative_library
                 with LOCK:
                     if route.endswith('apply'):return self.respond(creative_library.apply_asset(sys.modules[__name__],body))
-                    return self.respond(creative_library.update_asset(DATA,body) if route.endswith('asset-library') else creative_library.update_preset(DATA,body))
+                    if route.endswith('asset-library'):
+                        result=creative_library.update_asset(DATA,body)
+                        if body.get('action')=='category':
+                            import project_hub
+                            project_hub.rename_category(sys.modules[__name__],body['name'],'未分类' if body.get('remove') else body.get('newName') or body['name'])
+                        return self.respond(result)
+                    return self.respond(creative_library.update_preset(DATA,body))
             if route=='/api/canvas-layout':
                 with LOCK:
                     p=load_project();layout=body.get('layout')
                     if not p or p['projectId']!=body.get('projectId'):raise ValueError('项目已切换，布局未覆盖新项目')
                     if not isinstance(layout,dict) or len(json.dumps(layout))>1024*1024:raise ValueError('布局无效或过大')
                     p['overviewLayout']=layout;save(p);return self.respond({'ok':True})
+            if route in ['/api/project-action','/api/project-download']:
+                import project_hub
+                with LOCK:
+                    if route.endswith('project-action'):return self.respond(project_hub.action(sys.modules[__name__],body))
+                    project=project_hub.read(DATA,STATE,body.get('projectId'));return self.respond(export_pack(project,force=body.get('force') is True),mime='application/zip')
             if route in ['/api/project-open','/api/projects-recover','/api/projects-delete','/api/project-restore']:
                 import project_store
                 with LOCK:
@@ -775,9 +809,13 @@ class Handler(BaseHTTPRequestHandler):
             if route=='/api/editor-presets':
                 import editor_presets
                 return self.respond(editor_presets.library(sys.modules[__name__],body))
-            if route in ['/api/writing-rules','/api/story-plan','/api/story-apply']:
+            if route in ['/api/agent-threads','/api/agent-info','/api/agent-send','/api/agent-apply','/api/agent-undo']:
+                import agent_backend as agent
+                action={'/api/agent-threads':agent.thread_action,'/api/agent-info':agent.info,'/api/agent-send':agent.enqueue,'/api/agent-apply':agent.apply,'/api/agent-undo':agent.undo}[route]
+                return self.respond(action(sys.modules[__name__],body))
+            if route in ['/api/writing-rules','/api/story-plan','/api/story-restore','/api/story-apply']:
                 import writing_backend as writing
-                action={'/api/writing-rules':writing.library,'/api/story-plan':writing.enqueue,'/api/story-apply':writing.apply}[route]
+                action={'/api/writing-rules':writing.library,'/api/story-plan':writing.enqueue,'/api/story-restore':writing.restore,'/api/story-apply':writing.apply}[route]
                 return self.respond(action(sys.modules[__name__],body))
             if route in ['/api/prompt-translate','/api/prompt-translations','/api/prompt-translation-save','/api/prompt-export-language']:
                 import prompt_translation as translation

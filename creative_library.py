@@ -99,6 +99,7 @@ def update_asset(data,body):
         if replacement not in store['categories']:store['categories'].append(replacement)
         for row in store['items']:
             if row['category']==name:row['category']=replacement
+            if row.get('kind')==name:row['kind']=replacement
     elif action in ['delete','restore','favorite']:
         if not old:raise ValueError('素材已不存在')
         if action=='favorite':old['favorite']=not old.get('favorite',False)
@@ -106,7 +107,7 @@ def update_asset(data,body):
     elif action=='save':
         if key and not old:raise ValueError('素材已不存在')
         row={**(old or {}),'id':key or uuid.uuid4().hex,'title':_text(body.get('title'),'素材名称',100),'note':_text(body.get('note',''),'素材说明',10000,False),'category':_text(body.get('category','未分类'),'分类',60),'kind':body.get('kind','人物'),'updatedAt':time.strftime('%Y-%m-%d %H:%M:%S')}
-        if row['kind'] not in ['人物','场景','道具','风格','声音','视频']:raise ValueError('素材用途类型无效')
+        row['kind']=_text(row['kind'],'素材分类',60)
         if body.get('media'):row.update(_media(data,body['media']))
         if body.get('removeMedia'):
             for field in ['mediaFile','mime','mediaType']:row.pop(field,None)
@@ -133,6 +134,6 @@ def apply_asset(s,body):
     if scope not in ['public','segment'] or scope=='segment' and not any(v['id']==sid for v in p['segments']):raise ValueError('素材归属无效')
     raw,mime=media_file(s.DATA,row['mediaFile']);ident=s.uid();path='extra/library_assets/'+ident+'.'+row['mediaFile'].split('.')[-1]
     number=max([int(a.get('pictureNumber',0)) for a in p['assets']]+[int(p.get('nextPictureNumber',1))-1])+1
-    asset={'id':ident,'name':row['title'],'description':row['note'],'kind':row['kind'],'mediaType':row['mediaType'],'path':path,'scope':scope,'segmentId':sid if scope=='segment' else '','pictureNumber':number,'librarySourceId':row['id']}
+    asset={'id':ident,'name':row['title'],'description':row['note'],'kind':row.get('category',row['kind']),'mediaType':row['mediaType'],'path':path,'scope':scope,'segmentId':sid if scope=='segment' else '','pictureNumber':number,'librarySourceId':row['id']}
     p['media'][path]=base64.b64encode(raw).decode();p['assets'].append(asset);p['nextPictureNumber']=number+1;p['assetsManaged']=True;s.save(p)
     return {'project':p,'assetId':ident}

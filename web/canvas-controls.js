@@ -7,20 +7,27 @@ window.createFrameCanvasControls=function(o){
  const box=document.createElement('div');box.className='canvasSelectionBox';box.hidden=true;map.append(box);
  const toolbar=dialog.querySelector('.overviewToolbar');
  const appearanceButton=document.createElement('button');appearanceButton.type='button';appearanceButton.textContent='画布外观';appearanceButton.dataset.canvasAppearance='';
- const colors={background:'--canvas-background',node:'--canvas-node-bg',highlight:'--canvas-glow',grid:'--canvas-grid-color',titleColor:'--canvas-title-color',bodyColor:'--canvas-body-color',captionColor:'--canvas-caption-color',lineColor:'--canvas-line-color',arrowColor:'--canvas-arrow-color'};
+ const colors=frameAppearance.colors,readAppearance=o.appearance,writeAppearance=o.setAppearance;
+ o.appearance=()=>frameAppearance.resolve(readAppearance());
+ o.setAppearance=next=>writeAppearance(frameAppearance.edit(readAppearance(),next));
+ writeAppearance(frameAppearance.activate(readAppearance()));
+ const themeObserver=new MutationObserver(()=>{if(!active())return;writeAppearance(frameAppearance.activate(readAppearance()));applyAppearance();o.measure();const panel=dialog.querySelector('.canvasSettings');if(panel&&!panel.hidden&&getComputedStyle(panel.closest('.canvasFloatingEditor')||panel).display!=='none'){const name=panel.querySelector('[data-appearance-profile-name]')?.value||'';appearance();panel.querySelector('[data-appearance-profile-name]').value=name}});
+ themeObserver.observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});signal.addEventListener('abort',()=>themeObserver.disconnect());
+
  function applyAppearance(){
-  const a=o.appearance();dialog.dataset.projectShape=['circle','rounded','square','diamond','hexagon','chamfer'].includes(a.projectShape)?a.projectShape:'circle';for(const[key,css]of Object.entries(colors)){if(/^#[0-9a-f]{6}$/i.test(a[key]||''))dialog.style.setProperty(css,a[key]);else dialog.style.removeProperty(css)}
+  const a=o.appearance();dialog.dataset.projectShape=['circle','rounded','square','diamond','hexagon','chamfer','film','octagon','pill','badge'].includes(a.projectShape)?a.projectShape:'circle';for(const[key,css]of Object.entries(colors)){if(/^#[0-9a-f]{6}$/i.test(a[key]||''))dialog.style.setProperty(css,a[key]);else dialog.style.removeProperty(css)}
   if(Number.isFinite(a.gridSize)&&a.gridSize>=8&&a.gridSize<=160)dialog.style.setProperty('--canvas-grid-size',a.gridSize+'px');else dialog.style.removeProperty('--canvas-grid-size');
   for(const[key,min,max,defaultValue]of [['titleSize',10,48,16],['bodySize',10,36,15],['captionSize',9,28,12]]){const value=Number(a[key]);dialog.style.setProperty('--canvas-'+key.replace('Size','-size'),(Number.isFinite(value)&&value>=min&&value<=max?value:defaultValue)+'px')}
-  dialog.style.setProperty('--canvas-flow-duration',(6/Math.max(.1,Math.min(5,Number(a.arrowSpeed)||1)))+'s');dialog.dataset.canvasLineStyle=['default','orthogonal','straight','curve','pcb','hidden'].includes(a.lineStyle)?a.lineStyle:'pcb';dialog.dataset.canvasFlow=a.flow===false?'off':'on';dialog.dataset.canvasArrow=a.arrowType||'chevron2';dialog.dataset.canvasImageFit=a.imageFit==='cover'?'cover':'contain';
+  dialog.style.setProperty('--canvas-flow-duration',(6/Math.max(.1,Math.min(5,Number(a.arrowSpeed)||1)))+'s');dialog.dataset.canvasLineStyle=['default','orthogonal','straight','curve','pcb','hidden','rounded','bus','dotted'].includes(a.lineStyle)?a.lineStyle:'pcb';dialog.dataset.canvasFlow=a.flow===false?'off':'on';dialog.dataset.canvasArrow=a.arrowType||'chevron2';dialog.dataset.canvasImageFit=a.imageFit==='cover'?'cover':'contain';
   dialog.dataset.canvasPattern=['dots','lines','none'].includes(a.pattern)?a.pattern:'dots';
  }
  function appearance(){
   const panel=o.settings();panel.innerHTML=frameCanvasSettings(o.appearance(),o.selectedAsset());
   const update=()=>{applyAppearance();o.measure()};
+  frameAppearance.presets(panel,{get:readAppearance,set:writeAppearance,refresh:()=>{update();appearance()}});
   panel.oninput=e=>{const input=e.target,key=input.dataset.appearanceColor||input.dataset.appearanceNumber;if(!key)return;const value=input.type==='color'?input.value:input.valueAsNumber;if(input.type!=='color'&&(!Number.isFinite(value)||value<Number(input.min)||value>Number(input.max)))return;o.setAppearance({...o.appearance(),[key]:value});panel.querySelector('[data-value="'+key+'"]')?.replaceChildren(document.createTextNode(String(value)+(key==='arrowSpeed'?'×':' px')));update()};
   panel.onchange=e=>{const key=e.target.dataset.appearanceSelect||e.target.dataset.appearanceCheck;if(!key)return;o.setAppearance({...o.appearance(),[key]:e.target.type==='checkbox'?e.target.checked:e.target.value});update()};
-  panel.onclick=e=>{if(e.target.closest('[data-reset-appearance]')){o.setAppearance({});applyAppearance();appearance()}};
+  panel.onclick=e=>{if(e.target.closest('[data-reset-appearance]')){writeAppearance(frameAppearance.reset(readAppearance()));applyAppearance();appearance()}};
   for(const input of panel.querySelectorAll('[data-asset-size]'))input.oninput=()=>{const asset=o.selectedAsset();if(!asset)return;const el=o.nodes().get(asset.id),size={w:el.offsetWidth,h:el.offsetHeight};size[input.dataset.assetSize]=input.valueAsNumber;o.setSize(asset.id,size);el.style.width=size.w+'px';el.style.height=size.h+'px';el.classList.add('canvasSized');panel.querySelector('[data-size-value="'+input.dataset.assetSize+'"]').textContent=input.value+' px';o.measure();repaint()};
  }
  applyAppearance();on(appearanceButton,'click',()=>safe(async()=>{if(!active()||!await o.save())return;appearance()}));
@@ -83,6 +90,7 @@ window.createFrameCanvasControls=function(o){
   const edit=groups[0][1],view=groups[1][1],manage=groups[2][1],danger=groups[3][1];
   if(node){edit.push(['edit','编辑所选节点']);if(d?.kind==='segment')edit.push(['plan','AI 拆镜','primary'],['copy-segment','复制整段']);if(d?.kind==='asset')edit.push(['analyze-asset','AI 分析','primary'],['replace-asset','替换素材']);if(d?.kind==='shot')edit.push(['upload-shot','上传 / 替换镜头图']);if(ids.size>1){manage.push(['group','将所选节点编组']);if(o.groups().some(g=>g.members.some(id=>ids.has(id))))manage.push(['ungroup','解除所选布局组'])}if([...ids].some(id=>['segment','shot','asset'].includes(o.descriptor(id)?.kind)))danger.push(['delete',d?.kind==='asset'?'删除素材':'删除所选镜头 / 片段 / 素材','danger']);}
   else edit.push(['add-segment','＋ 新建片段'],['add-public-asset','＋ 添加公共素材'],['upload-video','＋ 上传本片段视频']);
+  if(node&&ids.size===1&&['project','segment','shot','asset','prompt'].includes(d?.kind))edit.unshift(['agent','与 Agent 对话','primary']);
   view.push(['all','全选可见节点'],['clear','取消选择'],['fit','适应全部'],['undo','撤销画布操作']);manage.push(['import-pack','导入导演包'],['export-pack','导出导演包'],['confirm-all-assets','人工确认全部素材']);
   const keys={all:'Ctrl+A',clear:'Esc',delete:'Delete',undo:'Ctrl+Z',group:'Ctrl+G',ungroup:'Ctrl+Shift+G'};
   const button=([cmd,label,style])=>`<button type="button" data-menu-command="${cmd}" class="${style||''}"><span>${label}</span>${keys[cmd]?'<kbd>'+keys[cmd]+'</kbd>':''}</button>`;

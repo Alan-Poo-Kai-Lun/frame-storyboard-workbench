@@ -1,0 +1,27 @@
+/* Project theme palettes and durable, cross-project named presets. */
+window.frameAppearance=(()=>{
+ const colors={background:'--canvas-background',node:'--canvas-node-bg',highlight:'--canvas-glow',grid:'--canvas-grid-color',titleColor:'--canvas-title-color',bodyColor:'--canvas-body-color',captionColor:'--canvas-caption-color',lineColor:'--canvas-line-color',arrowColor:'--canvas-arrow-color',cardBackground:'--canvas-card-bg',cardBorder:'--canvas-card-border'};
+ const defaults={light:{background:'#f0f3f5',node:'#ffffff',highlight:'#187d78',grid:'#ced8df',titleColor:'#243843',bodyColor:'#3f5664',captionColor:'#546b78',lineColor:'#418d88',arrowColor:'#187d78',cardBackground:'#e4ecef',cardBorder:'#a6bdc6'},dark:{background:'#111318',node:'#1a1d24',highlight:'#58cbb8',grid:'#303942',titleColor:'#e4eaf0',bodyColor:'#c0ccd5',captionColor:'#a0b0bd',lineColor:'#58b5a9',arrowColor:'#6bdfc8',cardBackground:'#1b252d',cardBorder:'#41535e'}};
+ const theme=()=>document.documentElement.dataset.theme==='dark'?'dark':'light';
+ const pick=a=>Object.fromEntries(Object.keys(colors).filter(k=>/^#[0-9a-f]{6}$/i.test(a?.[k]||'')).map(k=>[k,a[k]]));
+ function palettes(raw){const result=structuredClone(raw.themeColors||{});if(!raw.themeColors){const c=pick(raw);if(Object.keys(c).length){let owner=raw.activeTheme||theme();if(c.background){const rgb=c.background.slice(1).match(/../g).map(v=>parseInt(v,16));owner=rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722<128?'dark':'light'}result[owner]=c}}return result}
+ function resolve(raw,t=theme()){const rest={...raw};for(const key of Object.keys(colors))delete rest[key];return {...rest,...defaults[t],...(palettes(raw)[t]||{})}}
+ function activate(raw,t=theme()){return {...resolve(raw,t),themeColors:palettes(raw),activeTheme:t}}
+ function edit(raw,next,t=theme()){const p=palettes(raw);p[t]=pick(next);return {...next,themeColors:p,activeTheme:t}}
+ function reset(raw,t=theme()){const p=palettes(raw);delete p[t];return {...defaults[t],themeColors:p,activeTheme:t}}
+ function presets(panel,{get,set,refresh}){
+  const section=document.createElement('section');section.className='appearancePresets';section.innerHTML='<h3>自定义外观方案</h3><p class="muted">包含日间与夜间配色、字体、网格和连线设置，可跨项目套用。</p><label>已保存方案<select data-appearance-profile><option value="">选择方案</option></select></label><label>方案名称<input data-appearance-profile-name maxlength="80" placeholder="例如：暖金分镜"></label><div class="canvasActionRow"><button data-profile-action="apply">套用</button><button data-profile-action="save">另存为新方案</button><button data-profile-action="overwrite">覆盖所选方案</button><button data-profile-action="delete">删除所选方案</button><button data-profile-action="refresh">刷新</button></div><p data-profile-status role="status"></p>';panel.prepend(section);
+  const select=section.querySelector('select'),name=section.querySelector('input'),status=section.querySelector('[data-profile-status]');let store=null,busy=false;
+  function draw(id=select.value){select.innerHTML='<option value="">选择方案</option>'+(store?.items||[]).map(r=>`<option data-user-content value="${esc(r.id)}">${esc(r.name)}${r.builtin?' · 内置':''}</option>`).join('');select.value=id;for(const b of section.querySelectorAll('button'))b.disabled=busy||(!store&&b.dataset.profileAction!=='refresh');window.frameI18n?.apply(section)}
+  async function load(){store=await api('appearance-presets');draw()}
+  select.onchange=()=>{name.value=store?.items.find(r=>r.id===select.value)?.name||''};
+  section.onclick=e=>{const button=e.target.closest('[data-profile-action]');if(!button)return;e.stopPropagation();safe(async()=>{if(busy)return;busy=true;draw();try{const action=button.dataset.profileAction,row=store?.items.find(r=>r.id===select.value);if(action==='refresh'){await load();status.textContent='方案列表已刷新';return}if(action!=='save'&&!row)throw Error('请先选择一个方案');
+    if(action==='apply'){await flush();set(activate(structuredClone(row.appearance)));refresh();await flush();toast('外观方案已套用');return}
+    if(action==='delete'&&!confirm('删除所选外观方案？当前项目配色保留。'))return;
+    if(action==='overwrite'&&!confirm('覆盖所选外观方案？'))return;
+    store=await api('appearance-presets',{action:action==='delete'?'delete':'save',id:action==='save'?undefined:row.id,name:name.value,appearance:activate(get()),revision:store.revision});draw(action==='delete'?'':store.savedId);status.textContent=action==='delete'?'方案已删除':'方案已保存，可跨项目使用';
+   }catch(error){status.textContent=error.message;if(error.message.includes('其他窗口'))await load()}finally{busy=false;if(section.isConnected)draw()}})};
+  safe(async()=>{try{await load()}catch(error){status.textContent=error.message}});
+ }
+ return {colors,defaults,theme,resolve,activate,edit,reset,presets};
+})();

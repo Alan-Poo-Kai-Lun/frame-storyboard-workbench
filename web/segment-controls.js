@@ -25,14 +25,14 @@ async function moveSegment(id,targetId,after=false){
 function deleteSegmentModal(id){
  const source=P?.segments.find(s=>s.id===id);if(!source)return;
  const pid=P.projectId,assets=P.assets.filter(a=>a.scope==='segment'&&a.segmentId===id);
- modal('删除片段 · '+source.title,`<p>将删除「${esc(source.title)}」及 ${source.shots.length} 个镜头，移除 ${assets.length} 张本组素材卡片。</p><p class="notice">公共素材和图片 / 视频文件保留。本段等待或执行中的工作台任务会停止跟踪；ComfyUI 远端任务可能继续生成。可在左侧撤销最近一次删除（本次页面会话内）。</p>`,[{label:'取消',action:close},{label:'删除此片段',class:'danger',action:async()=>{
+ modal('删除片段 · '+source.title,`<p>将删除「${esc(source.title)}」及 ${source.shots.length} 个镜头，保留 ${assets.length} 张本组素材并转为公共素材。</p><p class="notice">公共素材和图片 / 视频文件保留。本段等待或执行中的工作台任务会停止跟踪；ComfyUI 远端任务可能继续生成。可在左侧撤销最近一次删除（本次页面会话内）。</p>`,[{label:'取消',action:close},{label:'删除此片段',class:'danger',action:async()=>{
   if(P?.projectId!==pid)throw Error('项目已切换');await flush();
   const r=await api('tasks'),shotIds=new Set(source.shots.map(h=>h.id));
   for(const row of r.tasks||[])if(row.projectId===pid&&(row.segmentId===id||shotIds.has(row.shotId))&&['waiting','running'].includes(row.status))await api('task-action',{id:row.id,action:'cancel'});
   if(P?.projectId!==pid)throw Error('项目已切换');
   const index=P.segments.findIndex(s=>s.id===id);if(index<0)throw Error('片段已删除');
-  segmentUndo={projectId:pid,segment:structuredClone(P.segments[index]),index,assets:P.assets.map((a,i)=>({asset:a,index:i})).filter(x=>x.asset.scope==='segment'&&x.asset.segmentId===id),continuity:P.segments.map(s=>({id:s.id,value:s.continuity}))};
-  const selected=seg()?.id,oldShot=shotId;P.segments.splice(index,1);P.assets=P.assets.filter(a=>a.scope!=='segment'||a.segmentId!==id);
+  segmentUndo={projectId:pid,segment:structuredClone(P.segments[index]),index,assets:P.assets.map((a,i)=>({asset:structuredClone(a),index:i})).filter(x=>x.asset.scope==='segment'&&x.asset.segmentId===id),continuity:P.segments.map(s=>({id:s.id,value:s.continuity}))};
+  const selected=seg()?.id,oldShot=shotId;P.segments.splice(index,1);retainAssetsAfterSegmentDeletion(new Set([id]));
   if(P.groupAssetsCollapsed)delete P.groupAssetsCollapsed[id];
   keepSegmentSelection(selected===id?P.segments[Math.min(index,P.segments.length-1)]?.id:selected,oldShot);changed();close();render();await flush();toast('已删除片段；左侧可撤销最近一次删除');
  }}]);
@@ -41,7 +41,7 @@ $('undoDeleteSegment').onclick=()=>safe(async()=>{
  const backup=segmentUndo;if(!backup||P?.projectId!==backup.projectId)throw Error('没有可撤销的删除');
  if(P.segments.some(s=>s.id===backup.segment.id))throw Error('片段已存在');
  P.segments.splice(Math.min(backup.index,P.segments.length),0,backup.segment);
- for(const x of backup.assets)if(!P.assets.some(a=>a.id===x.asset.id))P.assets.splice(Math.min(x.index,P.assets.length),0,x.asset);
+ for(const x of backup.assets){const a=P.assets.find(a=>a.id===x.asset.id);if(a&&a.formerSegmentId===backup.segment.id){a.scope=x.asset.scope;a.segmentId=x.asset.segmentId;delete a.formerSegmentId}else if(!a)P.assets.splice(Math.min(x.index,P.assets.length),0,x.asset)}
  for(const c of backup.continuity){const s=P.segments.find(s=>s.id===c.id);if(s)s.continuity=c.value}
  segIndex=P.segments.findIndex(s=>s.id===backup.segment.id);shotId=seg().shots[0]?.id||'';segmentUndo=null;changed();render();await flush();toast('已恢复片段与本组素材；取消的任务需手动重新提交');
 });

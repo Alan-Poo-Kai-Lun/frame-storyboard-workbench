@@ -293,3 +293,7 @@ html:not([data-theme="dark"]) .syntax-weight{color:#92541f}
 @media(max-width:600px){.presetSearch{grid-template-columns:1fr}.editorDisclosureBody{padding:10px}.editorPresetChips button{min-height:36px}}
 
 .canvasEditFields>.editorDisclosure{margin:0}.canvasEditFields>.editorCheckDisclosure{border-color:#bd9b47}.canvasEditFields>.editorCheckDisclosure>summary{color:var(--ink);border-left:3px solid #d8b24e}.editorPresetRow>small{display:block;font-size:11px;color:var(--muted);margin-top:5px}
+
+.assetMentions[popover]{margin:0;right:auto;bottom:auto;color:var(--text);box-sizing:border-box}.writingSelection{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}.writingSelection span{border:1px solid var(--line);padding:5px 9px;border-radius:14px;font-size:12px}#modalBody{min-width:0}#modalBody .mentionEditor{min-width:0;max-width:100%}
+
+.canvasAssetLayer,.canvasStoryLayer{display:contents}.canvasAssetDock{position:absolute;border:1px solid var(--line);background:color-mix(in srgb,var(--canvas-node-bg,var(--bg)) 35%,transparent);border-radius:12px;pointer-events:none;padding:10px 15px;z-index:-1}.canvasAssetDock strong{font-size:14px}.canvasAssetDock small{margin-left:15px;font-size:11px;color:var(--muted)}

@@ -1,0 +1,42 @@
+.frameAgentProject,.frameAgentNode{position:absolute;z-index:28;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 35px #0004;min-width:0}
+.frameAgentProject{bottom:14px;left:50%;transform:translateX(-50%);width:min(720px,calc(100% - 36px));max-height:72%;display:flex;flex-direction:column}
+.frameAgentNode{right:28px;top:130px;width:500px;max-width:calc(100% - 32px);max-height:calc(100% - 160px);resize:both;overflow:auto;z-index:29}
+.frameAgentProject[hidden],.frameAgentNode[hidden],.frameAgentProject [hidden],.frameAgentNode [hidden]{display:none!important}
+.frameAgentHandle{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:9px 12px;border-bottom:1px solid var(--line);flex-shrink:0}
+.frameAgentHandle strong{font-size:14px}.frameAgentHandle small{font-size:11px;color:var(--muted);flex:1}.frameAgentHandle button{font-size:12px;padding:5px 8px}
+.frameAgentNode .frameAgentHandle{cursor:move;touch-action:none;user-select:none}
+.frameAgentProject [data-agent-body]{overflow:auto;min-height:0}.frameAgentNode [data-agent-body]{max-height:340px;overflow:auto}
+.frameAgentHistory{padding:12px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px}
+.frameAgentUser{padding:9px 12px;border-left:2px solid var(--canvas-glow,var(--accent));background:color-mix(in srgb,var(--line) 20%,var(--bg));margin:8px 0}
+.frameAgentReply{margin:10px 0}.frameAgentResult{padding:8px 0;border-bottom:1px solid var(--line)}
+.frameAgentResult details{padding:8px;margin:8px 0}.frameAgentCompare{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}.frameAgentCompare pre{font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto;min-width:0;background:var(--bg);padding:8px}
+.frameAgentComposer{padding:10px 12px;flex-shrink:0}.frameAgentComposer label{font-size:12px}.frameAgentComposer textarea{min-height:55px;max-height:160px;margin-top:5px;font-size:13px;resize:vertical}
+.frameAgentActions{display:flex;gap:7px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:8px}.frameAgentActions>div{display:flex;gap:6px}.frameAgentActions button{font-size:12px;padding:6px 9px}.frameAgentActions .checkrow{margin:0}.frameAgentComposer>small{display:block;font-size:11px;margin-top:7px;color:var(--muted)}
+.frameAgentAttachment{display:flex;align-items:center;gap:10px;padding:10px}.frameAgentAttachment img{width:70px;height:60px;object-fit:contain;border-radius:6px}.frameAgentAttachment span{flex:1;font-size:12px;overflow-wrap:anywhere}.frameAgentEntry{margin:0 0 10px;border-color:var(--canvas-glow,var(--line));font-size:12px}
+.frameAgentImageUse{padding:5px 0;font-size:11px}.frameAgentProject:not(.expanded) .frameAgentComposer textarea{min-height:38px;max-height:72px}.frameAgentProject:not(.expanded) .frameAgentComposer{padding:7px 12px}
+
+@media(max-width:720px){.frameAgentNode{width:calc(100% - 24px);left:12px!important;right:12px;top:90px!important;max-height:calc(100% - 115px);resize:none}.frameAgentProject{width:calc(100% - 24px);bottom:8px;max-height:75%}.frameAgentCompare{grid-template-columns:minmax(0,1fr)}.frameAgentHandle small{flex-basis:100%}}
+
+/* Topic navigation and compact draggable windows. */
+.frameAgentProject{width:min(660px,calc(100% - 36px));max-height:68%;resize:both;overflow:hidden}
+.frameAgentNode{overflow:hidden;display:flex;flex-direction:column}
+.frameAgentProject:not(.expanded),.frameAgentNode:not(.expanded){width:min(340px,calc(100% - 24px))!important;height:auto!important;resize:none}
+.frameAgentProject:not(.expanded) .frameAgentWorkspace,.frameAgentNode:not(.expanded) .frameAgentWorkspace{display:none}
+.frameAgentProject:not(.expanded) .frameAgentHandle small,.frameAgentNode:not(.expanded) .frameAgentHandle small{display:none}
+.frameAgentHandle{cursor:move;touch-action:none;user-select:none;flex-wrap:nowrap}
+.frameAgentHandle strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.frameAgentHandle small{flex:0 1 auto}
+.frameAgentWorkspace{display:flex;min-height:0;flex:1;overflow:hidden}
+.frameAgentMain{display:flex;flex-direction:column;flex:1;min-width:0;min-height:0;overflow:hidden}
+.frameAgentProject [data-agent-body],.frameAgentNode [data-agent-body]{flex:1;max-height:310px;min-height:55px;overflow:auto}
+.frameAgentTopics{width:164px;flex-shrink:0;overflow:auto;padding:7px;border-right:1px solid var(--line);font-size:12px}
+.frameAgentTopics>div:first-child{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px}
+.frameAgentTopics button{font-size:11px;padding:5px 7px}
+.frameAgentTopic{padding:5px 0;border-bottom:1px solid var(--line)}
+.frameAgentTopic>button{width:100%;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.frameAgentTopic>button[aria-pressed=true]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 20%,var(--bg))}
+.frameAgentTopic>div{display:flex;gap:4px;margin-top:4px}
+.frameAgentComposer textarea{min-height:42px;max-height:95px}
+.frameAgentCompare{grid-template-columns:minmax(0,1fr)}
+.frameAgentCompare pre{max-height:160px}
+@media(max-width:720px){.frameAgentTopics{width:130px}.frameAgentHandle small{display:none}.frameAgentProject{max-height:65%}.frameAgentHandle{flex-wrap:nowrap}}

@@ -1,10 +1,12 @@
 # FRAME · 分镜工作台
 
+当前版本：**V3.29 Beta 1** · [12 套内置配色与画布扩展说明](docs/release-v3.29-beta.1.md)。提供独立 ZIP / EXE 包；GitHub 发布页以实际已发布版本为准。
+
 **把故事、参考素材、分镜和成片记录，整理在同一张导演画布里。**
 
-Windows · 本地运行 · V3.24 Beta 1 · 基础分镜无需 AI
+Windows · 本地运行 · V3.29 Beta 1 · 基础分镜无需 AI
 
-### [⬇ 下载 Windows 版（EXE，无需 Python）](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.24-beta.1/FRAME-Workbench-Windows-x64-v3.24-beta.1.exe)
+### [⬇ 下载 GitHub 已发布 Windows 版（EXE，无需 Python）](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.24-beta.1/FRAME-Workbench-Windows-x64-v3.24-beta.1.exe)
 
 [完整更新日志（V2.1–V3.24）](CHANGELOG.md) · [所有版本与更新包](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases) · [新手教程](docs/quick-start.md) · [常见问题](docs/faq.md) · [English](docs/README.en.md)
 

@@ -108,7 +108,15 @@ def enqueue(s,body,cached_snapshot=None):
  mode=body.get('mode','quick')
  if mode not in ['quick','review']:raise ValueError('未知拆镜模式')
  if mode=='review' and not seg.get('shots'):raise ValueError('请先生成分镜，再选择深度审查')
- snap={'pipelineVersion':25,'smartRepair':bool(body.get('smartRepair')),'mode':mode,'instruction':instruction,'duration':duration,'sourceSignature':source_signature(s,p,seg),'context':{'request':convert(instruction),'story':convert(seg.get('storyText',p.get('script',''))),'aspect':p.get('aspect'),'segmentTitle':seg['title'],'existingShots':existing,'summary':convert(seg.get('planning',{}).get('summary','')),'intent':p.get('intent',{}),'dialogueLanguage':seg.get('dialogueLanguage',p.get('dialogueLanguage','')),'previousSegment':previous(s,p,seg),'referenceDescriptions':[{'picture':n,'name':a['name'],'kind':a['kind'],'description':convert(generation_description(a)['generation']),'uncertainties':generation_description(a)['uncertainties'],'confirmedBy':a['confirmation']['mode'],'sceneLayout':{k:convert(v) for k,v in scene_layout(a).items()}} for n,a in enumerate(active,1)]},'originalShots':copy.deepcopy(seg.get('shots',[])) if mode=='review' else [],'refNumbers':[a.get('pictureNumber',p['assets'].index(a)+1) for a in active]}
+ intent=copy.deepcopy(p.get('intent',{}))
+ all_images={a.get('pictureNumber',p['assets'].index(a)+1):a for a in p.get('assets',[]) if not a.get('deleted') and a.get('path') and s.generation_backend.media_type(a)=='image'}
+ def goal_ref(match):
+  n=int(match.group(1))
+  if n in mapping:return '@Picture '+str(mapping[n])
+  a=all_images.get(n)
+  return '【项目素材：'+a.get('name','未命名')+'；当前片段未绑定】' if a else '【项目素材引用已缺失】'
+ if isinstance(intent.get('goal'),str):intent['goal']=__import__('re').sub(r'@?Picture\s+(\d+)\b',goal_ref,intent['goal'],flags=__import__('re').I)
+ snap={'pipelineVersion':25,'smartRepair':bool(body.get('smartRepair')),'mode':mode,'instruction':instruction,'duration':duration,'sourceSignature':source_signature(s,p,seg),'context':{'request':convert(instruction),'story':convert(seg.get('storyText',p.get('script',''))),'aspect':p.get('aspect'),'segmentTitle':seg['title'],'existingShots':existing,'summary':convert(seg.get('planning',{}).get('summary','')),'intent':intent,'dialogueLanguage':seg.get('dialogueLanguage',p.get('dialogueLanguage','')),'previousSegment':previous(s,p,seg),'referenceDescriptions':[{'picture':n,'name':a['name'],'kind':a['kind'],'description':convert(generation_description(a)['generation']),'uncertainties':generation_description(a)['uncertainties'],'confirmedBy':a['confirmation']['mode'],'sceneLayout':{k:convert(v) for k,v in scene_layout(a).items()}} for n,a in enumerate(active,1)]},'originalShots':copy.deepcopy(seg.get('shots',[])) if mode=='review' else [],'refNumbers':[a.get('pictureNumber',p['assets'].index(a)+1) for a in active]}
  import writing_backend
  snap['context']['writingRules']=writing_backend.selected(s,p,seg)
  snap['sourceDocument']=source_document(s,p,seg)

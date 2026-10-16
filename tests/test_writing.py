@@ -40,3 +40,36 @@ class WritingChecks(unittest.TestCase):
  def test_segment_language_overrides_project_and_shot_overrides_segment(self):
   p=server.load_project();p['dialogueLanguage']='粤语';s=p['segments'][0];s['dialogueLanguage']='英语';s['prompt']='timeline:\n[0s-15s]\n你好';s['shots']=[{'id':'h','start':0,'end':15,'action':'站立','dialogue':'你好','sound':'风声'}]
   self.assertIn('Dialogue language: English',server.original_scoped_prompt(p,s));s['shots'][0]['dialogueLanguage']='马来语';self.assertIn('Dialogue language: Malay',server.original_scoped_prompt(p,s));self.assertIn('你好',server.original_scoped_prompt(p,s))
+
+ def test_detailed_rules_and_visibility(self):
+  lib=writing.library(server)
+  self.assertEqual({r['id'] for r in lib['items']},{'fight','slapstick','expression'})
+  for r in lib['items']:self.assertTrue(1000<len(r['rules'])<=6000)
+  lib=writing.library(server,{'action':'visibility','revision':lib['revision'],'id':'fight','hidden':True})
+  self.assertTrue(next(r for r in lib['items'] if r['id']=='fight')['hidden'])
+  self.assertGreater(len(writing.selected(server,self.p,ids=['fight'])[0]['rules']),1000)
+  lib=writing.library(server,{'action':'visibility','revision':lib['revision'],'id':'fight','hidden':False})
+  self.assertFalse(lib['items'][0]['hidden'])
+ def test_ai_receives_full_rules(self):
+  snap=self.snapshot();snap['rules']=writing.selected(server,self.p,ids=['fight','slapstick','expression'])
+  with patch.object(server,'ai_call',return_value=json.dumps(self.output())) as call:
+   writing.analyze(server,{},snap,{})
+  sent=json.loads(call.call_args.args[1][1]['content'])
+  self.assertEqual([r['rules'] for r in sent['rules']],[r['rules'] for r in snap['rules']])
+ def test_local_reference_is_copied_and_remapped(self):
+  p=server.load_project();p['assets']=[{'id':'local','pictureNumber':7,'name':'local','kind':'人物','description':'站立的人','scope':'segment','segmentId':p['segments'][0]['id'],'path':'assets/person.png'}];server.save(p)
+  snap=self.snapshot();snap['refs']=[{'number':7}];obj=self.output();obj['segments'][0]['story']='@Picture 7 走近';obj['segments'][0]['shots'][0]['action']='@Picture 7 走近'
+  result=writing.validate(server,obj,snap);row={'id':'t','type':'story','status':'done','projectId':p['projectId'],'result':result}
+  edits=[{'title':s['title'],'storyText':s['storyText']} for s in result['segments']]
+  with patch('task_backend.manager',return_value=SimpleNamespace(get=lambda i:row,patch=lambda *a,**k:None)):
+   out=writing.apply(server,{'id':'t','segments':edits})['project']
+  self.assertEqual(out['assets'][0],p['assets'][0]);self.assertEqual(out['assets'][1]['pictureNumber'],8)
+  self.assertEqual(out['assets'][1]['segmentId'],out['segments'][-2]['id']);self.assertIn('Picture 8',out['segments'][-2]['storyText'])
+
+ def test_coverage_error_names_segment_and_preserves_raw(self):
+  snap=self.snapshot();obj=self.output();obj['segments'][1]['shots'][0]['end']=4
+  raw=json.dumps(obj,ensure_ascii=False);saved=[]
+  manager=SimpleNamespace(store_input=lambda ident,value:saved.append(copy.deepcopy(value)))
+  with patch.object(server,'ai_call',return_value=raw),patch('task_backend.manager',return_value=manager):
+   with self.assertRaisesRegex(ValueError,'第 2 段.*最后结束 4 秒'):writing.analyze(server,{},snap,{'_taskId':'test'})
+  self.assertEqual(saved[0]['modelResponse'],raw)

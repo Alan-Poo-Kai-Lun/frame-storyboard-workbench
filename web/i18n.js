@@ -1,6 +1,27 @@
 /* UI localization only. Never translates project values, prompts or editable content. */
 (()=>{
  const pairs=`
+项目 Agent|Project Agent
+节点 Agent|Node Agent
+与 Agent 对话 · 定点调整|Chat with Agent · Focused edits
+与 Agent 对话|Chat with Agent
+整个项目 · 给图构思与规划|Whole project · Ideas and planning
+只修改当前节点|Only this node
+向项目 Agent 提问|Ask the project Agent
+定点调整要求|Focused edit request
+发送|Send
+保留对白|Keep dialogue
+＋ 图片|＋ Image
+停止此任务|Stop task
+确认应用修改|Apply changes
+确认将附图入库|Add attached image to assets
+撤销此次修改|Undo this change
+将方案带入整篇规划|Use idea in story planner
+Agent 对话设置|Agent chat settings
+Agent 文字模型|Agent text model
+单次对话模型调用上限|Maximum model calls per message
+填入 Gemini 兼容 API 地址|Use Gemini compatible API endpoint
+
 全部折叠|Collapse all
 全部展开|Expand all
 管理快捷预设|Manage text presets
@@ -810,13 +831,152 @@ AI 生成中文与英文副本|Generate Chinese and English copies with AI
 本段专属参考|Segment-specific reference
 公共参考|Shared reference
 `;
- const dict=Object.fromEntries((pairs+extra+chrome+messages).trim().split('\n').map(line=>{const i=line.indexOf('|');return [line.slice(0,i),line.slice(i+1)]}));
+ const upgrade=`
+胶片画框|Film frame
+八角重装切角框|Heavy octagon
+极简胶囊|Pill
+档案吊牌|Archive badge
+圆角折线|Rounded orthogonal
+共享主干总线|Shared trunk bus
+点阵虚线|Dotted line
+行军蚁|Marching ants
+彗星拖尾|Comet trail
+呼吸微光|Breathing glow
+胶片颗粒微光|Film grain glow
+场记板角标|Clapperboard
+三叉信号头|Trident
+方块终端插头|Square jack
+雷达扇形|Radar arc
+内置|Built-in
+内置方案请另存副本；不能删除内置原件|Save a copy of a built-in profile; the original cannot be deleted
+
+自定义外观方案|Custom appearance profiles
+包含日间与夜间配色、字体、网格和连线设置，可跨项目套用。|Includes light and dark palettes, typography, grid and lines. Reuse across projects.
+即时预览，随项目自动保存。日间与夜间配色分别保留。|Live preview, saved with the project. Light and dark palettes are stored separately.
+已保存方案|Saved profiles
+选择方案|Select a profile
+方案名称|Profile name
+例如：暖金分镜|For example: Warm gold storyboard
+套用|Apply
+另存为新方案|Save as new profile
+覆盖所选方案|Overwrite selected profile
+删除所选方案|Delete selected profile
+卡片容器|Card container
+卡片背景|Card background
+卡片边框|Card border
+方案列表已刷新|Profile list refreshed
+外观方案已套用|Appearance profile applied
+方案已删除|Profile deleted
+方案已保存，可跨项目使用|Profile saved for reuse across projects
+请先选择一个方案|Select a profile first
+删除所选外观方案？当前项目配色保留。|Delete this appearance profile? Current project colors will be preserved.
+覆盖所选外观方案？|Overwrite this appearance profile?
+
+收起|Collapse
+展开|Expand
+参考素材|Reference asset
+剧情节点层|Story graph layer
+片段管理|Segment management
+项目 Agent 对话|Project Agent chat
+节点 Agent 对话|Node Agent chat
+调整左侧面板宽度|Resize left panel
+调整右侧面板宽度|Resize right panel
+可以给图构思方案，或检查整个项目。节点修改请先预览。|Discuss image ideas or review the project. Preview node changes before applying.
+对话已绑定当前节点，默认保留对白。|This chat is bound to the current node. Dialogue is preserved by default.
+修改先预览，确认后应用。模型在设置中配置。|Preview changes before applying. Configure the model in Settings.
+修改先预览，确认后应用。|Preview changes before applying.
+输入想法或添加图片，先讨论方案…|Describe your idea or attach an image to discuss a plan…
+描述当前节点需要修复或调整的内容…|Describe what to fix or adjust in this node…
+确认结果时将附图加入公共素材（默认仅本次讨论）|Add the attachment to shared assets when applying (discussion only by default)
+新话题已创建，与其他话题独立。|New topic created, separate from other conversations.
+已移到对话回收站，素材与已应用的修改保留。|Moved to conversation trash. Assets and applied changes are preserved.
+话题改名|Rename topic
+暂无话题，点击“新话题”。|No topics yet. Choose New topic.
+当前节点已删除，历史对话保留；请在画布选择其他节点继续。|This node was deleted. History is preserved; select another node to continue.
+此话题在回收站，可恢复或新建话题。|This topic is in Trash. Restore it or start a new topic.
+已应用；可撤销|Applied; undo available
+原规划随工程保存。恢复只补齐缺失片段，不调用模型，不覆盖已有编辑。另建副本会明确创建新的片段。|Original plans are saved in the project. Restore missing segments without model calls or overwriting edits, or explicitly create a copy.
+此项目还没有可恢复的规划快照；旧任务可继续查看原结果。|No saved plan snapshots yet. Original results remain available in older tasks.
+另建完整副本？已有片段将保留。|Create a complete copy? Existing segments will be preserved.
+每段秒数|Seconds per segment
+沿用原文|Keep original language
+整体剧情|Whole story
+简体中文|Simplified Chinese
+繁體中文|Traditional Chinese
+未选择技能|No skills selected
+本次整篇规划使用 · 项目默认技能|Skills for this plan · Project defaults
+选择项目写作技能|Select project writing skills
+原规划片段|Original planned segment
+
+已完成，结果可查看|Done; result available
+执行失败|Execution failed
+原片段已删除或未记录位置|Original segment deleted or location unavailable
+原镜头已删除或未记录位置|Original shot deleted or location unavailable
+整篇剧情规划|Whole-story planning
+项目任务|Project task
+规划输出语言|Planning output language
+对白语言|Dialogue language
+原规划与恢复|Original plans and recovery
+原规划与片段恢复|Original plans and segment recovery
+恢复缺失片段|Restore missing segments
+恢复此片段|Restore this segment
+另建完整副本|Create a full copy
+查看原始规划 · 只读|View original plan · Read-only
+查看恢复 / 创建副本|Recovery / Create a copy
+片段已删除|Segment deleted
+已存在|Exists
+全部片段已存在|All segments exist
+媒体格式|Media format
+管理素材分类|Manage asset categories
+素材分类|Asset category
+新增分类|New category
+工作台设置|Workbench settings
+搜索项目|Search projects
+更多项目操作|More project actions
+项目更多操作|More project actions
+网格视图|Grid view
+列表视图|List view
+创建新项目|Create project
+新建空白分镜工程，从一个想法开始。|Start a blank storyboard from one idea.
+导入已有工程|Import project
+支持直接拖拽导演包到此处|Drop a Director Pack here
+官方示例|Official example
+体验示例项目 · 基于示例创建副本|Try the example · Create a copy
+故事大纲|Story outline
+画布编排|Canvas arrangement
+分镜成片|Shots to film
+复制工程副本|Duplicate project
+重命名项目|Rename project
+重命名|Rename
+左侧|Left
+右侧|Right
+浮动|Floating
+属性|Inspector
+展开左侧面板|Expand left panel
+收起左侧面板|Collapse left panel
+停靠到左侧|Dock left
+停靠到右侧|Dock right
+话题|Topics
+新话题|New topic
+＋ 新话题|＋ New topic
+原有对话|Existing conversation
+改名|Rename
+返回话题|Back to topics
+项目素材区|Project assets
+独立于片段|Independent of segments
+原规划片段全部存在；需要副本时请明确选择另建副本|All original segments exist; explicitly choose a copy if needed
+来源已修改：规则检查按当前内容运行；旧 AI 提醒仅供参考，可手动核对或选择深度审查。|Sources changed: checks use current content. Old AI notes are reference only; review manually or run a deep review.
+`;
+ const dict=Object.fromEntries((pairs+extra+chrome+messages+upgrade).trim().split('\n').map(line=>{const i=line.indexOf('|');return [line.slice(0,i),line.slice(i+1)]}));
  let language='zh';try{language=localStorage.getItem('frame-ui-language')==='en'?'en':'zh'}catch{}
  const textSources=new WeakMap(),attrSources=new WeakMap();let running=false,scheduled=false;
  // User text and machine-readable values remain intact, even if they match a UI label.
- const protectedSelector='textarea,input,datalist,script,style,[contenteditable], [data-user-content],.mentionMirror,.canvasDetailHeading h2,[data-floating-title],.canvasProjectHeading h2,.localProjectCard b,.creatorAsset b,.creatorAsset p,.creatorAsset small,#startupResumeTitle,#segmentTitle,#professionalSummary,#viewerTitle,#prompt,#taskResult,.taskResult,.taskRowHead b,.taskRow>small,pre,code,.referenceCard,.shotbody p,#reverseRendered,#planningReviewNotes,.canvasSegmentLink,.generationSegment h3,#assetMentions span,.canvasEditableRefs small,#segments b';
+ const protectedSelector='textarea,input,datalist,script,style,[contenteditable], [data-user-content],.mentionMirror,.canvasDetailHeading h2,[data-floating-title],.canvasProjectHeading h2,.localProjectCard b,.creatorAsset b,.creatorAsset p,.creatorAsset small,#startupResumeTitle,#segmentTitle,#professionalSummary,#viewerTitle,#prompt,#taskResult,.taskResult,pre,code,.referenceCard,.shotbody p,#reverseRendered,#planningReviewNotes,.canvasSegmentLink,.generationSegment h3,#assetMentions span,.canvasEditableRefs small,#segments b';
  const keys=Object.keys(dict).filter(k=>k.length>1).sort((a,b)=>b.length-a.length),pattern=new RegExp(keys.map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|'),'g');
- function translate(text){if(language!=='en')return text;const trim=text.trim();if(dict[trim])return text.replace(trim,dict[trim]);return text.replace(/(\d+(?:\.\d+)?)(\s*)(?:个)?(片段|镜头|素材|视频(?!版本)|秒|条历史)/g,(_,n,space,unit)=>n+' '+({片段:'segments',镜头:'shots',素材:'assets',视频:'videos',秒:'s',条历史:'history entries'})[unit]).replace(pattern,key=>dict[key])}
+ function translate(text){if(language!=='en')return text;const trim=text.trim();if(dict[trim])return text.replace(trim,dict[trim]);
+ text=text.replace(/输出检查 · (\d+) 项/g,'Output checks · $1 items').replace(/预计总时长：(\d+) 秒/g,'Estimated total: $1 s').replace(/输出 (\d+) 字/g,'Output $1 chars').replace(/思考 (\d+) 字/g,'Thinking $1 chars').replace(/模型报告 (\d+) tokens/g,'Model reported $1 tokens').replace(/本步 (\d+) 秒/g,'This stage $1 s').replace(/(\d+) 小时/g,'$1 h').replace(/(\d+) 分(?!镜|钟)/g,'$1 min').replace(/(\d+) 分钟/g,'$1 min').replace(/(\d+) 秒/g,'$1 s').replace(/关闭思考/g,'Thinking off').replace(/模型加载/g,'Model loading');
+ return text.replace(/(\d+(?:\.\d+)?)(\s*)(?:个)?(片段|镜头|素材|视频(?!版本)|秒|条历史)/g,(_,n,space,unit)=>n+' '+({片段:'segments',镜头:'shots',素材:'assets',视频:'videos',秒:'s',条历史:'history entries'})[unit]).replace(pattern,key=>dict[key])}
+
  function apply(root=document.body){if(running||!root)return;running=true;try{
   const nav=document.querySelector('.canvasQuickNav');if(nav&&!nav.querySelector('[data-ui-language]'))nav.append(control());
   const walk=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let node;while(node=walk.nextNode()){const parent=node.parentElement;if(!parent||parent.closest(protectedSelector)||(parent.matches('.nodeLabel b')&&!parent.closest('.overviewNode.shot,.overviewNode.output')))continue;const prior=textSources.get(node),source=prior&&node.nodeValue===prior.applied?prior.source:node.nodeValue;if(parent.tagName==='OPTION'&&!parent.hasAttribute('value'))parent.setAttribute('value',parent.value);const applied=translate(source);textSources.set(node,{source,applied});if(node.nodeValue!==applied)node.nodeValue=applied}

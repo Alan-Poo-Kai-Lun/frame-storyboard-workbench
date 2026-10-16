@@ -1,0 +1,461 @@
+{
+  "schema": 1,
+  "items": [
+    {
+      "id": "builtin-look-01",
+      "name": "DaVinci 工业灰黑（影视标准、最耐看、完全不偏色）",
+      "appearance": {
+        "themeColors": {
+          "dark": {
+            "background": "#0d1117",
+            "node": "#161b22",
+            "highlight": "#388bfd",
+            "grid": "#21262d",
+            "titleColor": "#f1f5f9",
+            "bodyColor": "#cbd5e1",
+            "captionColor": "#94a3b8",
+            "lineColor": "#388bfd",
+            "arrowColor": "#58a6ff",
+            "cardBackground": "#161b22",
+            "cardBorder": "#30363d"
+          }
+        },
+        "activeTheme": "dark",
+        "hierarchy": true,
+        "arrowType": "chevron3",
+        "lineEffect": "neon",
+        "background": "#0d1117",
+        "node": "#161b22",
+        "highlight": "#388bfd",
+        "grid": "#21262d",
+        "titleColor": "#f1f5f9",
+        "bodyColor": "#cbd5e1",
+        "captionColor": "#94a3b8",
+        "lineColor": "#388bfd",
+        "arrowColor": "#58a6ff",
+        "cardBackground": "#161b22",
+        "cardBorder": "#30363d"
+      }
+    },
+    {
+      "id": "builtin-look-02",
+      "name": "暗黑霓虹紫罗兰（前卫动感、独树一帜）",
+      "appearance": {
+        "themeColors": {
+          "dark": {
+            "background": "#0d0c14",
+            "node": "#171522",
+            "highlight": "#a855f7",
+            "grid": "#1f1c2e",
+            "titleColor": "#f5f3ff",
+            "bodyColor": "#e0e7ff",
+            "captionColor": "#8e92af",
+            "lineColor": "#818cf8",
+            "arrowColor": "#c084fc",
+            "cardBackground": "#171522",
+            "cardBorder": "#342f4a"
+          }
+        },
+        "activeTheme": "dark",
+        "hierarchy": false,
+        "arrowType": "chevron3",
+        "lineEffect": "neon",
+        "projectShape": "chamfer",
+        "gridSize": 55,
+        "pattern": "dots",
+        "background": "#0d0c14",
+        "node": "#171522",
+        "highlight": "#a855f7",
+        "grid": "#1f1c2e",
+        "titleColor": "#f5f3ff",
+        "bodyColor": "#e0e7ff",
+        "captionColor": "#8e92af",
+        "lineColor": "#818cf8",
+        "arrowColor": "#c084fc",
+        "cardBackground": "#171522",
+        "cardBorder": "#342f4a"
+      }
+    },
+    {
+      "id": "builtin-look-03",
+      "name": "赛博矩阵极光（升级版科技青绿、深邃通透）",
+      "appearance": {
+        "themeColors": {
+          "dark": {
+            "background": "#0b131b",
+            "node": "#131f2b",
+            "highlight": "#2dd4bf",
+            "grid": "#162633",
+            "titleColor": "#ecfeff",
+            "bodyColor": "#cffafe",
+            "captionColor": "#678492",
+            "lineColor": "#14b8a6",
+            "arrowColor": "#38bdf8",
+            "cardBackground": "#131f2b",
+            "cardBorder": "#1e3a4d"
+          }
+        },
+        "activeTheme": "dark",
+        "hierarchy": false,
+        "arrowType": "chevron3",
+        "lineEffect": "neon",
+        "projectShape": "chamfer",
+        "gridSize": 55,
+        "pattern": "dots",
+        "background": "#0b131b",
+        "node": "#131f2b",
+        "highlight": "#2dd4bf",
+        "grid": "#162633",
+        "titleColor": "#ecfeff",
+        "bodyColor": "#cffafe",
+        "captionColor": "#678492",
+        "lineColor": "#14b8a6",
+        "arrowColor": "#38bdf8",
+        "cardBackground": "#131f2b",
+        "cardBorder": "#1e3a4d"
+      }
+    },
+    {
+      "id": "builtin-look-04",
+      "name": "琥珀黑金胶片（编导电影感、奢华高对比）",
+      "appearance": {
+        "themeColors": {
+          "dark": {
+            "background": "#0e0f11",
+            "node": "#202125",
+            "highlight": "#f59e0b",
+            "grid": "#21262d",
+            "titleColor": "#fef3c7",
+            "bodyColor": "#e5e7eb",
+            "captionColor": "#9ca3af",
+            "lineColor": "#d97706",
+            "arrowColor": "#f59e0b",
+            "cardBackground": "#18191c",
+            "cardBorder": "#373430"
+          }
+        },
+        "activeTheme": "dark",
+        "hierarchy": true,
+        "arrowType": "chevron3",
+        "lineEffect": "neon",
+        "background": "#0e0f11",
+        "node": "#202125",
+        "highlight": "#f59e0b",
+        "grid": "#21262d",
+        "titleColor": "#fef3c7",
+        "bodyColor": "#e5e7eb",
+        "captionColor": "#9ca3af",
+        "lineColor": "#d97706",
+        "arrowColor": "#f59e0b",
+        "cardBackground": "#18191c",
+        "cardBorder": "#373430"
+      }
+    },
+    {
+      "id": "builtin-look-05",
+      "name": "柯达胶片 / 暖木暗褐（Kodak 35mm 复古电影感）",
+      "appearance": {
+        "themeColors": {
+          "dark": {
+            "background": "#12100f",
+            "node": "#262321",
+            "highlight": "#f59e0b",
+            "grid": "#21262d",
+            "titleColor": "#fef3c7",
+            "bodyColor": "#e7e5e4",
+            "captionColor": "#a8a29e",
+            "lineColor": "#d97706",
+            "arrowColor": "#f97316",
+            "cardBackground": "#1c1917",
+            "cardBorder": "#44403c"
+          }
+        },
+        "activeTheme": "dark",
+        "hierarchy": true,
+        "arrowType": "chevron3",
+        "lineEffect": "neon",
+        "background": "#12100f",
+        "node": "#262321",
+        "highlight": "#f59e0b",
+        "grid": "#21262d",
+        "titleColor": "#fef3c7",
+        "bodyColor": "#e7e5e4",
+        "captionColor": "#a8a29e",
+        "lineColor": "#d97706",
+        "arrowColor": "#f97316",
+        "cardBackground": "#1c1917",
+        "cardBorder": "#44403c"
+      }
+    },
+    {
+      "id": "builtin-look-06",
+      "name": "Blade Runner 暗红警报（赛博朋克 / 悬疑谍战）",
+      "appearance": {
+        "themeColors": {
+          "dark": {
+            "background": "#0f0d0e",
+            "node": "#181416",
+            "highlight": "#f43f5e",
+            "grid": "#261c20",
+            "titleColor": "#fef2f2",
+            "bodyColor": "#e2e8f0",
+            "captionColor": "#94a3b8",
+            "lineColor": "#ef4444",
+            "arrowColor": "#f43f5e",
+            "cardBackground": "#181416",
+            "cardBorder": "#412d34"
+          }
+        },
+        "activeTheme": "dark",
+        "hierarchy": true,
+        "arrowType": "chevron3",
+        "lineEffect": "neon",
+        "projectShape": "chamfer",
+        "background": "#0f0d0e",
+        "node": "#181416",
+        "highlight": "#f43f5e",
+        "grid": "#261c20",
+        "titleColor": "#fef2f2",
+        "bodyColor": "#e2e8f0",
+        "captionColor": "#94a3b8",
+        "lineColor": "#ef4444",
+        "arrowColor": "#f43f5e",
+        "cardBackground": "#181416",
+        "cardBorder": "#412d34"
+      }
+    },
+    {
+      "id": "builtin-look-07",
+      "name": "战术军武 / 森林墨绿（Tactical Dark Olive）",
+      "appearance": {
+        "themeColors": {
+          "dark": {
+            "background": "#0a0f0c",
+            "node": "#16221a",
+            "highlight": "#22c55e",
+            "grid": "#261c20",
+            "titleColor": "#f0fdf4",
+            "bodyColor": "#dcebe1",
+            "captionColor": "#738778",
+            "lineColor": "#22c55e",
+            "arrowColor": "#4ade80",
+            "cardBackground": "#121814",
+            "cardBorder": "#24342a"
+          }
+        },
+        "activeTheme": "dark",
+        "hierarchy": true,
+        "arrowType": "chevron3",
+        "lineEffect": "neon",
+        "projectShape": "chamfer",
+        "pattern": "lines",
+        "background": "#0a0f0c",
+        "node": "#16221a",
+        "highlight": "#22c55e",
+        "grid": "#261c20",
+        "titleColor": "#f0fdf4",
+        "bodyColor": "#dcebe1",
+        "captionColor": "#738778",
+        "lineColor": "#22c55e",
+        "arrowColor": "#4ade80",
+        "cardBackground": "#121814",
+        "cardBorder": "#24342a"
+      }
+    },
+    {
+      "id": "builtin-look-08",
+      "name": "Monochrome 纯粹黑白灰（Apple / Linear 极简大师风）",
+      "appearance": {
+        "themeColors": {
+          "dark": {
+            "background": "#09090b",
+            "node": "#18181b",
+            "highlight": "#ffffff",
+            "grid": "#27272a",
+            "titleColor": "#ffffff",
+            "bodyColor": "#d4d4d8",
+            "captionColor": "#71717a",
+            "lineColor": "#a1a1aa",
+            "arrowColor": "#ffffff",
+            "cardBackground": "#18181b",
+            "cardBorder": "#3f3f46"
+          }
+        },
+        "activeTheme": "dark",
+        "hierarchy": true,
+        "arrowType": "chevron3",
+        "lineEffect": "dual",
+        "projectShape": "chamfer",
+        "pattern": "lines",
+        "arrowSpeed": 2,
+        "background": "#09090b",
+        "node": "#18181b",
+        "highlight": "#ffffff",
+        "grid": "#27272a",
+        "titleColor": "#ffffff",
+        "bodyColor": "#d4d4d8",
+        "captionColor": "#71717a",
+        "lineColor": "#a1a1aa",
+        "arrowColor": "#ffffff",
+        "cardBackground": "#18181b",
+        "cardBorder": "#3f3f46"
+      }
+    },
+    {
+      "id": "builtin-look-09",
+      "name": "新东京机能 / 蓝紫脉冲（Anime / EVA 动漫电竞风）",
+      "appearance": {
+        "themeColors": {
+          "dark": {
+            "background": "#0b0c16",
+            "node": "#1e2036",
+            "highlight": "#a855f7",
+            "grid": "#27272a",
+            "titleColor": "#f8fafc",
+            "bodyColor": "#e2e8f0",
+            "captionColor": "#94a3b8",
+            "lineColor": "#8b5cf6",
+            "arrowColor": "#38bdf8",
+            "cardBackground": "#141526",
+            "cardBorder": "#33385c"
+          }
+        },
+        "activeTheme": "dark",
+        "hierarchy": true,
+        "arrowType": "chevron3",
+        "lineEffect": "dual",
+        "projectShape": "chamfer",
+        "pattern": "lines",
+        "arrowSpeed": 2,
+        "background": "#0b0c16",
+        "node": "#1e2036",
+        "highlight": "#a855f7",
+        "grid": "#27272a",
+        "titleColor": "#f8fafc",
+        "bodyColor": "#e2e8f0",
+        "captionColor": "#94a3b8",
+        "lineColor": "#8b5cf6",
+        "arrowColor": "#38bdf8",
+        "cardBackground": "#141526",
+        "cardBorder": "#33385c"
+      }
+    },
+    {
+      "id": "builtin-look-10",
+      "name": "深渊幽海 / 冰川冷青（Abyssal Deep Ocean）",
+      "appearance": {
+        "themeColors": {
+          "dark": {
+            "background": "#080f17",
+            "node": "#0f1924",
+            "highlight": "#38bdf8",
+            "grid": "#142130",
+            "titleColor": "#f0f9ff",
+            "bodyColor": "#dbeafe",
+            "captionColor": "#7d8fa9",
+            "lineColor": "#0ea5e9",
+            "arrowColor": "#38bdf8",
+            "cardBackground": "#0f1924",
+            "cardBorder": "#203449"
+          }
+        },
+        "activeTheme": "dark",
+        "hierarchy": true,
+        "arrowType": "chevron3",
+        "lineEffect": "dual",
+        "projectShape": "chamfer",
+        "pattern": "lines",
+        "arrowSpeed": 2,
+        "background": "#080f17",
+        "node": "#0f1924",
+        "highlight": "#38bdf8",
+        "grid": "#142130",
+        "titleColor": "#f0f9ff",
+        "bodyColor": "#dbeafe",
+        "captionColor": "#7d8fa9",
+        "lineColor": "#0ea5e9",
+        "arrowColor": "#38bdf8",
+        "cardBackground": "#0f1924",
+        "cardBorder": "#203449"
+      }
+    },
+    {
+      "id": "builtin-look-11",
+      "name": "经典终端机 / 荧光琥珀（Vintage Terminal CRT）",
+      "appearance": {
+        "themeColors": {
+          "dark": {
+            "background": "#0d0b08",
+            "node": "#211b10",
+            "highlight": "#facc15",
+            "grid": "#27272a",
+            "titleColor": "#fef08a",
+            "bodyColor": "#fde047",
+            "captionColor": "#a17e2b",
+            "lineColor": "#eab308",
+            "arrowColor": "#facc15",
+            "cardBackground": "#17140f",
+            "cardBorder": "#42361c"
+          }
+        },
+        "activeTheme": "dark",
+        "hierarchy": true,
+        "arrowType": "chevron3",
+        "lineEffect": "dual",
+        "projectShape": "chamfer",
+        "pattern": "lines",
+        "arrowSpeed": 2,
+        "background": "#0d0b08",
+        "node": "#211b10",
+        "highlight": "#facc15",
+        "grid": "#27272a",
+        "titleColor": "#fef08a",
+        "bodyColor": "#fde047",
+        "captionColor": "#a17e2b",
+        "lineColor": "#eab308",
+        "arrowColor": "#facc15",
+        "cardBackground": "#17140f",
+        "cardBorder": "#42361c"
+      }
+    },
+    {
+      "id": "builtin-look-12",
+      "name": "北欧极夜 / 铅灰莫兰迪（Nordic Slate & Frost）",
+      "appearance": {
+        "themeColors": {
+          "dark": {
+            "background": "#0f172a",
+            "node": "#1e293b",
+            "highlight": "#818cf8",
+            "grid": "#27272a",
+            "titleColor": "#f8fafc",
+            "bodyColor": "#cbd5e1",
+            "captionColor": "#64748b",
+            "lineColor": "#6366f1",
+            "arrowColor": "#94a3b8",
+            "cardBackground": "#1e293b",
+            "cardBorder": "#334155"
+          }
+        },
+        "activeTheme": "dark",
+        "hierarchy": true,
+        "arrowType": "chevron3",
+        "lineEffect": "dual",
+        "projectShape": "chamfer",
+        "pattern": "lines",
+        "arrowSpeed": 2,
+        "background": "#0f172a",
+        "node": "#1e293b",
+        "highlight": "#818cf8",
+        "grid": "#27272a",
+        "titleColor": "#f8fafc",
+        "bodyColor": "#cbd5e1",
+        "captionColor": "#64748b",
+        "lineColor": "#6366f1",
+        "arrowColor": "#94a3b8",
+        "cardBackground": "#1e293b",
+        "cardBorder": "#334155"
+      }
+    }
+  ]
+}

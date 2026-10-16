@@ -31,11 +31,17 @@ def before_save(data,state,p):
     if previous and previous!=p['projectId'] and state.exists():
         folder=data/'projects';folder.mkdir(exist_ok=True);path=folder/(_key(previous)+'.json');temp=path.with_suffix('.tmp');temp.write_bytes(state.read_bytes());temp.replace(path)
 def after_save(data,state,p):
-    value=index(data,state);rows={r['id']:r for r in value['projects']};rows[p['projectId']]=_meta(p);value.update(current=p['projectId'],projects=list(rows.values()));_write(data/'projects-index.json',value)
+    value=index(data,state);rows={r['id']:r for r in value['projects']};from project_hub import metadata
+    rows[p['projectId']]={**_meta(p),**metadata(data,p)};value.update(current=p['projectId'],projects=list(rows.values()));_write(data/'projects-index.json',value)
 def listing(data,state):
     value=index(data,state);rows=[]
     for row in value['projects']:
         is_current=row['id']==value['current'];path=state if is_current else data/'projects'/(_key(row['id'])+'.json')
+        if 'coverUrl' not in row and path.is_file():
+            try:
+                from project_hub import metadata
+                enriched=metadata(data,json.loads(path.read_text('utf-8')));enriched.pop('updatedMs',None);row.update(enriched)
+            except (ValueError,OSError):pass
         rows.append({**row,'current':is_current,'missing':not path.is_file()})
     return sorted(rows,key=lambda r:r['updatedAt'],reverse=True)
 def open_project(data,state,key,expected,save):
