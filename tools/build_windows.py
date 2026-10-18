@@ -13,6 +13,17 @@ def icon_bytes():
  dib=struct.pack('<IIIHHIIIIII',40,size,size*2,1,32,0,len(pixels)+len(mask),0,0,0,0)+pixels+mask
  return struct.pack('<HHH',0,1,1)+struct.pack('<BBBBHHII',size,size,0,0,1,32,len(dib),22)+dib
 
+def copy_pillow_notices(notices):
+ from importlib.metadata import distribution
+ dist=distribution('Pillow')
+ files=[f for f in dist.files or [] if '.dist-info/licenses/' in str(f).replace('\\','/')]
+ if not files:raise RuntimeError('Pillow license files missing')
+ for file in files:
+  relative=str(file).replace('\\','/').split('.dist-info/licenses/',1)[1]
+  dest=notices/'Pillow'/relative
+  dest.parent.mkdir(parents=True,exist_ok=True)
+  shutil.copyfile(dist.locate_file(file),dest)
+
 def build():
  if sys.platform!='win32':raise RuntimeError('Windows EXE 必须在 Windows 构建；使用仓库的 Windows release workflow')
  sys.path.insert(0,str(ROOT/'tools'));from check_release import inputs
@@ -25,6 +36,7 @@ def build():
    dest=resources/rel;dest.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(ROOT/rel,dest)
  from importlib.metadata import distribution
  notices=resources/'third-party-notices';notices.mkdir(exist_ok=True)
+ copy_pillow_notices(notices)
  dist=distribution('pyinstaller')
  copying=next((Path(dist.locate_file(f)) for f in dist.files or [] if str(f).endswith('COPYING.txt')),None)
  licenses=[(Path(sys.base_prefix)/'LICENSE.txt','Python-LICENSE.txt'),(copying,'PyInstaller-COPYING.txt')]

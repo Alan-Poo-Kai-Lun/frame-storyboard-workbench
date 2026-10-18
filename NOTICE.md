@@ -1,30 +1,37 @@
-# 来源与分发范围
+# 分发内容与第三方组件说明
 
-本仓库由 Alan 的 FRAME V3.7 本地安装包整理。原安装包未附外部许可证清单；无法仅凭源码静态检查保证所有历史代码的来源。因此，公开分发前仍需核对实际复用的代码或资源及其许可证。
+FRAME 的代码授权以 [LICENSE](LICENSE) 为准。本声明区分程序、示例素材、外部对接工具及实际打包依赖，不构成全部代码或素材均为原创的保证。
 
-程序的 Python 运行依赖为标准库，前端为仓库内的 HTML/CSS/JavaScript，不随包分发 Ollama、AI 模型、ComfyUI 或第三方节点。
+## 程序与来源记录
 
-曾讨论过的参考项目包括：
-- https://github.com/BroderQi/Storyboard
-- https://github.com/luoluo-121/neural-creator-dashboard
+本仓库最初由维护者的 FRAME V3.7 本地安装包整理，后续修改由 Git 历史记录。2026-10-18 对当前源码、依赖、资源清单及仓库历史的检查，未发现复用此前讨论的两个参考项目代码或资源的证据；该检查不等同于完整源码相似性审计，也无法追溯导入仓库之前的全部来源。
 
-以上仅作为设计参考的核对线索，不声明复用了其代码，也不声明其许可证适用于本项目。若发现具体复用，应逐项记录文件、来源和必要声明，不能以本项目的保留权利声明覆盖第三方许可证。
+因此不再将仅讨论过的项目列为第三方代码来源。若后续确认具体复用，应按实际文件、资源、来源和许可补充记录。
 
-不随本仓库分发的内容：原内部店面与独立人物测试图、内部导演包、客户资料、个人连接设置、生成视频与用户自定义视觉参考。
+前端使用仓库内的 HTML/CSS/JavaScript；Python 程序使用标准库，并通过 Pillow 处理项目封面缩略图。
 
-文档新增的例外：`docs/assets/screenshots/director-canvas-historical.png` 是维护者先前提供的历史界面截图，含演示项目文字与虚构角色、飞剑缩略图，不含连接密钥。它用于说明画布操作，不作为新版界面或模型质量承诺。`docs/examples/cafe-demo.mmxpack.zip` 为本次手工构造、经程序导出并回读验证的教学示例，含三张自绘示意 PNG 与人工编写的镜头；不含真实人物、店面、AI 输出或视频。
+## 示例与文档素材
 
-`docs/assets/workflow.svg` 是为本仓库绘制的流程示意；不是工作台截图，也不包含用户素材。
+- `presets/starter-project.mmxpack.zip`：维护者提供并纳入公开分发的「赛博修仙 v5」示例，包含人物参考图、飞剑参考图及一条已有视频。这些是随包示例，不是当前软件现场生成的结果；本声明不额外确认素材的原创归属或授予超出实际权利范围的许可。
+- `presets/starter-project.json`：咖啡店入门示例的文字与分镜结构。
+- `docs/examples/cafe-demo.mmxpack.zip`：教学导演包，含三张为教学绘制的示意图和人工编写的镜头。
+- `docs/assets/screenshots/`：实际程序界面及示例内容截图；新版截图来源见[截图说明](docs/assets/screenshots/README.md)，旧版文件保留作历史记录。
+- `docs/assets/workflow.svg`：本仓库制作的流程示意图。
+- `presets/appearance-presets.json`：经维护者确认公开分发的 12 套外观名称及参数，不包含本机项目、连接设置或密钥。
 
-## 导演包目标接收端
+发布包按 `release-manifest.json` 收录程序与明确列出的资源，不包含用户 `data/`、私人素材库、客户资料、连接设置或模型密钥。上述公开示例及文档截图属于明确收录的例外。
 
-工作台导演包的目标接收端为 AI 搅拌手（AIMixer）的 [ComfyUI_MiniMaxH3_Director](https://github.com/AIMixer/ComfyUI_MiniMaxH3_Director)。FRAME 是独立的策划工具，引用名称是为了说明对接对象，不表示获得作者认证或联合发布；本仓库不分发其插件、工作流或模型。第三方许可分别适用，本项目的权利保留声明不覆盖它们。
+## 外部工具兼容性
 
+导演包的目标接收端为 AIMixer 的 [ComfyUI MiniMax H3 Director](https://github.com/AIMixer/ComfyUI_MiniMaxH3_Director)。引用名称用于说明文件对接对象，不表示认证、合作或联合发布。FRAME 不随包分发其插件、工作流或模型，也不随包分发 Ollama、ComfyUI 或 AI 模型权重。
 
-## Windows EXE 运行依赖
+## Windows EXE 与第三方依赖
 
-EXE 使用 PyInstaller 打包 Python 运行环境和标准库 Tkinter/Tcl/Tk。构建时复制 Python、PyInstaller 与 Tcl/Tk 发行包中实际提供的许可证文本到内置 `third-party-notices/`。这些依赖各自的许可证和 PyInstaller bootloader 分发例外分别适用，FRAME 的保留权利声明不覆盖第三方运行组件。构建不包含模型、Ollama、ComfyUI 或用户数据。
+Windows EXE 使用 PyInstaller 打包 Python、Tkinter/Tcl/Tk 和 Pillow。它们及所带运行组件的许可分别适用，FRAME 的权利保留声明不覆盖第三方组件。
 
-- Python: https://docs.python.org/3/license.html
-- PyInstaller: https://github.com/pyinstaller/pyinstaller/blob/develop/COPYING.txt
-- Tcl/Tk: https://www.tcl-lang.org/software/tcltk/license.html
+当前构建脚本从构建环境收录 Python、PyInstaller、Tcl/Tk 的许可文本，以及 Pillow 发行包提供的许可文件，放入 EXE 的 `third-party-notices/`。实际依赖版本以对应发布物的构建记录为准；源码中的说明或构建修正不会改变已发布的旧安装包。
+
+- [Python 许可与所含组件声明](https://docs.python.org/3/license.html)
+- [PyInstaller 许可与 bootloader 分发例外](https://github.com/pyinstaller/pyinstaller/blob/develop/COPYING.txt)
+- [Tcl/Tk 许可](https://www.tcl-lang.org/software/tcltk/license.html)
+- [Pillow 许可](https://github.com/python-pillow/Pillow/blob/main/LICENSE)
