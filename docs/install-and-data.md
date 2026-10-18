@@ -8,7 +8,7 @@
 
 ## 源码启动
 
-安装 Python 3.10+，完整解压源码，Windows 双击 `Start-Windows.bat`；其他系统运行 `python3 server.py`，访问 `http://127.0.0.1:8787`。无需第三方 Python 运行包。
+安装 Python 3.10+，完整解压源码，Windows 双击 `Start-Windows.bat`；其他系统运行 `python3 server.py`，访问 `http://127.0.0.1:8787`。项目封面缩略图使用 Pillow，请先运行 `python -m pip install Pillow==12.3.0`；EXE 已包含此依赖。
 
 ## 更新与数据
 

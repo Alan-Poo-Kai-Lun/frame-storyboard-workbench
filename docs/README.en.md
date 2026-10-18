@@ -1,95 +1,60 @@
 # FRAME Storyboard Workbench
 
-A local planning workspace for assets, scripts, shot lists, H3 prompts and manually uploaded clip records.
+A local workspace for stories, project assets, shot lists, H3 prompts and uploaded video records.
 
-**V3.24 Beta 1. Publicly visible source. All rights reserved.** No open-source permission is granted at this time.
+**V3.29 Beta 1 · Windows · Basic storyboarding works without AI.** Publicly visible source; all rights reserved. See [LICENSE](../LICENSE).
 
-[Download Windows EXE — no Python required](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.24-beta.1/FRAME-Workbench-Windows-x64-v3.24-beta.1.exe) · [All releases](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases) · [Complete changelog, V2.1–V3.24](../CHANGELOG.md)
+[**Download Windows EXE — no Python required**](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.29-beta.1/FRAME-Workbench-Windows-x64-v3.29-beta.1.exe) · [ZIP updater](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.29-beta.1/FRAME-Storyboard-Workbench-v3.29-beta.1.zip) · [Release notes and checksums](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/tag/v3.29-beta.1)
 
-[Chinese step-by-step tutorial](quick-start.md) · [Troubleshooting](faq.md) · [Importable sample pack](../presets/starter-project.mmxpack.zip)
+[中文](../README.md) · [Complete changelog, V2.1–V3.29](../CHANGELOG.md) · [Step-by-step tutorial (Chinese)](quick-start.md) · [Troubleshooting](faq.md)
 
-The Chinese README includes actual V3.24 floating-editor and preset-management screenshots. The built-in Cyber Cultivation v5 sample includes two reference images, four segments, twelve shots and one existing video. Opening it needs no AI connection and backs up the current project. Director-pack export retains the media and storyboard.
+![Actual V3.29 home screen with project covers and search](assets/screenshots/home-v3.29.jpg)
 
-## V3.24 updates
+## Get started
 
-Drag and resize a floating editor for segments, shots, assets and final prompts, or dock it to the Inspector. Previous/next controls and Ctrl+Left/Right switch shots with save-failure protection.
+1. Run the EXE and keep its launcher open. The workbench opens in your browser.
+2. Open the official Cyber Cultivation v5 sample to create a copy, create a blank project, or import a Director Pack. The sample contains two reference images, four segments, twelve shots and one existing video.
+3. Select a segment to write its story, then select a shot to edit. Use cards for grouped content or the free canvas for relationships. Save a project backup or export a Director Pack.
 
-Create, rename, edit, order and remove text presets, assign Alt+Shift+1–9 within the matching field, and bind visual-reference or asset-library entries. Insertion reads the latest library text without adding media. Check reference-number meaning against the current segment. Collapsible sections retain live drafts and remember their state; collapsed output checks keep a warning count.
+Configure Ollama or a compatible API in settings when you need AI. Image analysis requires a vision-capable model. Cloud requests are sent to the configured service.
 
-This public version also includes whole-story AI planning with preview-before-append, reusable writing rules, detailed prompt syntax colors, six root-node shapes and nested context menus from V3.21–V3.23. It does not directly execute Codex skills or add a ComfyUI queue bridge. Local checks passed: 57 backend tests, 20 DOM integration groups and an isolated Windows EXE self-test. Real AI output quality and GPU rendering were not tested in this update.
+## What's included in V3.29
 
-![V3.24 text presets](assets/screenshots/editor-presets-v3.24.jpg)
+This public release includes the cumulative V3.25–V3.29 local iterations. Individual local versions do not imply separate published installers.
 
-## V3.23, V3.22 and V3.21 history
+- **Project hub:** media covers, an official sample, grid/list views, search, duplicate, rename, Director Pack export and recoverable deletion. Single-click selects; double-click opens the last mode.
+- **Two Agent entry points:** project conversations for ideas and planning; segment, shot or asset conversations for targeted edits. Topics have separate histories and recoverable deletion. Preview changes before applying them.
+- **Docking:** drag Agent and property panels to the left, right or floating position. Resize, snap to an edge and collapse with edge arrows; panel state is remembered.
+- **Independent project assets:** the asset dock remains visible with zero segments. Uploading assets creates no implicit segment; deleting a segment preserves project media. Categories follow the asset library, including custom categories.
+- **Planning recovery and languages:** choose output and dialogue languages separately. Saved original plans can restore deleted segments without another model call.
+- **Appearance:** independent light/dark palettes, card-container colors and named reusable profiles. Twelve built-in profiles are available on a fresh installation; local profiles with the same name take priority.
+- **Canvas styles:** film, octagon, pill and badge roots; rounded, shared-bus and dotted lines; additional decorative effects and terminal markers. Effects never represent render progress.
 
-- **V3.23:** movable/resizable floating editors, Inspector docking, shot paging, duration calculation and explicit next-shot alignment. [Details](release-v3.23-beta.1.md)
-- **V3.22:** detailed syntax colors in segment/final prompts, six root shapes and expandable context-menu submenus. [Details](release-v3.22-beta.1.md)
-- **V3.21:** whole-story segment planning, reusable writing rules, segment dialogue languages and highlighted AI context actions. [Details](release-v3.21-beta.1.md)
+![Actual V3.29 free canvas and independent project asset dock](assets/screenshots/director-canvas-v3.29.jpg)
 
-These were local iterations first published together with V3.24. The release list jumping from V3.20 to V3.24 is intentional; no missing installers or fabricated Git history are implied. The [complete changelog](../CHANGELOG.md) also preserves earlier documented changes back to V2.1, without inventing unavailable release dates.
+![Actual V3.29 project Agent docked on the left](assets/screenshots/agent-docked-v3.29.jpg)
 
-## V3.20 updates
+![V3.29 appearance controls and film-frame root](assets/screenshots/appearance-v3.29.jpg)
 
-Fixed stale imported media overwriting replaced reference images during Director Pack export. Output warnings can request AI repair with a before/after comparison and explicit application; previous shots and prompts remain recoverable. The Inspector can collapse and expand from its edge, with the state saved per project. AI workflow validation uses a mock model; review real suggestions before applying.
+Screenshots use isolated sample projects, not private user projects. The Agent screenshot shows the interface without fabricated model replies. See [screenshot provenance](assets/screenshots/README.md).
 
-## V3.19 updates
+Validation: **93 backend tests, 26 DOM integration groups, GitHub Linux/Windows builds and an isolated EXE self-test passed.** Real model-output quality and GPU video generation were not tested. [V3.29 notes (Chinese)](release-v3.29-beta.1.md).
 
-Chinese / English interface switching works across canvas and detailed editing. On-demand AI translation keeps the original prompt plus Chinese and English copies; choose the Director Pack export language explicitly. Timeline tokens, reference identifiers and spoken lines remain unchanged. Stale copies require translation again. Translation workflow tests use a mock model; review real translations before exporting.
+## Export to ComfyUI
 
-Output warnings are highlighted, manual prompt guidance is available, and segment cards can collapse and move as a group.
+Director Packs target [AIMixer / ComfyUI MiniMax H3 Director](https://github.com/AIMixer/ComfyUI_MiniMaxH3_Director). Import the `.mmxpack.zip` using the director node's pack-import control. Install its plugin, workflow and models separately. See [compatibility details](h3-director-compatibility.md).
 
-## Export target
+T2V, I2V, FL2V, R2V, V2V, RV2V and MIXED projects have explicit media requirements. FRAME plans, edits and records; images and videos are generated externally and added back to the project. FRAME does not render, edit or concatenate final videos.
 
-Director packs target **AI Mixer / AIMixer’s [ComfyUI MiniMax H3 Director](https://github.com/AIMixer/ComfyUI_MiniMaxH3_Director)**. Import the `.mmxpack.zip` using the director node’s pack-import control, not ComfyUI’s general workflow importer. Install the plugin, its workflow and model dependencies separately. `formatVersion: 1` is the pack schema version, not the plugin version; pack import has been checked with the actual target importer; GPU generation has not been validated. See [integration and compatibility](h3-director-compatibility.md). FRAME is a separate project and does not bundle the upstream plugin or model weights.
+## Source, data and updates
 
-## Run
-
-**Windows users:** download the EXE above, run it and keep the launcher open. The workbench opens in your browser. Try the built-in sample first; AI setup is optional.
-
-**Source users:** install Python 3.10+. No third-party Python package is required.
-
-On Windows, run `Start-Windows.bat`; alternatively:
+Source users need Python 3.10+. Install Pillow for project-cover thumbnail processing:
 
 ```bash
-python3 server.py
+python -m pip install Pillow==12.3.0
+python server.py
 ```
 
-Open http://127.0.0.1:8787, create a project. Configure a model service only when you want AI assistance. Ollama defaults to http://127.0.0.1:11434. Image analysis requires a vision-capable model. Confirmed asset descriptions can be reused for text-only shot planning.
+Open http://127.0.0.1:8787. On Windows you can use `Start-Windows.bat` after installing the dependency. The packaged EXE already includes it.
 
-![Actual V3.16 director canvas](assets/screenshots/director-canvas-v3.16.png)
-
-**Beta 2 fixes interrupted typing:** focused text fields and IME composition no longer trigger autosave. Changes save when you leave text editing or switch nodes; manual saves preserve the caret and selection. [Fix notes](release-v3.16-beta.2.md).
-
-## New in V3.16
-
-- Persistent Segment / Assets / Settings inspector, with automatic saving and visible status.
-- Drop image, audio or video files on blank canvas to add shared references, on shot / segment cards to add segment references, or on an asset card to replace it with a file of the same media type. Output cards receive existing video records.
-- Inline T2V / I2V / FL2V / R2V selection per segment; changing a segment uses MIXED and preserves other segments' modes. V2V / RV2V projects use explicit source video configuration.
-- Direct media playback, resizable images, font and color controls, PCB lines, HUD terminals and optional flow effects.
-- Asset deletion with an impact preview and restore, grouped toolbar actions and clearer output placeholders.
-
-[V3.16 release notes](release-v3.16-beta.1.md) · [Settings screenshot](assets/screenshots/canvas-settings-v3.16.png)
-
-## Features
-
-Director canvas with fullscreen, unbounded node dragging, pan/zoom and resizable inspector; shared and segment assets; shot editing and history; custom visual references; AI task queue and saved failed outputs; segment continuity; H3 Director Pack v1 import/export; uploaded video records bundled in the pack.
-
-Images and videos are generated externally. The workbench does not generate, edit or concatenate final videos. Playback depends on browser codec support.
-
-## Data and updates
-
-Keep the complete `data/` directory private and backed up. Settings may contain API keys. Model requests go to the configured service; a cloud endpoint is not offline.
-
-To update on Windows, close the browser and server, drag the release ZIP onto `Update-Windows.bat` in the existing installation, restart and hard refresh. Old program copies are archived in `versions/`.
-
-See the [Chinese README](../README.md), [release guide](releasing.md), [LICENSE](../LICENSE) and [NOTICE](../NOTICE.md).
-
-
-## First-run flow in V3.16
-
-The home screen offers Try example, Create project, Import project, and Continue for an existing local project. The built-in Cyber Cultivation v5 project needs no AI to open. Simple mode follows Story → Assets → Shots; Professional mode exposes the full editor. Canvas appearance controls save background, node, highlight and grid colors, background pattern and grid size with the project. Reference-library media and reference packs have no file-size or total-capacity cap; available memory and disk still apply. AI tools prompt for Ollama or a compatible API only when needed. Save / handoff can download a complete `.frame.json` project backup without H3. H3 director-pack export still requires the separate AI Mixer ComfyUI node, workflow, and models.
-
-
-## V3.18
-
-Segment cards group reference assets, shots, prompts and output records. Save named layout presets and choose the default for new projects. The independent creator asset library supports editable names, notes, categories, favorites and image/audio/video previews; adding a reference copies its media into the project. Both libraries and Task Center are directly accessible from the canvas. Existing layouts remain unchanged until explicitly switched.
+Back up and keep the complete `data/` folder private; model settings may contain API keys. To update an existing Windows installation, close its server, drag the ZIP updater onto `Update-Windows.bat`, restart and hard-refresh. Program backups are kept in `versions/`. See [installation and data](install-and-data.md), [release maintenance](releasing.md), [LICENSE](../LICENSE) and [NOTICE](../NOTICE.md).

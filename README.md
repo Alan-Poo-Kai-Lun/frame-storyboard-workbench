@@ -1,24 +1,94 @@
 # FRAME · 分镜工作台
 
-当前版本：**V3.29 Beta 1** · [12 套内置配色与画布扩展说明](docs/release-v3.29-beta.1.md)。提供独立 ZIP / EXE 包；GitHub 发布页以实际已发布版本为准。
-
 **把故事、参考素材、分镜和成片记录，整理在同一张导演画布里。**
 
-Windows · 本地运行 · V3.29 Beta 1 · 基础分镜无需 AI
+Windows · 本地运行 · **V3.29 Beta 1** · 基础分镜无需 AI
 
-### [⬇ 下载 GitHub 已发布 Windows 版（EXE，无需 Python）](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.24-beta.1/FRAME-Workbench-Windows-x64-v3.24-beta.1.exe)
+[**下载 Windows EXE（无需 Python）**](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.29-beta.1/FRAME-Workbench-Windows-x64-v3.29-beta.1.exe) · [**下载 ZIP 更新包**](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.29-beta.1/FRAME-Storyboard-Workbench-v3.29-beta.1.zip) · [发布说明与 SHA-256](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/tag/v3.29-beta.1)
 
-[完整更新日志（V2.1–V3.24）](CHANGELOG.md) · [所有版本与更新包](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases) · [新手教程](docs/quick-start.md) · [常见问题](docs/faq.md) · [English](docs/README.en.md)
+[完整更新日志（V2.1–V3.29）](CHANGELOG.md) · [新手教程](docs/quick-start.md) · [常见问题](docs/faq.md) · [English](docs/README.en.md)
 
-![FRAME V3.18 实际界面：片段卡片画布](docs/assets/screenshots/director-cards-v3.18.jpg)
+![V3.29 实际首页：新建、拖拽导入、项目封面与搜索](docs/assets/screenshots/home-v3.29.jpg)
 
 ## 三步开始
 
-1. **双击 EXE**，保持启动器运行，浏览器会打开工作台。
-2. **点击「体验示例项目」**，直接查看「赛博修仙 v5」的 2 张参考图、4 个片段、12 个镜头和 1 条已有视频。
-3. **点片段写故事，点镜头编辑**；准备好后保存项目备份，或导出导演包交给 ComfyUI H3 导演台。
+1. **双击 EXE**，保持启动器运行，浏览器会打开工作台。已有安装可使用 ZIP 更新；更新前备份 `data/`，见[安装与数据说明](docs/install-and-data.md)。
+2. **从首页打开「官方示例」**，基于「赛博修仙 v5」创建副本；也可新建空白工程或导入导演包。示例含 2 张参考图、4 个片段、12 个镜头和 1 条已有视频。
+3. **选片段写故事，选镜头编辑**；卡片模式集中查看内容，自由画布整理节点关系。准备好后保存项目备份，或导出导演包交给 ComfyUI H3 导演台。
 
-无需先安装 Ollama 或配置 API。AI 分析素材、拆镜和审查可以之后再设置。
+基础分镜无需配置模型。首次使用 AI 时再到设置中连接 Ollama 或兼容 API；图像分析需要支持视觉输入的模型。
+
+## V3.29：12 套内置外观，累计工作台升级
+
+本次公开发布包含 V3.25–V3.29 的累计改动。此前本地迭代的详细记录保留在[更新日志](CHANGELOG.md)，不代表每个版本都单独发布过安装包。
+
+| 功能 | 当前可用行为 |
+|---|---|
+| 项目首页 | 实际素材封面、官方示例、网格 / 列表、搜索、复制、重命名、导演包导出与回收站；单击选中，双击按上次模式打开 |
+| 双入口 Agent | 项目对话构思方案，片段 / 镜头 / 素材对话定点调整；按话题保存，支持删除与恢复，修改先预览再应用 |
+| 左右停靠 / 浮动 | Agent 与属性面板可拖动、拉伸、贴边吸附，边缘箭头收起 / 展开并记忆状态 |
+| 项目级素材 | 素材与片段生命周期解耦；零片段也显示项目素材区，拖入素材不会新建片段，删除片段保留素材 |
+| 规划与恢复 | 输出语言、对白语言独立选择；保存原规划，删除片段后可从规划恢复，不必再次调用模型 |
+| 卡片与素材管理 | 项目素材区可折叠，素材引用连线同步；素材类型使用素材库分类，支持自定义分类 |
+| 日夜与自定义外观 | 两种主题分别保存配色；卡片容器背景 / 边框可调，命名外观方案可跨项目复用 |
+| 12 套内置方案 | DaVinci 灰黑、紫罗兰、赛博极光、琥珀黑金、柯达暖褐等；新安装直接可用，本机同名方案优先 |
+| 影视画布扩展 | 胶片 / 八角 / 胶囊 / 吊牌根节点，圆角 / 总线 / 点阵走线，以及新光效与端点 |
+
+![V3.29 自由画布：独立项目素材区、片段、镜头与成片记录](docs/assets/screenshots/director-canvas-v3.29.jpg)
+
+![V3.29 项目 Agent 左侧停靠，可由边缘箭头收起](docs/assets/screenshots/agent-docked-v3.29.jpg)
+
+<details>
+<summary>查看新版卡片模式、项目管理和外观方案截图</summary>
+
+![V3.29 卡片模式：项目素材区与片段卡片引用关系](docs/assets/screenshots/director-cards-v3.29.jpg)
+
+![V3.29 项目管理：官方示例、项目封面、搜索及视图切换](docs/assets/screenshots/projects-v3.29.jpg)
+
+![V3.29 内置外观与胶片根节点、共享主干走线](docs/assets/screenshots/appearance-v3.29.jpg)
+
+</details>
+
+截图为 V3.29 的真实运行界面，使用隔离示例工程；[截图来源说明](docs/assets/screenshots/README.md)。Agent 截图展示对话入口，没有虚构 AI 回复。光效只作装饰，不表示渲染进度。
+
+**发布验证：**93 项后端测试、26 组界面回归、GitHub Linux / Windows 构建及隔离 EXE 自检通过。真实模型输出质量与 GPU 视频生成不在本次验证范围内。[V3.29 外观扩展说明](docs/release-v3.29-beta.1.md) · [V3.28 工作台改动](docs/release-v3.28-beta.1.md) · [V3.27 Agent 与素材改动](docs/release-v3.27-beta.1.md)
+
+## 导演包如何接到 ComfyUI
+
+支持 T2V、I2V、FL2V、R2V、V2V、RV2V 与 MIXED 项目；MIXED 可为每段选择 T2V / I2V / FL2V / R2V。按模式明确指定参考素材、首尾帧或源视频，导出时检查必需输入。
+
+在 **[AIMixer / ComfyUI MiniMax H3 Director](https://github.com/AIMixer/ComfyUI_MiniMaxH3_Director)** 节点内点击「导入导演包」，选择 `.mmxpack.zip`。插件、工作流和模型需要另行准备。已核对七种模式的包结构与目标导入器读取；实际生成效果仍需在你的模型环境验证，见 [对接说明](docs/h3-director-compatibility.md)。
+
+FRAME 负责规划、编辑与记录；图片和视频在外部工具生成，再放回对应片段。项目与设置保存在本机；使用云模型时，请求发送到你配置的服务。
+
+## 使用与维护
+
+| 你想做什么 | 从这里开始 |
+|---|---|
+| 跟着做第一个项目 | [新手图文教程](docs/quick-start.md) |
+| 更新、迁移或备份数据 | [安装、更新与数据](docs/install-and-data.md) |
+| 了解完整功能和历史更新 | [功能说明](docs/workbench-guide.md) · [更新记录](CHANGELOG.md) |
+| 遇到问题 | [常见问题](docs/faq.md) · [提交问题](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/issues/new/choose) |
+
+<details>
+<summary>开发、源码与授权</summary>
+
+源码运行需要 Python 3.10+；项目封面缩略图使用 Pillow（`python -m pip install Pillow==12.3.0`）。见 [安装说明](docs/install-and-data.md#源码启动)。开发检查：
+
+```bash
+python -m unittest discover -s tests -v
+python tools/check_release.py
+python tools/build_release.py
+```
+
+[发布管理](docs/releasing.md) · [贡献说明](CONTRIBUTING.md) · [安全反馈](SECURITY.md)
+
+当前源码公开可见，采用 **All rights reserved**，授权以 [LICENSE](LICENSE) 为准。素材与第三方来源见 [NOTICE](NOTICE.md)。
+
+</details>
+
+<details>
+<summary>历史版本介绍与旧界面截图（V3.18–V3.24）</summary>
 
 ## V3.24：浮动编辑与自定义快捷预设
 
@@ -98,36 +168,5 @@ V3.21–V3.23 为本地迭代，首次随 V3.24 一并公开，并非漏发了�
 
 </details>
 
-## 导演包如何接到 ComfyUI
-
-支持 T2V、I2V、FL2V、R2V、V2V、RV2V 与 MIXED 项目；MIXED 可为每段选择 T2V / I2V / FL2V / R2V。按模式明确指定参考素材、首尾帧或源视频，导出时检查必需输入。
-
-在 **[AIMixer / ComfyUI MiniMax H3 Director](https://github.com/AIMixer/ComfyUI_MiniMaxH3_Director)** 节点内点击「导入导演包」，选择 `.mmxpack.zip`。插件、工作流和模型需要另行准备。已核对七种模式的包结构与目标导入器读取；实际生成效果仍需在你的模型环境验证，见 [对接说明](docs/h3-director-compatibility.md)。
-
-FRAME 负责规划、编辑与记录；图片和视频在外部工具生成，再放回对应片段。项目与设置保存在本机；使用云模型时，请求发送到你配置的服务。
-
-## 使用与维护
-
-| 你想做什么 | 从这里开始 |
-|---|---|
-| 跟着做第一个项目 | [新手图文教程](docs/quick-start.md) |
-| 更新、迁移或备份数据 | [安装、更新与数据](docs/install-and-data.md) |
-| 了解完整功能和历史更新 | [功能说明](docs/workbench-guide.md) · [更新记录](CHANGELOG.md) |
-| 遇到问题 | [常见问题](docs/faq.md) · [提交问题](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/issues/new/choose) |
-
-<details>
-<summary>开发、源码与授权</summary>
-
-源码运行需要 Python 3.10+，见 [安装说明](docs/install-and-data.md#源码启动)。开发检查：
-
-```bash
-python -m unittest discover -s tests -v
-python tools/check_release.py
-python tools/build_release.py
-```
-
-[发布管理](docs/releasing.md) · [贡献说明](CONTRIBUTING.md) · [安全反馈](SECURITY.md)
-
-当前源码公开可见，采用 **All rights reserved**，授权以 [LICENSE](LICENSE) 为准。素材与第三方来源见 [NOTICE](NOTICE.md)。
 
 </details>
