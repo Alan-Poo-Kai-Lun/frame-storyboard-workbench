@@ -83,10 +83,10 @@ function startupHandoff(continueExport){
 }
 const startupExportAction=$('export').onclick;$('export').onclick=()=>startupHandoff(startupExportAction);
 const startupImportChange=$('packFile').onchange;
-$('packFile').accept='.zip,.mmxpack,.json';
+$('packFile').accept='.zip,.mmxpack,.frame,.json';
 $('packFile').onchange=()=>safe(async()=>{
  const f=$('packFile').files[0];if(!f)return;
- if(!f.name.toLowerCase().endsWith('.json')){await startupImportChange();if(P&& !$('packFile').value)enterStartupWorkspace();return}
- try{const obj=JSON.parse(await f.text());if(obj.format!=='frame-project'||obj.version!==1||!obj.project)throw Error('请选择 FRAME 项目备份 (.frame.json) 或导演包 (.mmxpack.zip)');await flush();if(P&&!confirm('导入将替换当前项目，原项目会自动备份。继续吗？'))return;P=await api('import-project',{project:obj.project});dirty=false;segIndex=0;shotId=seg()?.shots[0]?.id||'';render();enterStartupWorkspace();toast('项目备份已导入')}finally{$('packFile').value=''}
+ if(!/\.(frame|json)$/i.test(f.name)){await startupImportChange();if(P&& !$('packFile').value)enterStartupWorkspace();return}
+ try{const obj=JSON.parse(await f.text());if(obj.format!=='frame-project'||obj.version!==1||!obj.project)throw Error('请选择 FRAME 项目备份 (.frame / .frame.json) 或导演包 (.mmxpack.zip)');await flush();if(P&&!confirm('导入将替换当前项目，原项目会自动备份。继续吗？'))return;P=await api('import-project',{project:obj.project});dirty=false;segIndex=0;shotId=seg()?.shots[0]?.id||'';render();enterStartupWorkspace();toast('项目备份已导入')}finally{$('packFile').value=''}
 });
 if(ready)initStartup();

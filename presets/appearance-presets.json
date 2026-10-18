@@ -308,9 +308,9 @@
         "themeColors": {
           "dark": {
             "background": "#0b0c16",
-            "node": "#1e2036",
+            "node": "#141526",
             "highlight": "#a855f7",
-            "grid": "#27272a",
+            "grid": "#1e2036",
             "titleColor": "#f8fafc",
             "bodyColor": "#e2e8f0",
             "captionColor": "#94a3b8",
@@ -328,9 +328,9 @@
         "pattern": "lines",
         "arrowSpeed": 2,
         "background": "#0b0c16",
-        "node": "#1e2036",
+        "node": "#141526",
         "highlight": "#a855f7",
-        "grid": "#27272a",
+        "grid": "#1e2036",
         "titleColor": "#f8fafc",
         "bodyColor": "#e2e8f0",
         "captionColor": "#94a3b8",
@@ -376,7 +376,19 @@
         "lineColor": "#0ea5e9",
         "arrowColor": "#38bdf8",
         "cardBackground": "#0f1924",
-        "cardBorder": "#203449"
+        "cardBorder": "#203449",
+        "enableDynamicBg": true,
+        "bgIntensity": 8,
+        "themeDynamicBg": {
+          "dark": {
+            "enableDynamicBg": true,
+            "bgIntensity": 8
+          },
+          "light": {
+            "enableDynamicBg": false,
+            "bgIntensity": 8
+          }
+        }
       }
     },
     {

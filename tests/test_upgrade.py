@@ -36,3 +36,15 @@ class UpgradeChecks(unittest.TestCase):
   snap=snapshots[0];output={'segments':[{'title':'故事','story':'人物站立','shots':[{'start':0,'end':5,'action':'站立','startState':'门口','endState':'门口'}]}]}
   with patch.object(server,'ai_call',return_value=json.dumps(output)) as call:result=writing.analyze(server,{},snap,{})
   self.assertIn('Bahasa Melayu',call.call_args.args[1][0]['content']);self.assertEqual(result['segments'][0]['dialogueLanguage'],'Cantonese')
+
+ def test_portrait_cover_is_cropped_without_letterbox_and_video_status_is_real(self):
+  import io,base64
+  from PIL import Image
+  import project_hub
+  image=Image.new('RGB',(100,300),(240,40,30));raw=io.BytesIO();image.save(raw,format='PNG')
+  p={'assets':[{'path':'portrait.png'}],'segments':[{'duration':5,'shots':[],'videos':[{'path':'present.mp4'},{'path':'missing.mp4'}]}],'media':{'portrait.png':base64.b64encode(raw.getvalue()).decode(),'present.mp4':'test'}}
+  row=project_hub.metadata(server.DATA,p);self.assertEqual(row['videos'],1)
+  file=server.DATA/'project-thumbnails'/row['coverUrl'].split('/')[-1]
+  with Image.open(file) as cover:
+   self.assertEqual(cover.size,(480,270))
+   for xy in [(0,0),(479,269),(240,135)]:self.assertGreater(cover.getpixel(xy)[0],200)

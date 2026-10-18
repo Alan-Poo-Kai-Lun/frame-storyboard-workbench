@@ -71,6 +71,20 @@ async function fixture(existing=null,mode='simple',broken=false){
  await pause();
  return {dom,w,calls,errors,set visualRows(v){visualRows=v},set libraryRows(v){libraryRows=v},set failRebuild(v){failRebuild=v},set tasks(v){remoteTasks=v},get project(){return project},get config(){return config},el:id=>w.document.getElementById(id)};
 }
+async function runtimeAndPromptChecks(){
+ const source=copy(sample);source.segments[0].prompt='Camera: '+ 'cinematic lighting and detailed rendering parameters '.repeat(8);const f=await fixture(source,'professional');
+ try{
+  await f.w.openFrameOverview();await pause();await pause();const d=f.el('overviewDialog'),input=f.el('canvas_segmentPrompt'),wrap=input.closest('.highlightPrompt');
+  assert(wrap.classList.contains('promptCollapsed'));assert.equal(wrap.querySelector('.promptExpandToggle').getAttribute('aria-expanded'),'false');const original=input.value;let copied='';Object.defineProperty(f.w.navigator,'clipboard',{configurable:true,value:{writeText:async text=>{copied=text}}});
+  wrap.querySelector('.promptCopyIcon').click();await pause();assert.equal(copied,original);assert(wrap.querySelector('.promptCopyIcon').classList.contains('copied'));wrap.querySelector('.promptExpandToggle').click();assert(!wrap.classList.contains('promptCollapsed'));assert.equal(input.value,original);wrap.querySelector('.promptExpandToggle').click();assert(wrap.classList.contains('promptCollapsed'));assert.equal(input.value,original);
+  d.querySelector('.unifiedEditorPanel [data-panel-dock="floating"]').click();await pause();await pause();assert(d.querySelector('.unifiedEditorPanel').classList.contains('framePanelFloating'));f.w.dispatchEvent(new f.w.Event('resize'));assert.equal(f.errors.length,0);
+  const nativeFetch=f.w.fetch;let finish;f.w.fetch=async(url,options)=>String(url).includes('/api/compiled-prompt')?new Promise(resolve=>{finish=()=>resolve({ok:true,json:async()=>({prompt:'LATE RESULT',warnings:[]})})}):nativeFetch(url,options);
+  d.querySelector('[data-overview-select="p:'+source.segments[0].id+'"]').click();await pause();await pause();assert(finish);
+  d.querySelector('[data-canvas-home]').click();await pause();await pause();d.dispatchEvent(new f.w.Event('close'));finish();await pause();await pause();assert.equal(d.open,false);assert.equal(f.errors.length,0);assert(!f.el('toast').textContent.includes('Cannot set properties'));
+  assert.doesNotThrow(()=>f.w.framePromptTools(null,null));const toast=f.el('toast');toast.remove();assert.doesNotThrow(()=>f.w.toast('detached'));f.w.document.body.append(toast);
+  console.log('PASS: full prompt copy, green feedback, reversible three-line preview, stale compiled response after Home, null tool mount and missing Toast');
+ }finally{f.w.close()}
+}
 async function visualOptionsChecks(){
  const f=await fixture(sample,'professional');try{await f.w.openFrameOverview();await pause();const d=f.el('overviewDialog');d.querySelector('[data-inspector-tab=settings]').click();await pause();
  const change=(key,value)=>{const el=d.querySelector('[data-appearance-select="'+key+'"]');assert([...el.options].some(o=>o.value===value));el.value=value;el.dispatchEvent(new f.w.Event('change',{bubbles:true}))};
@@ -104,6 +118,10 @@ async function upgradeChecks(){
  const f=await fixture(sample,'professional');try{
   f.el('homeProjectSearch').value='no-such-project';f.el('homeProjectSearch').dispatchEvent(new f.w.Event('input'));assert.equal(f.el('localProjectList').querySelectorAll('.homeProject').length,0);
   f.el('homeProjectSearch').value='';f.el('homeProjectSearch').dispatchEvent(new f.w.Event('input'));f.el('homeList').click();assert(f.el('localProjectList').classList.contains('homeListView'));f.el('homeGrid').click();
+  const search=f.el('homeProjectSearch');search.value='replace me';search.dispatchEvent(new f.w.KeyboardEvent('keydown',{key:'k',ctrlKey:true,bubbles:true,cancelable:true}));assert.equal(f.w.document.activeElement,search);assert.equal(search.selectionStart,0);assert.equal(search.selectionEnd,10);search.value='';
+  const drag=(kind,target=f.el('startImport'),related=null)=>{const e=new f.w.Event(kind,{bubbles:true,cancelable:true});Object.defineProperty(e,'dataTransfer',{value:{types:['Files'],files:[],dropEffect:'none'}});Object.defineProperty(e,'relatedTarget',{value:related});target.dispatchEvent(e)};
+  drag('dragenter');assert(f.el('startImport').classList.contains('fileover'));assert.match(f.el('startImport').textContent,/松手即可/);drag('dragenter',f.el('startImport').querySelector('b'));drag('dragleave',f.el('startImport').querySelector('b'),f.el('startImport'));assert(f.el('startImport').classList.contains('fileover'),'nested child leave must not flicker');drag('dragleave');assert(!f.el('startImport').classList.contains('fileover'));assert.match(f.el('startImport').textContent,/支持直接拖拽/);
+  const card=f.el('localProjectList').querySelector('.homeProject');assert.equal(card.querySelectorAll('.homeMetaCounts .highlight').length,2);assert.equal(card.querySelector('.homeCoverBadge').textContent,'已有分镜');
   f.el('homeSettings').click();await pause();assert(f.el('homeSettingsMount').contains(f.el('checkUpdates')));f.w.close();assert(f.el('checkUpdates').closest('header'));
   await f.w.openFrameOverview();await pause();await pause();const d=f.el('overviewDialog');d.querySelector('[data-card-mode]').click();await pause();await pause();assert(d.querySelectorAll('.referenceEdge').length>0,'Cards keep reference links');
   const before=f.project.assets.length,fold=d.querySelector('[data-project-assets-toggle]');const right=d.querySelector('[data-dock-arrow=right]');if(right.getAttribute('aria-expanded')==='true'){right.click();await pause()}fold.click();await pause();await pause();await f.w.flush();assert.equal(right.getAttribute('aria-expanded'),'false','Asset repaint must not reopen collapsed Inspector');assert.equal(d.querySelectorAll('.canvasAssetLayer .overviewNode.asset').length,0);assert.equal(f.project.assets.length,before);assert(f.project.overviewLayout.canvas37.assetsCollapsed);assert(d.querySelectorAll('.referenceEdge').length>0,'Collapsed dock keeps reference links');
@@ -441,7 +459,7 @@ async function inspectorWorkflowChecks(){
  }finally{f.dom.window.close()}
 }
 async function run(){
- await visualOptionsChecks();await paletteChecks();await upgradeChecks();if(process.env.FRAME_UPGRADE_ONLY)return;
+ await runtimeAndPromptChecks();if(process.env.FRAME_RUNTIME_ONLY)return;await visualOptionsChecks();await paletteChecks();await upgradeChecks();if(process.env.FRAME_UPGRADE_ONLY)return;
  let f=await fixture();
  try{
   assert.equal(f.w.document.body.dataset.startupView,'home');assert.equal(f.w.document.body.dataset.workbenchMode,'simple');
@@ -464,7 +482,7 @@ async function run(){
   f.el('script').value='一个人走进房间。';f.el('script').dispatchEvent(new f.w.Event('input'));f.el('startupNextStep').click();assert.equal(f.w.document.body.dataset.startupStage,'assets');assert.equal(f.el('startupAssetsBlock').parentElement.id,'startupAssetsMount');
   f.el('startupNextStep').click();assert.equal(f.w.document.body.dataset.startupStage,'shots');f.el('addShot').click();await pause();await f.w.flush();assert.equal(f.project.segments[0].shots.length,1);
   f.el('export').click();assert.match(f.el('modalTitle').textContent,/保存项目/);assert.match(f.el('modalBody').textContent,/AI 搅拌手/);
-  Object.defineProperty(f.el('packFile'),'files',{configurable:true,value:[{name:'saved.frame.json',text:async()=>JSON.stringify({format:'frame-project',version:1,project:sample})}]});await f.el('packFile').onchange();await pause();assert.equal(f.project.title,sample.title);assert(f.calls.some(c=>c.route==='import-project'));
+  for(const name of ['saved.frame.json','saved.frame']){Object.defineProperty(f.el('packFile'),'files',{configurable:true,value:[{name,text:async()=>JSON.stringify({format:'frame-project',version:1,project:sample})}]});await f.el('packFile').onchange();await pause();assert.equal(f.project.title,sample.title);assert(f.calls.some(c=>c.route==='import-project'));}
   assert.equal(f.errors.length,0);console.log('PASS: home, manual steps, example, mode preservation, AI deferred setup/resume, H3 handoff');
  }finally{f.dom.window.close()}
  f=await fixture(sample,'professional');

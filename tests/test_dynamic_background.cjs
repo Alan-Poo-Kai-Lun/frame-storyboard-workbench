@@ -1,0 +1,24 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),{JSDOM}=require('jsdom');
+const dom=new JSDOM('<html><body><dialog open><div id="map"><div id="root"></div></div></dialog></body></html>',{runScripts:'outside-only'}),w=dom.window,d=w.document,map=d.querySelector('#map'),dialog=d.querySelector('dialog'),root=d.querySelector('#root');
+w.structuredClone=structuredClone;
+let hidden=false,reduced=false,notifyMotion,resize,now=0,next=0,frames=new Map(),arcs=[],clears=0,gradients=[],saves=0,restores=0,composites=[];
+Object.defineProperty(d,'hidden',{get:()=>hidden});w.CanvasRenderingContext2D=function(){};
+const ctx={setTransform(){},clearRect(){clears++},beginPath(){},arc(...args){arcs.push(args)},stroke(){throw Error('Hard rings forbidden')},fill(){},save(){saves++},restore(){restores++},set globalCompositeOperation(value){composites.push(value)},createRadialGradient(...args){const g={args,stops:[],addColorStop(...stop){this.stops.push(stop)}};gradients.push(g);return g}};
+w.HTMLCanvasElement.prototype.getContext=()=>ctx;w.matchMedia=()=>({get matches(){return reduced},addEventListener(_,cb){notifyMotion=cb},removeEventListener(){}});
+w.ResizeObserver=class{constructor(cb){resize=cb}observe(){}disconnect(){}};
+w.requestAnimationFrame=cb=>{frames.set(++next,cb);return next};w.cancelAnimationFrame=id=>frames.delete(id);Object.defineProperty(w.performance,'now',{value:()=>now});
+map.getBoundingClientRect=()=>({left:10,top:20,width:800,height:600});root.getBoundingClientRect=()=>({left:110,top:120,width:100,height:60});
+vm.runInContext(fs.readFileSync('web/dynamic-background.js','utf8'),dom.getInternalVMContext());
+vm.runInContext(fs.readFileSync('web/appearance-profiles.js','utf8'),dom.getInternalVMContext());
+let a={enableDynamicBg:false,bgIntensity:8,highlight:'#38bdf8'};
+const bg=w.createFrameDynamicBackground({dialog,map,appearance:()=>a,root:()=>root});
+function step(t){now=t;const q=[...frames.values()];frames.clear();q.forEach(cb=>cb(t))}
+assert.equal(frames.size,0);a.enableDynamicBg=true;bg.sync();assert.equal(frames.size,1);assert.equal(map.querySelector('canvas').style.opacity,'1');step(0);assert.equal(arcs.length,43);assert.deepEqual(arcs[0].slice(0,2),[150,130]);step(16);assert.equal(arcs.length,43);step(34);assert.equal(arcs.length,86);
+map.dispatchEvent(new w.Event('wheel'));step(68);assert.equal(arcs.length,86);step(140);assert.equal(arcs.length,89);step(340);assert.equal(arcs.length,132);
+assert.equal(gradients.length,12);assert.equal(gradients[0].args[5],450);assert.equal(gradients[1].args[5]-gradients[1].args[2],140);assert.equal(gradients[0].stops[0][1],'rgba(56,189,248,0.0096)');assert.equal(gradients[1].stops[0][1],'rgba(56,189,248,0)');assert.equal(gradients[1].stops[2][1],'rgba(56,189,248,0)');assert.equal(saves,restores);assert(composites.every(x=>x==='screen'));
+hidden=true;d.dispatchEvent(new w.Event('visibilitychange'));assert.equal(frames.size,0);hidden=false;d.dispatchEvent(new w.Event('visibilitychange'));assert.equal(frames.size,1);
+reduced=true;notifyMotion();assert.equal(frames.size,0);reduced=false;notifyMotion();assert.equal(frames.size,1);
+a.bgIntensity=0;bg.sync();assert.equal(frames.size,0);a.bgIntensity=30;bg.sync();assert.equal(map.querySelector('canvas').style.opacity,'1');bg.dispose();assert.equal(frames.size,0);assert.equal(map.querySelector('canvas'),null);
+const api=w.frameAppearance,old=api.activate({},'dark');assert.equal(old.enableDynamicBg,false);assert.equal(old.bgIntensity,8);
+let saved=api.edit(old,{...old,enableDynamicBg:true,bgIntensity:12},'dark');saved=api.edit(saved,{...api.resolve(saved,'light'),enableDynamicBg:false,bgIntensity:3},'light');assert.equal(api.resolve(saved,'dark').bgIntensity,12);assert.equal(api.resolve(saved,'dark').enableDynamicBg,true);assert.equal(api.resolve(saved,'light').bgIntensity,3);assert.equal(api.resolve(saved,'light').enableDynamicBg,false);
+console.log('PASS: feathered gradients, two wide waves, 40 stable dust particles, screen blend and balanced save/restore; root anchor, 30 FPS cap, interaction throttling/particle skip, hidden/reduced-motion pause, zero intensity, disposal, legacy defaults and independent theme persistence');dom.window.close();

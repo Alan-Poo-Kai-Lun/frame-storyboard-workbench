@@ -8,21 +8,21 @@ def thumbnail(data,p):
     for path in paths:
         content=p.get('media',{}).get(path)
         if not content or not str(path).lower().endswith(('.png','.jpg','.jpeg','.webp','.gif')):continue
-        name=hashlib.sha256(content.encode()).hexdigest()+'.jpg';target=data/'project-thumbnails'/name
+        name=hashlib.sha256(('cover-v2:'+content).encode()).hexdigest()+'.jpg';target=data/'project-thumbnails'/name
         if not target.exists():
             try:
                 from PIL import Image,ImageOps
                 raw=base64.b64decode(content,validate=True)
                 with Image.open(io.BytesIO(raw)) as image:
-                    image=ImageOps.exif_transpose(image);image.thumbnail((480,270))
-                    canvas=Image.new('RGB',(480,270),(24,28,34));image=image.convert('RGB');canvas.paste(image,((480-image.width)//2,(270-image.height)//2))
+                    image=ImageOps.exif_transpose(image)
+                    canvas=ImageOps.fit(image.convert('RGB'),(480,270),method=Image.Resampling.LANCZOS,centering=(.5,.5))
                     target.parent.mkdir(parents=True,exist_ok=True);temp=target.with_suffix('.tmp');canvas.save(temp,format='JPEG',quality=78);temp.replace(target)
             except Exception:continue
         return '/project-thumbnail/'+name
     return ''
 
 def metadata(data,p):
-    return {'duration':sum(s.get('duration',0) for s in p.get('segments',[])), 'coverUrl':thumbnail(data,p),'updatedMs':int(time.time()*1000),'starterExample':bool(p.get('starterExample'))}
+    return {'videos':sum(1 for s in p.get('segments',[]) for v in s.get('videos',[]) if isinstance(v,dict) and v.get('path') in p.get('media',{})), 'duration':sum(s.get('duration',0) for s in p.get('segments',[])), 'coverUrl':thumbnail(data,p),'updatedMs':int(time.time()*1000),'starterExample':bool(p.get('starterExample'))}
 
 def read(data,state,key):
     index=store.index(data,state);store._key(key)

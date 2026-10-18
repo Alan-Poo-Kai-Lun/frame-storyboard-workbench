@@ -4,6 +4,8 @@
 
 Windows · 本地运行 · **V3.29 Beta 1** · 基础分镜无需 AI
 
+> 主分支另含待发布的动态背景、首页弹性网格、浮动面板与 Prompt 快捷栏优化；下方 V3.29 下载包不包含这些新改动。详见[未发布更新记录](CHANGELOG.md)。
+
 [**下载 Windows EXE（无需 Python）**](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.29-beta.1/FRAME-Workbench-Windows-x64-v3.29-beta.1.exe) · [**下载 ZIP 更新包**](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.29-beta.1/FRAME-Storyboard-Workbench-v3.29-beta.1.zip) · [发布说明与 SHA-256](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/tag/v3.29-beta.1)
 
 [完整更新日志（V2.1–V3.29）](CHANGELOG.md) · [新手教程](docs/quick-start.md) · [常见问题](docs/faq.md) · [English](docs/README.en.md)

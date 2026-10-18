@@ -1,6 +1,19 @@
 /* UI localization only. Never translates project values, prompts or editable content. */
 (()=>{
  const pairs=`
+📋 复制完整 Prompt|📋 Copy full Prompt
+✓ 已复制|✓ Copied
+↕ 折叠|↕ Collapse
+↕ 展开|↕ Expand
+已有分镜|Storyboard ready
+已有成片|Video available
+草稿|Draft
+支持直接拖拽工程备份或导演包到此处|Drop a project backup or Director Pack here
+松手即可载入工程 (.frame / .zip)|Release to load project (.frame / .zip)
+动态背景 (Dynamic BG)|Dynamic BG
+启用动态背景|Enable dynamic background
+动效强度|BG intensity
+深渊光环 / 雷达脉冲 · 后台自动暂停|Abyssal halo / Radar pulse · Pauses in background
 项目 Agent|Project Agent
 节点 Agent|Node Agent
 与 Agent 对话 · 定点调整|Chat with Agent · Focused edits

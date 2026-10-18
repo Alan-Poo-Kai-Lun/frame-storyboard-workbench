@@ -37,7 +37,7 @@ def listing(data,state):
     value=index(data,state);rows=[]
     for row in value['projects']:
         is_current=row['id']==value['current'];path=state if is_current else data/'projects'/(_key(row['id'])+'.json')
-        if 'coverUrl' not in row and path.is_file():
+        if ('coverUrl' not in row or 'videos' not in row) and path.is_file():
             try:
                 from project_hub import metadata
                 enriched=metadata(data,json.loads(path.read_text('utf-8')));enriched.pop('updatedMs',None);row.update(enriched)

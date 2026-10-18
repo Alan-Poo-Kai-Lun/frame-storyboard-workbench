@@ -297,3 +297,13 @@ html:not([data-theme="dark"]) .syntax-weight{color:#92541f}
 .assetMentions[popover]{margin:0;right:auto;bottom:auto;color:var(--text);box-sizing:border-box}.writingSelection{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}.writingSelection span{border:1px solid var(--line);padding:5px 9px;border-radius:14px;font-size:12px}#modalBody{min-width:0}#modalBody .mentionEditor{min-width:0;max-width:100%}
 
 .canvasAssetLayer,.canvasStoryLayer{display:contents}.canvasAssetDock{position:absolute;border:1px solid var(--line);background:color-mix(in srgb,var(--canvas-node-bg,var(--bg)) 35%,transparent);border-radius:12px;pointer-events:none;padding:10px 15px;z-index:-1}.canvasAssetDock strong{font-size:14px}.canvasAssetDock small{margin-left:15px;font-size:11px;color:var(--muted)}
+/* Dynamic light stays below an independent static grid and all interactive nodes. */
+.directorCanvas37 .overviewMap{isolation:isolate;background-image:none!important}
+.canvasDynamicBg{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.canvasDynamicBg[hidden]{display:none}
+.directorCanvas37 .overviewMap::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background-image:radial-gradient(var(--canvas-grid-color,var(--line)) .7px,transparent .7px);background-size:var(--canvas-grid-size,28px) var(--canvas-grid-size,28px)}
+.directorCanvas37[data-canvas-pattern="lines"] .overviewMap::before{background-image:linear-gradient(to right,var(--canvas-grid-color,var(--line)) 1px,transparent 1px),linear-gradient(to bottom,var(--canvas-grid-color,var(--line)) 1px,transparent 1px)}
+.directorCanvas37[data-canvas-pattern="none"] .overviewMap::before{background-image:none}
+.directorCanvas37 .overviewGraph{z-index:2}
+.directorCanvas37 .canvasHint,.directorCanvas37 .canvasControls,.directorCanvas37 .canvasStatus{z-index:3}
+.dynamicBgSettings{margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:8px;min-width:0}

@@ -61,3 +61,33 @@ body[data-startup-view=home]>header{background:var(--panel);min-height:58px;padd
 .directorCanvas37[data-canvas-line-effect=grain] .canvasRail{stroke-dasharray:1 5;stroke-width:2;stroke-linecap:round}
 .directorCanvas37.canvasAnimated[data-canvas-flow=on][data-canvas-line-effect=grain] .canvasRail{animation:canvasGrainShift 1.7s steps(1) infinite}
 @media(prefers-reduced-motion:reduce){.directorCanvas37 .canvasRail{animation:none!important}}
+/* Home card rhythm and file-drop feedback. Light mode keeps its own readable text. */
+.homeProject .homeCover{position:relative;aspect-ratio:16 / 9;overflow:hidden;border-radius:10px 10px 0 0;min-height:0;height:auto}
+.homeProject .homeCover>img{position:absolute;inset:0;object-fit:cover;object-position:center;width:100%;height:100%;border-radius:inherit}
+.homeCoverBadge{right:9px;bottom:9px;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.16);border-radius:999px;color:#f1f5f9;font-size:10px;padding:3px 7px;z-index:2;pointer-events:none;backdrop-filter:blur(5px)}
+.homeProjectInfo b{font-weight:600;color:var(--ink)}
+:root[data-theme=dark] .homeProjectInfo b{color:#f1f5f9}
+.homeProjectInfo small{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;color:var(--muted)}
+:root[data-theme=dark] .homeMetaCounts{color:#94a3b8}
+.homeMetaCounts .highlight{color:var(--canvas-glow,#58cbb8);font-weight:600}
+:root:not([data-theme=dark]) .homeMetaCounts .highlight{color:#187d78}
+.homeProjectInfo time{margin-left:auto;color:#64748b;white-space:nowrap;font-size:10px}
+#startImport{transition:border-color .18s ease,box-shadow .18s ease,background-color .18s ease}
+#startImport.fileover{border:1px solid #38bdf8;box-shadow:0 0 20px rgba(56,189,248,.25);background:color-mix(in srgb,#38bdf8 9%,var(--panel))}
+@media(prefers-reduced-motion:reduce){#startImport{transition:none}}
+.homeOfficialBadge{position:absolute;z-index:3}
+/* Responsive home columns; localProjectList remains display:contents in grid view. */
+.startupLocalProjects{width:100%;box-sizing:border-box;grid-template-columns:repeat(auto-fill,minmax(min(280px,100%),1fr));gap:16px}
+.startupLocalProjects:has(.homeListView){grid-template-columns:minmax(0,1fr)}
+/* Floating headers stay outside the one independent scrolling content area. */
+.framePanelFloating{max-height:min(85vh,calc(100% - 12px))!important;box-shadow:0 16px 40px -8px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.12)!important;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);background:color-mix(in srgb,var(--panel) 88%,transparent)}
+.framePanelFloating.unifiedEditorPanel{display:flex;flex-direction:column;overflow:hidden}
+.framePanelFloating.unifiedEditorPanel>.canvasInspector{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;background:transparent}
+.framePanelFloating .floatingEditorHandle{flex-shrink:0}
+.framePanelFloating.frameAgentProject{display:flex;flex-direction:column;overflow:hidden}
+.framePanelFloating.frameAgentProject [data-agent-body]{flex:1;min-height:0;overflow-y:auto}
+.promptTextSurface{position:relative}
+.promptQuickActions{position:sticky;top:0;z-index:5;display:flex;justify-content:flex-end;gap:6px;padding:6px;background:var(--panel);border:1px solid var(--line);border-radius:8px 8px 0 0}
+.promptQuickActions .promptCopyIcon,.promptQuickActions .promptExpandToggle{position:static;white-space:nowrap;font-size:11px;padding:5px 8px}
+.promptQuickActions .copied{color:#3dbd87;border-color:#3dbd87}
+.highlightPrompt.promptCollapsed textarea{height:calc(3 * 1.65 * 13px + 26px)!important;min-height:0!important;max-height:calc(3 * 1.65 * 13px + 26px)!important;resize:none;overflow:hidden}

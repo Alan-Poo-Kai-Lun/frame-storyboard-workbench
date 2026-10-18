@@ -37,3 +37,10 @@ class AppearancePresetsChecks(unittest.TestCase):
   builtin=profiles.builtins()[0];self.save(name=builtin['name']);self.assertEqual(len(profiles.listing(self.data)['items']),12);self.assertEqual(len([r for r in profiles.listing(self.data)['items'] if r['name']==builtin['name']]),1)
  def test_builtin_original_cannot_be_deleted(self):
   with self.assertRaises(ValueError):self.save(action='delete',id=profiles.builtins()[0]['id'])
+
+ def test_dynamic_background_persistence_and_validation(self):
+  value={**self.value,'enableDynamicBg':True,'bgIntensity':8,'themeDynamicBg':{'dark':{'enableDynamicBg':True,'bgIntensity':8},'light':{'enableDynamicBg':False,'bgIntensity':3}}}
+  self.save(appearance=value)
+  self.assertEqual(next(r for r in profiles.listing(self.data)['items'] if not r.get('builtin'))['appearance'],value)
+  for key,v in [('bgIntensity',31),('bgIntensity',-1),('bgIntensity',True),('enableDynamicBg',1),('themeDynamicBg',{'dark':{'secret':'x'}})]:
+   with self.subTest(key=key,value=v),self.assertRaises(ValueError):profiles.validate({key:v})

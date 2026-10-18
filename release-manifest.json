@@ -99,6 +99,7 @@
   "web/canvas-controls.js",
   "web/canvas-style.js",
   "web/card-layouts.js",
+  "web/dynamic-background.js",
   "web/editor-presets.js",
   "web/floating-editor.js",
   "web/generation-controls.js",

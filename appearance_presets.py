@@ -3,7 +3,7 @@ import copy, math, re, uuid
 import creative_library as library
 
 COLORS = {'background','node','highlight','grid','titleColor','bodyColor','captionColor','lineColor','arrowColor','cardBackground','cardBorder'}
-NUMBERS = {'titleSize':(10,48),'bodySize':(10,36),'captionSize':(9,28),'gridSize':(8,160),'arrowSpeed':(.1,5)}
+NUMBERS = {'bgIntensity':(0,30),'titleSize':(10,48),'bodySize':(10,36),'captionSize':(9,28),'gridSize':(8,160),'arrowSpeed':(.1,5)}
 CHOICES = {'lineStyle':{'default','pcb','orthogonal','straight','curve','hidden','rounded','bus','dotted'},'lineEffect':{'none','pulse','dual','neon','ants','comet','breathing','grain'},'arrowType':{'chevron2','chevron3','diamond','crosshair','chiseled','pulse','filled','open','dot','none','clapper','fork','jack','radar'},'pattern':{'dots','lines','none'},'imageFit':{'contain','cover'},'projectShape':{'circle','rounded','square','diamond','hexagon','chamfer','film','octagon','pill','badge'}}
 
 def validate(value):
@@ -17,8 +17,13 @@ def validate(value):
    if isinstance(v,bool) or not isinstance(v,(int,float)) or not math.isfinite(v) or not lo<=v<=hi:raise ValueError('外观数值超出范围')
   elif key in CHOICES:
    if not isinstance(v,str) or v not in CHOICES[key]:raise ValueError('外观选项无效')
-  elif key in {'flow','hierarchy','pins'}:
+  elif key in {'flow','hierarchy','pins','enableDynamicBg'}:
    if not isinstance(v,bool):raise ValueError('外观开关无效')
+  elif key=='themeDynamicBg':
+   if not isinstance(v,dict) or set(v)-{'light','dark'}:raise ValueError('动态主题无效')
+   for item in v.values():
+    if not isinstance(item,dict) or set(item)-{'enableDynamicBg','bgIntensity'}:raise ValueError('动态背景字段无效')
+    validate(item)
   elif key=='activeTheme':
    if v not in ['light','dark']:raise ValueError('主题无效')
   elif key=='themeColors':

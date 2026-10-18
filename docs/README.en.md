@@ -10,6 +10,8 @@ A local workspace for stories, project assets, shot lists, H3 prompts and upload
 
 ![Actual V3.29 home screen with project covers and search](assets/screenshots/home-v3.29.jpg)
 
+> The main branch also contains unreleased dynamic backgrounds, responsive home cards, floating-panel improvements and Prompt quick actions. The V3.29 downloads above remain unchanged. See the [changelog](../CHANGELOG.md).
+
 ## Get started
 
 1. Run the EXE and keep its launcher open. The workbench opens in your browser.

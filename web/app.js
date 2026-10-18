@@ -8,9 +8,9 @@ let initialTheme='light';try{initialTheme=localStorage.getItem('frame-theme')||'
 let ready=false;
 let P=null,segIndex=0,shotId='',token='',cfg={},saveTimer,dirty=false,saveChain=Promise.resolve();
 const newId=()=>crypto.randomUUID().replaceAll('-','').slice(0,12),seg=()=>P?.segments[segIndex],shot=()=>seg()?.shots.find(s=>s.id===shotId);
-function toast(t){$('toast').textContent=t;$('toast').style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>$('toast').style.display='none',5000)}
+function toast(t){const el=$('toast');if(!el)return;el.textContent=String(t??'');el.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>{if(el.isConnected)el.style.display='none'},5000)}
 async function api(path,body){const opts={headers:{'X-Workbench-Token':token}};if(body!==undefined){opts.method='POST';opts.body=body instanceof File?body:JSON.stringify(body);opts.headers['Content-Type']=body instanceof File?'application/zip':'application/json'}const r=await fetch('/api/'+path,opts);const data=await r.json();if(!r.ok||data?.error)throw Error(data.error||'请求失败');return data}
-async function safe(fn){try{await fn()}catch(e){toast(e.message)}}
+async function safe(fn){try{await fn()}catch(e){if(e instanceof TypeError){window.frameLastRuntimeError={message:e.message,stack:e.stack};console.error(e)}toast(e?.message||String(e))}}
 function changed(){dirty=true;$('saved').textContent='有未保存修改';clearTimeout(saveTimer);saveTimer=setTimeout(()=>safe(flush),600)}
 function flush(){clearTimeout(saveTimer);if(!dirty||!P)return saveChain;dirty=false;const snapshot=JSON.parse(JSON.stringify(P));saveChain=saveChain.catch(()=>{}).then(()=>api('project',snapshot)).then(()=>{if(!dirty)$('saved').textContent='已保存在本机'}).catch(e=>{dirty=true;$('saved').textContent='保存失败';throw e});return saveChain}
 function image(path){if(/\.(mp3|wav|flac|ogg|m4a|aac|mp4|webm|mov|mkv)$/i.test(path||''))return '';if(!path||!P?.media[path])return '';const ext=path.split('.').at(-1).toLowerCase();let mime=({webp:'image/webp',jpg:'image/jpeg',jpeg:'image/jpeg',jfif:'image/jpeg',gif:'image/gif',bmp:'image/bmp',avif:'image/avif',tif:'image/tiff',tiff:'image/tiff'})[ext]||'image/png';return 'data:'+mime+';base64,'+P.media[path]}

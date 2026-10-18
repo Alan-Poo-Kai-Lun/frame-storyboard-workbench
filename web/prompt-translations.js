@@ -4,7 +4,7 @@ async function queuePromptTranslation(segmentId){
  await flush();const result=await api('prompt-translate',{projectId:P.projectId,segmentId});toast('双语翻译已加入任务中心');openTaskCenter();return result;
 }
 async function openPromptTranslations(segmentId=seg()?.id){
- if(!P||!segmentId)throw Error('请先选择片段');await flush();const pid=P.projectId,body={projectId:pid,segmentId},data=await api('prompt-translations',body);
+ if(!P||!segmentId)throw Error('请先选择片段');await flush();const pid=P.projectId,body={projectId:pid,segmentId},data=await api('prompt-translations',body);if(P?.projectId!==pid||!P.segments?.some(s=>s.id===segmentId))return;
  const versions=data.versions||{},texts={original:data.original,zh:versions.zh||'',en:versions.en||''};
  modal('最终提示词 · 中英双语',`<p class="notice">按需调用已配置的文字 AI。时间线、素材编号与对白原文保持不变；原文不会被翻译覆盖。翻译需人工核对。</p><p class="warning">${data.stale?'原文或素材已改变，旧翻译仅供查看，请重新翻译。':''}</p><label>查看版本<select id="promptLanguageView"><option value="original">原文</option><option value="zh">中文副本</option><option value="en">English copy</option></select></label><textarea id="translatedPromptText" rows="14" readonly data-user-content>${esc(texts.original)}</textarea><p>当前导演包导出语言：<b data-user-content>${esc({original:'原文',zh:'中文',en:'English'}[data.exportLanguage]||'原文')}</b></p><p id="translationError" role="alert"></p>`,[
  {label:'关闭',action:close},{label:'AI 生成中文与英文副本',action:()=>queuePromptTranslation(segmentId)},

@@ -42,6 +42,7 @@ jobs:
           npm install --prefix "$env:RUNNER_TEMP/frame-ui-check" jsdom@26.1.0 --ignore-scripts --no-audit --no-fund
           $env:NODE_PATH="$env:RUNNER_TEMP/frame-ui-check/node_modules"
           node tests/test_startup_ui.cjs
+          node tests/test_dynamic_background.cjs
       - name: Build source updater ZIP
         run: python tools/build_release.py
       - name: Build single-file Windows EXE
