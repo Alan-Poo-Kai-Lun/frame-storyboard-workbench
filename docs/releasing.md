@@ -56,6 +56,10 @@ python tools/build_release.py
 ```bash
 npm install --prefix /tmp/frame-ui-check jsdom@26.1.0 --ignore-scripts --no-audit --no-fund
 NODE_PATH=/tmp/frame-ui-check/node_modules node tests/test_startup_ui.cjs
+NODE_PATH=/tmp/frame-ui-check/node_modules node tests/test_dynamic_background.cjs
+NODE_PATH=/tmp/frame-ui-check/node_modules node tests/test_canvas_clipboard.cjs
+NODE_PATH=/tmp/frame-ui-check/node_modules node tests/test_canvas_effects.cjs
+NODE_PATH=/tmp/frame-ui-check/node_modules node tests/test_canvas_lifecycle.cjs
 ```
 
 
