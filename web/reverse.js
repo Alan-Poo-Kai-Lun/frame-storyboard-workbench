@@ -20,12 +20,12 @@ function renderReverseSources(){
  $('reverseSource').innerHTML='<option value="">选择图片 / 视频</option>'+options.join('');$('reverseSource').value=value;
 }
 function syncReversePanel(){
- if(!P)return;
+ if(!P||!$('reversePanel').isConnected)return;
  if(reverseProject!==P.projectId){reverseProject=P.projectId;reverseLoadVersion++;releaseReverseDraft();reverseBusy=false;$('reverseSubmit').disabled=$('reverseSampling').disabled=false;reverseWantedTask='';reverseSeen.clear();$('reversePreview').innerHTML='';$('reverseOutput').hidden=true;$('reverseSamplingLabel').hidden=$('reverseAudio').hidden=true;$('reverseState').textContent='请选择图片或视频';$('reverseAudioNotes').value='';if(reverseTemplatesLoaded)renderReverseTemplates('',true)}
  renderReverseSources();if(!$('reverseModel').value)$('reverseModel').value=cfg.ui?.reverseModel||cfg.ai?.visionModel||cfg.ai?.model||'';
  if(ready&&!reverseTemplatesLoaded)safe(loadReverseTemplates);
 }
-async function openReversePanel(){if(!ready)throw Error('工作台正在加载，请稍候');ensure();$('reversePanel').open=true;syncReversePanel();await loadReverseTemplates();$('reversePanel').scrollIntoView?.({behavior:'smooth',block:'nearest'})}
+async function openReversePanel(){if(!ready)throw Error('工作台正在加载，请稍候');ensure();mountReversePanel();$('reversePanel').open=true;syncReversePanel();await loadReverseTemplates();consumeReverseTasks(taskRows);$('reversePanel').scrollIntoView?.({behavior:'smooth',block:'nearest'})}
 $('reversePrompt').onclick=()=>safe(openReversePanel);
 $('reversePanel').ontoggle=()=>{if($('reversePanel').open)safe(loadReverseTemplates)};
 function mediaEvent(media,event,action,timeout=20000){
@@ -126,13 +126,15 @@ function showReverseResult(row){
  if(row.id===reverseWantedTask){reverseWantedTask='';$('reverseState').textContent='提示词反推已完成，结果已保存到任务历史'}
 }
 function consumeReverseTasks(rows){
- if(!P)return;const completed=rows.filter(r=>r.type==='reverse'&&r.status==='done'&&r.projectId===P.projectId),fresh=completed.filter(r=>!reverseSeen.has(r.id));completed.forEach(r=>reverseSeen.add(r.id));
+ if(!P||!$('reversePanel').isConnected)return;const completed=rows.filter(r=>r.type==='reverse'&&r.status==='done'&&r.projectId===P.projectId),fresh=completed.filter(r=>!reverseSeen.has(r.id));completed.forEach(r=>reverseSeen.add(r.id));
  const selected=reverseWantedTask?fresh.find(r=>r.id===reverseWantedTask):fresh.at(-1);if(selected)showReverseResult(selected);
  const failed=rows.find(r=>r.id===reverseWantedTask&&['error','cancelled','interrupted'].includes(r.status));if(failed){$('reverseState').textContent='反推任务未完成：'+(failed.error||failed.status);reverseWantedTask=''}
 }
-function viewReverseTask(id){const row=taskRows.find(r=>r.id===id);if(!row||row.projectId!==P?.projectId){toast('先打开原项目再查看反推结果');return}$('reversePanel').open=true;showReverseResult(row);$('reverseOutput').scrollIntoView?.({behavior:'smooth',block:'nearest'})}
+function viewReverseTask(id){const row=taskRows.find(r=>r.id===id);if(!row||row.projectId!==P?.projectId){toast('先打开原项目再查看反推结果');return}mountReversePanel();$('reversePanel').open=true;syncReversePanel();showReverseResult(row);$('reverseOutput').scrollIntoView?.({behavior:'smooth',block:'nearest'})}
 $('reverseCopy').onclick=()=>safe(async()=>{await navigator.clipboard.writeText($('reverseText').value);toast('已复制反推结果')});
 $('reverseDownload').onclick=()=>{const value=$('reverseText').value;if(!value)return;const url=URL.createObjectURL(new Blob([value],{type:'text/markdown;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download='FRAME-Reverse-Prompt.md';a.click();setTimeout(()=>URL.revokeObjectURL(url),30000)};
 syncReversePanel();
 
 $('reverseModel').onchange=()=>safe(async()=>{if(typeof saveUIPreference==='function')await saveUIPreference('reverseModel',$('reverseModel').value.trim())});
+
+function mountReversePanel(){const panel=$('reversePanel');if(panel.isConnected)return;modal('图片 / 视频提示词反推','',[{label:'关闭',action:close}]);$('modalBody').append(panel);const cleanup=()=>{for(const media of panel.querySelectorAll('video,audio'))media.pause();releaseReverseDraft();frameCommands.root.append(panel);$('reversePreview').replaceChildren()};$('modal')._releaseContent=cleanup;}

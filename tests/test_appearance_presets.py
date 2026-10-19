@@ -44,3 +44,11 @@ class AppearancePresetsChecks(unittest.TestCase):
   self.assertEqual(next(r for r in profiles.listing(self.data)['items'] if not r.get('builtin'))['appearance'],value)
   for key,v in [('bgIntensity',31),('bgIntensity',-1),('bgIntensity',True),('enableDynamicBg',1),('themeDynamicBg',{'dark':{'secret':'x'}})]:
    with self.subTest(key=key,value=v),self.assertRaises(ValueError):profiles.validate({key:v})
+
+ def test_visual_effect_flags_round_trip(self):
+  flags={key:True for key in ['nodeGlow','spotlightGrid','junctionPads','glassPanels','reduceMotion']}
+  self.save(appearance={**self.value,**flags})
+  saved=next(r for r in profiles.listing(self.data)['items'] if not r.get('builtin'))['appearance']
+  for key in flags:
+   self.assertIs(saved[key],True)
+   with self.subTest(key=key),self.assertRaises(ValueError):profiles.validate({key:1})

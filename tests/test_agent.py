@@ -89,7 +89,7 @@ class AgentChecks(unittest.TestCase):
   manager=SimpleNamespace(get=lambda ident:source,input=lambda row:stored,add=lambda kind,payload,cfg,snap:(snaps.append(copy.deepcopy(snap)) or {'id':'planned'}))
   with patch('task_backend.manager',return_value=manager),patch.object(server,'settings',return_value={'ai':{'model':'test','endpoint':'http://local'}}):writing.enqueue(server,{'projectId':self.p['projectId'],'story':'展示产品','count':1,'duration':5,'sourceAgentTaskId':'source'})
   snap=snaps[0];self.assertEqual(server.load_project()['assets'],[]);self.assertEqual(snap['refs'][0]['number'],1)
-  result=writing.validate(server,{'segments':[{'title':'产品展示','story':'@Picture 1 在桌上','shots':[{'start':0,'end':5,'action':'@Picture 1 保持正面','camera':'缓慢推近','startState':'产品在桌上','endState':'产品仍在桌上'}]}]},snap)
+  result=writing.validate(server,{'segments':[{'title':'产品展示','story':'@Picture 1 在桌上','shots':[{'start':0,'end':5,'action':'@Picture 1 保持正面','references':[1],'camera':'缓慢推近','startState':'产品在桌上','endState':'产品仍在桌上'}]}]},snap)
   story={'id':'planned','type':'story','status':'done','projectId':self.p['projectId'],'result':result};manager.get=lambda ident:story;manager.input=lambda row:snap;manager.patch=lambda *args,**kw:None
   with patch('task_backend.manager',return_value=manager):out=writing.apply(server,{'id':'planned','segments':[{'title':'产品展示','storyText':'@Picture 1 在桌上'}]})['project']
   self.assertEqual(len(out['assets']),1);self.assertEqual(out['media'][out['assets'][0]['path']],image['b64'])

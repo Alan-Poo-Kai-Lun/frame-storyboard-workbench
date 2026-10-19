@@ -2,15 +2,31 @@
 
 **把故事、参考素材、分镜和成片记录，整理在同一张导演画布里。**
 
-Windows · 本地运行 · **V3.29 Beta 1** · 基础分镜无需 AI
+Windows · 本地运行 · **V3.32 Beta 1** · 基础分镜无需 AI
 
-> 主分支另含待发布的动态背景、首页弹性网格、浮动面板与 Prompt 快捷栏优化；下方 V3.29 下载包不包含这些新改动。详见[未发布更新记录](CHANGELOG.md)。
+[**下载 Windows EXE（无需 Python）**](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.32-beta.1/FRAME-Workbench-Windows-x64-v3.32-beta.1.exe) · [**下载完整源码／BAT ZIP**](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.32-beta.1/FRAME-Storyboard-Workbench-v3.32-beta.1.zip) · [发布说明与 SHA-256](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/tag/v3.32-beta.1)
 
-[**下载 Windows EXE（无需 Python）**](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.29-beta.1/FRAME-Workbench-Windows-x64-v3.29-beta.1.exe) · [**下载 ZIP 更新包**](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.29-beta.1/FRAME-Storyboard-Workbench-v3.29-beta.1.zip) · [发布说明与 SHA-256](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/tag/v3.29-beta.1)
+[完整更新日志（V2.1–V3.32）](CHANGELOG.md) · [新手教程](docs/quick-start.md) · [常见问题](docs/faq.md) · [English](docs/README.en.md)
 
-[完整更新日志（V2.1–V3.29）](CHANGELOG.md) · [新手教程](docs/quick-start.md) · [常见问题](docs/faq.md) · [English](docs/README.en.md)
+## V3.32：统一画布编辑与可选视觉效果
 
-![V3.29 实际首页：新建、拖拽导入、项目封面与搜索](docs/assets/screenshots/home-v3.29.jpg)
+画布和卡片流共用编辑、保存与任务服务，取消独立“详细编辑”长页面；保存时不再重建隐藏的旧镜头板、素材列表和时间线。退出画布后释放视图资源，后台任务继续执行。
+
+- **外观与性能控制**：选中节点呼吸微光、180 屏幕像素探照灯网格、汇聚焊盘和玻璃浮层可分别开关、随方案保存；支持减少动态和后台暂停。
+- **就地编辑与复制**：节点下方展开镜头动作、对白、空间起止状态、素材与最终提示词；内容独立滚动，可复制或就地修改。
+- **素材与剪贴板**：Ctrl/Cmd+V 导入图片；Ctrl/Cmd+C 复制素材真实 PNG，Ctrl/Cmd+D 创建独立副本。输入框保持原生文字操作。@ 标签显示完整名称，悬停预览图片和备注。
+- **规划、恢复与 H3**：选择真实参考素材，逐镜头绑定；段间引导与起止状态随规划保留。可从原规划恢复误删片段／镜头；两种视图共用添加镜头和时长处理。Subject 引用与 `(S1)/(S2)` 对白声线独立编译。
+- **写作技能与 Agent**：分类双列卡片、完整规则抽屉、技能编辑／另存；Agent 左右气泡、时间戳和日期分隔，修改先预览再应用。
+
+本次公开发布累计包含 V3.30–V3.32 的本地迭代；旧工程、12 套内置外观和自定义方案继续读取。[本版说明](docs/release-v3.32-beta.1.md) · [V3.31 交互改动](docs/release-v3.31-beta.2.md) · [V3.30 规划与恢复](docs/release-v3.30-beta.1.md)
+
+![V3.32 实际画布：可选视觉效果与设置面板](docs/assets/screenshots/canvas-effects-v3.32.png)
+
+[查看日间主题与减少动态](docs/assets/screenshots/canvas-light-v3.32.png) · [V3.31 完整名称素材标签](docs/assets/screenshots/mention-full-name-v3.31-beta.2.jpg) · [技能编辑](docs/assets/screenshots/skill-edit-v3.31-beta.2.jpg) · [Agent 气泡](docs/assets/screenshots/agent-bubbles-v3.31-beta.2.jpg)
+
+截图来自隔离测试工程，版本在文件名中标明；聊天验证示例未调用真实模型。[截图来源](docs/assets/screenshots/README.md)。装饰光效不表示生成进度。
+
+**本地验证：**106 项后端测试、29 组 UI 集成回归，以及生命周期、动态背景、探照灯、PNG 剪贴板检查和隔离 EXE 自检通过。相同 100／500 节点的结构测试中，页面元素数约减少 34%／33%；该结果不代表 CPU、GPU 或内存降幅，未进行这三项实测。GitHub 发布流程另行运行 Linux 检查和 Windows 构建。
 
 ## 三步开始
 
@@ -20,9 +36,9 @@ Windows · 本地运行 · **V3.29 Beta 1** · 基础分镜无需 AI
 
 基础分镜无需配置模型。首次使用 AI 时再到设置中连接 Ollama 或兼容 API；图像分析需要支持视觉输入的模型。
 
-## V3.29：12 套内置外观，累计工作台升级
+## 既有功能：12 套内置外观与项目工作台
 
-本次公开发布包含 V3.25–V3.29 的累计改动。此前本地迭代的详细记录保留在[更新日志](CHANGELOG.md)，不代表每个版本都单独发布过安装包。
+V3.29 已发布的 V3.25–V3.29 累计功能继续保留。此前本地迭代的详细记录保留在[更新日志](CHANGELOG.md)，不代表每个版本都单独发布过安装包。
 
 | 功能 | 当前可用行为 |
 |---|---|
@@ -53,7 +69,7 @@ Windows · 本地运行 · **V3.29 Beta 1** · 基础分镜无需 AI
 
 截图为 V3.29 的真实运行界面，使用隔离示例工程；[截图来源说明](docs/assets/screenshots/README.md)。Agent 截图展示对话入口，没有虚构 AI 回复。光效只作装饰，不表示渲染进度。
 
-**发布验证：**93 项后端测试、26 组界面回归、GitHub Linux / Windows 构建及隔离 EXE 自检通过。真实模型输出质量与 GPU 视频生成不在本次验证范围内。[V3.29 外观扩展说明](docs/release-v3.29-beta.1.md) · [V3.28 工作台改动](docs/release-v3.28-beta.1.md) · [V3.27 Agent 与素材改动](docs/release-v3.27-beta.1.md)
+**V3.29 历史验证：**93 项后端测试、26 组界面回归、GitHub Linux / Windows 构建及隔离 EXE 自检通过。真实模型输出质量与 GPU 视频生成不在本次验证范围内。[V3.29 外观扩展说明](docs/release-v3.29-beta.1.md) · [V3.28 工作台改动](docs/release-v3.28-beta.1.md) · [V3.27 Agent 与素材改动](docs/release-v3.27-beta.1.md)
 
 ## 导演包如何接到 ComfyUI
 

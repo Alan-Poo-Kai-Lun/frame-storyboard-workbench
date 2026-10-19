@@ -23,13 +23,15 @@ COMPUTE_LOCK=threading.RLock()
 def uid(): return uuid.uuid4().hex[:12]
 def digest(t): return hashlib.sha256(t.encode()).hexdigest()
 def parse_shots(prompt,duration):
+    import h3_compiler
+    prompt=h3_compiler.editable_text(prompt)
     pattern=r'\[(\d+(?:\.\d+)?)\s*s?\s*[–—\-~到]\s*(\d+(?:\.\d+)?)\s*s?\]'
     matches=list(re.finditer(pattern,prompt)); shots=[]
     for i,m in enumerate(matches):
         end=matches[i+1].start() if i+1<len(matches) else len(prompt)
         body=prompt[m.end():end]
         if i+1==len(matches):
-            stop=re.search(r'(?m)^\s*(?:editing|audio|cinematography|continuity_constraints|negative_constraints|FINAL VISUAL INTENT)\s*:',body)
+            stop=re.search(r'(?m)^\s*(?:overall_soundscape|non_diegetic_music|editing|audio|cinematography|continuity_constraints|negative_constraints|FINAL VISUAL INTENT)\s*:',body)
             if stop: body=body[:stop.start()]
         fields=parse_shot_fields(body)
         shots.append({'id':uid(),'start':float(m[1]),'end':float(m[2]),**fields,'image':'','firstFrame':'','lastFrame':'','locks':{'identity':True,'costume':False,'scene':True,'prop':False}})
@@ -42,7 +44,7 @@ def parse_shot_fields(body):
     for i,m in enumerate(matches):
         key=next(v for k,v in labels.items() if k.lower()==m[1].lower());value=body[m.end():matches[i+1].start() if i+1<len(matches) else len(body)].strip()
         if key=='dialogueLanguage':value=value.split('。')[0].strip()
-        result[key]=value
+        result[key]=(result[key]+'\n'+value) if key=='dialogue' and result[key] else value
     return result
 ASPECTS=['1:1','2:3','3:4','3:5','4:5','5:7','5:8','7:9','9:16','9:19','9:21','9:32','3:2','4:3','5:3','5:4','7:5','8:5','9:7','16:9','19:9','21:9','32:9']
 def aspect_from_output(out):
@@ -338,7 +340,7 @@ def scoped_assets(project, segment=None):
     local=[a for a in assets if a.get('scope')=='segment' and segment and a.get('segmentId')==segment['id']]
     return public+local
 
-def original_scoped_prompt(project, segment):
+def legacy_scoped_prompt(project, segment):
     for asset in project.get('assets',[]):
         if not asset.get('deleted') or generation_backend.media_type(asset)=='image':continue
         for scope in asset.get('deletedReferenceScopes',[]):
@@ -380,6 +382,12 @@ def original_scoped_prompt(project, segment):
         guide='参考用途：人物图片仅约束人物身份与服装，不沿用设定板的背景、排版或展示站姿；每镜头仅使用其明确绑定的场景，不混合其他参考场景。视频环境由场景参考与已确认布局决定。未显示的入口和通路不自行补造。'
         text='subject_definitions:\n'+'\n'.join(definitions)+'\n'+guide+'\n\n'+text
     return text
+
+def original_scoped_prompt(project, segment):
+    legacy=legacy_scoped_prompt(project,segment)  # Retain missing/deleted-reference validation.
+    if not (project.get('assetsManaged') or project.get('generationManaged') or segment.get('planning',{}).get('h3PromptVersion')==2):return legacy
+    import h3_compiler
+    return h3_compiler.compile_prompt(sys.modules[__name__],project,segment)
 
 def scoped_prompt(project, segment):
     source=original_scoped_prompt(project,segment);lang=segment.get('promptExportLanguage','original')

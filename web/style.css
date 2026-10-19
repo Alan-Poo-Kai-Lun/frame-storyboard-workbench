@@ -307,3 +307,7 @@ html:not([data-theme="dark"]) .syntax-weight{color:#92541f}
 .directorCanvas37 .overviewGraph{z-index:2}
 .directorCanvas37 .canvasHint,.directorCanvas37 .canvasControls,.directorCanvas37 .canvasStatus{z-index:3}
 .dynamicBgSettings{margin:12px 0;padding:12px;border:1px solid var(--line);border-radius:8px;min-width:0}
+
+/* Canonical values are retained in textarea; full visible labels are styled in workbench-upgrade.css. */
+.mentionToken{position:relative;white-space:nowrap}.mentionCanonical{color:transparent!important;text-decoration:none}.mentionToken::after{content:attr(data-ref-name);position:absolute;inset:0;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none;text-decoration:underline;text-decoration-color:#8da13b;text-underline-offset:3px}
+.assetMentions button>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.referenceTooltip{max-width:min(360px,calc(100vw - 24px))}

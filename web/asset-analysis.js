@@ -54,7 +54,3 @@ async function confirmAllAssets(scope='all'){
   toast('已人工确认 '+result.confirmed+' 张素材'+(result.skipped.length?'；跳过 '+result.skipped.length+' 张（'+Object.entries(counts).map(([k,v])=>k+' '+v).join('、')+'）':''));
  }finally{bulkConfirmationBusy=false}
 }
-for(const [anchor,scope,label]of [['toggleAssets','public','确认全部公共素材'],['groupAssetsTitle','segment','确认本组素材']]){
- const b=document.createElement('button');b.type='button';b.textContent=label;b.dataset.confirmAssets=scope;b.title='人工确认现有说明，跳过缺图、空说明和已确认素材';$(anchor).after(b);
- b.onclick=()=>safe(async()=>{b.disabled=true;try{await confirmAllAssets(scope)}finally{b.disabled=false}});
-}

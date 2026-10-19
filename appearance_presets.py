@@ -17,7 +17,7 @@ def validate(value):
    if isinstance(v,bool) or not isinstance(v,(int,float)) or not math.isfinite(v) or not lo<=v<=hi:raise ValueError('外观数值超出范围')
   elif key in CHOICES:
    if not isinstance(v,str) or v not in CHOICES[key]:raise ValueError('外观选项无效')
-  elif key in {'flow','hierarchy','pins','enableDynamicBg'}:
+  elif key in {'flow','hierarchy','pins','enableDynamicBg','nodeGlow','spotlightGrid','junctionPads','glassPanels','reduceMotion'}:
    if not isinstance(v,bool):raise ValueError('外观开关无效')
   elif key=='themeDynamicBg':
    if not isinstance(v,dict) or set(v)-{'light','dark'}:raise ValueError('动态主题无效')

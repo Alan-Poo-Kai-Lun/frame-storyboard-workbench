@@ -48,14 +48,15 @@ function renderTaskCenter(){
  if($('clearDoneTasks')){$('clearDoneTasks').disabled=!taskRows.some(r=>r.status==='done');$('clearDoneTasks').textContent='清理完成任务 ('+taskRows.filter(r=>r.status==='done').length+')'}
  $('taskRows').innerHTML=rows.slice().reverse().map(r=>`<article class="taskRow"><div class="taskRowHead"><b><span>${esc({story:"整篇剧情规划",agent:"Agent 对话",planning:"AI 拆镜",analysis:"镜头解析",assets:"素材分析",reverse:"提示词反推",translation:"提示词翻译"}[r.type]||"任务")}</span> · <span data-user-content>${esc(r.projectTitle||r.title)}</span></b><span class="taskStatus ${r.status}">${TASK_LABELS[r.status]||esc(r.status)}</span></div><small><span data-user-content>${esc(r.projectTitle)}</span> · ${esc(taskLocation(r))} · ${esc(r.createdAt)}</small><p>${esc(r.stage||'')}${r.cancelRequested?'（已请求停止）':''}</p>${taskTiming(r)}<p class="muted">${esc(taskProgressText(r))}</p>${r.stageHistory?.length?`<details><summary>每一步耗时</summary><ul>${taskStageHistory(r)}</ul></details>`:''}${r.cleanupError?`<p class="warning">${esc(r.cleanupError)}</p>`:''}${r.error?'<p class="taskError">'+esc(r.error)+'</p>':''}<div class="row"><button data-task-detail="${esc(r.id)}">查看任务</button>${['planning','analysis','reverse','assets','translation','story','agent'].includes(r.type)?`<button data-task-jump="${esc(r.id)}">跳转到工作台</button>${r.status==='done'?`<button data-task-result="${esc(r.id)}">查看结果</button>`:''}${['waiting','running'].includes(r.status)?`<button data-task-action="cancel" data-task-id="${esc(r.id)}">${r.status==='waiting'?'取消排队':'停止跟踪'}</button>`:''}${['error','cancelled','interrupted'].includes(r.status)?`<button data-task-action="retry" data-task-id="${esc(r.id)}">${r.type==='planning'&&r.outputSaved?'重新解析已有输出':'重试'}</button>${r.type==='planning'&&r.outputSaved?`<button data-task-action="regenerate" data-task-id="${esc(r.id)}">重新推理</button>`:''}`:''}`:'<small>旧生成模块已移除，记录仅供查阅</small>'}${['done','error','cancelled','interrupted'].includes(r.status)?`<button data-task-action="delete" data-task-id="${esc(r.id)}">删除记录</button>`:''}</div></article>`).join('')||'<p class="muted">没有符合条件的任务。</p>';
 }
+const taskSubscribers=new Set();window.frameTaskFeed={subscribe(fn){taskSubscribers.add(fn);return ()=>taskSubscribers.delete(fn)},snapshot:()=>taskRows,get subscriberCount(){return taskSubscribers.size}};
 async function pollTasks(){
  if(!ready||taskLoading)return;taskLoading=true;
  try{
- const r=await api('tasks');taskRows=r.tasks;tasksPaused=r.paused;if(typeof consumePreparationTasks==='function')await consumePreparationTasks(taskRows);if(typeof consumeReverseTasks==='function')consumeReverseTasks(taskRows);if(typeof syncAIStatus==='function')syncAIStatus();$('taskCount').textContent=taskRows.filter(r=>['waiting','running'].includes(r.status)).length;document.querySelectorAll('[data-canvas-task-count]').forEach(el=>el.textContent=$('taskCount').textContent);
+ const r=await api('tasks');taskRows=r.tasks;tasksPaused=r.paused;for(const fn of taskSubscribers)Promise.resolve(fn(taskRows)).catch(console.error);if(typeof consumePreparationTasks==='function')await consumePreparationTasks(taskRows);if(typeof consumeReverseTasks==='function')consumeReverseTasks(taskRows);if(typeof syncAIStatus==='function')syncAIStatus();$('taskCount').textContent=taskRows.filter(r=>['waiting','running'].includes(r.status)).length;document.querySelectorAll('[data-canvas-task-count]').forEach(el=>el.textContent=$('taskCount').textContent);
  const running=taskRows.find(r=>r.status==='running'),waiting=taskRows.filter(r=>r.status==='waiting').length;
  $('jobStatus').textContent=running?'正在执行：'+({analysis:'镜头解析',reverse:'提示词反推',planning:'AI 拆镜 / 调整',assets:'素材视觉分析'}[running.type]||running.type):tasksPaused?'任务队列已暂停':waiting?'等待队列：'+waiting+' 个任务':'任务队列空闲';
  refreshTaskResults();renderTaskCenter();
- }catch(e){if(taskCenterOpen)toast(e.message)}finally{taskLoading=false;clearTimeout(taskTimer);taskTimer=setTimeout(()=>pollTasks(),taskRows.some(r=>r.status==='running')?1500:4000)}
+ }catch(e){if(taskCenterOpen)toast(e.message)}finally{taskLoading=false;clearTimeout(taskTimer);taskTimer=setTimeout(()=>pollTasks(),document.hidden?12000:taskRows.some(r=>r.status==='running')?1500:4000)}
 }
 function syncStudioPanel(){if(!taskTimer)pollTasks()}
 function openTaskCenter(){
@@ -84,7 +85,8 @@ async function jumpToTask(id){
  if(row.type==='translation'){await openPromptTranslations(row.segmentId);return}
  if(row.type==='assets'&&row.status==='done'){viewAssetTask(id);return}
  if(row.type==='planning'&&row.status==='done'){viewPlanningTask(id);return}
- const panel=row.type==='reverse'?'reversePanel':'boardPanel';if($(panel)){$(panel).open=true;$(panel).scrollIntoView?.({behavior:'smooth',block:'start'})}
+ if(row.type!=='reverse'){await openFrameOverview();return}
+ const panel='reversePanel';if($(panel)){$(panel).open=true;$(panel).scrollIntoView?.({behavior:'smooth',block:'start'})}
  if(row.type==='reverse'&&row.status==='done')viewReverseTask(id);
  toast('已定位：'+taskLocation(row));
 }
@@ -104,3 +106,5 @@ function showAnalysis(id){
 $('taskCenter').onclick=openTaskCenter;
 const originalStudioClose=close;close=function(){taskCenterOpen=false;originalStudioClose()};$('closeModal').onclick=close;
 syncStudioPanel();
+
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){clearTimeout(taskTimer);taskTimer=0;safe(pollTasks)}});

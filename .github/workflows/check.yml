@@ -26,10 +26,13 @@ jobs:
           npm install --prefix "$RUNNER_TEMP/frame-ui-check" jsdom@26.1.0 --ignore-scripts --no-audit --no-fund
           NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_startup_ui.cjs
           NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_dynamic_background.cjs
+          NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_canvas_clipboard.cjs
+          NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_canvas_effects.cjs
+          NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_canvas_lifecycle.cjs
       - name: Build clean installer
         run: python tools/build_release.py
       - uses: actions/upload-artifact@v4
         with:
-          name: frame-v3.12-beta-installer
+          name: frame-source-verified-build
           path: dist/*
           if-no-files-found: error

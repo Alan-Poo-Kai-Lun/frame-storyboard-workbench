@@ -1,0 +1,10 @@
+const fs=require('node:fs');const path=require('node:path');const {performance}=require('node:perf_hooks');
+if(!process.argv[2]){console.error('Usage: node tests/compare_canvas_architecture.cjs <baseline-root> [output-dir]');process.exit(2)}
+const baseline=path.resolve(process.argv[2]);const out=path.resolve(process.argv[3]||'benchmark-output');fs.mkdirSync(out,{recursive:true});
+const current=require('./test_startup_ui.cjs');const before=require(path.join(baseline,'tests/test_startup_ui.cjs'));
+async function check(api,n,label){const p=JSON.parse(JSON.stringify(api.sample));p.assets=[];p.segments=[p.segments[0]];p.segments[0].shots=Array.from({length:n-4},(_,i)=>({...p.segments[0].shots[0],id:'perf-'+i,start:i*3,end:(i+1)*3}));p.overviewLayout={};
+ const f=await api.fixture(p,'professional');try{if(label==='after')f.w.eval("P.overviewLayout={canvas37:{appearance:{nodeGlow:false,spotlightGrid:false,junctionPads:false,glassPanels:false,enableDynamicBg:false}}}");await f.w.openFrameOverview();await api.pause();await api.pause();
+ const doc=f.w.document,activeNodes=doc.querySelectorAll('.overviewNode').length,dom=doc.querySelectorAll('*').length,legacy=doc.querySelector('#workspace')?.querySelectorAll('*').length||0;
+ const times=[];for(let i=0;i<6;i++){const t=performance.now();f.w.render();times.push(performance.now()-t)}
+ times.shift();times.sort((a,b)=>a-b);return {version:label,targetNodes:n,activeNodes,domElements:dom,legacyPageElements:legacy,renderMedianMs:+times[2].toFixed(2),samplesMs:times.map(x=>+x.toFixed(2))};}finally{f.w.close()}}
+(async()=>{const rows=[];for(const n of [100,500])for(const [label,api]of [['before',before],['after',current]])rows.push(await check(api,n,label));const report={method:'JSDOM same project, graphics effects disabled for isolation. Synchronous render() only; excludes browser layout, CPU/GPU/FPS and process memory.',rows};fs.writeFileSync(path.join(out,'performance-comparison.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2))})().then(()=>process.exit(0)).catch(e=>{console.error(e);process.exit(1)});

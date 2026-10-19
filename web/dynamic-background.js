@@ -4,7 +4,7 @@ window.createFrameDynamicBackground=function({dialog,map,appearance,root}){
  let ctx=null;try{if(window.CanvasRenderingContext2D)ctx=canvas.getContext('2d')}catch(_){}
  let raf=0,last=-Infinity,phase=0,previous=null,movingUntil=0,disposed=false,width=0,height=0,dpr=1,color='#38bdf8',intensity=.08,particles=[];
  const motion=window.matchMedia?.('(prefers-reduced-motion: reduce)');
- const allowed=()=>!disposed&&ctx&&dialog.open&&!document.hidden&&!motion?.matches&&appearance().enableDynamicBg===true&&Number(appearance().bgIntensity)>0;
+ const allowed=()=>!disposed&&ctx&&dialog.open&&!document.hidden&&!motion?.matches&&appearance().reduceMotion!==true&&appearance().enableDynamicBg===true&&Number(appearance().bgIntensity)>0;
  function stop(){if(raf)cancelAnimationFrame(raf);raf=0;previous=null;last=-Infinity}
  function clear(){ctx?.clearRect(0,0,width,height)}
  function resize(){const oldWidth=width,oldHeight=height,r=map.getBoundingClientRect();width=Math.max(0,r.width);height=Math.max(0,r.height);dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);ctx?.setTransform(dpr,0,0,dpr,0,0);if(!width||!height)stop();else if(!particles.length)particles=Array.from({length:40},()=>({x:Math.random()*width,y:Math.random()*height,radius:Math.random()*1.5+.5,alpha:Math.random()*.4+.1,speed:Math.random()*.3+.1,angle:Math.random()*Math.PI*2}));else if(oldWidth&&oldHeight)for(const p of particles){p.x*=width/oldWidth;p.y*=height/oldHeight}}

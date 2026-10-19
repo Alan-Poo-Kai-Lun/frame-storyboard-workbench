@@ -22,10 +22,24 @@ def resolve(p,target):
 
 def scope_key(target):return writing.digest({k:target.get(k,'') for k in ['kind','segmentId','shotId','assetId']})
 def read_chats(s):
- path=s.DATA/'agent-conversations.json'
- return json.loads(path.read_text('utf-8')) if path.exists() else {}
+ import math
+ with s.LOCK:
+  path=s.DATA/'agent-conversations.json';chats=json.loads(path.read_text('utf-8')) if path.exists() else {};changed=False
+  for project in chats.values():
+   for messages in project.values():
+    for message in messages:
+     value=message.get('timestamp',message.get('at',0))
+     value=int(value*(1000 if value<100_000_000_000 else 1)) if isinstance(value,(int,float)) and not isinstance(value,bool) and math.isfinite(value) and value>0 else 0
+     if message.get('timestamp')!=value:message['timestamp']=value;changed=True
+  if changed:
+   temp=path.with_suffix('.tmp');temp.write_text(json.dumps(chats,ensure_ascii=False),'utf-8');temp.replace(path)
+  return chats
+
 def store_chat(s,pid,key,message):
  with s.LOCK:
+  value=message.get('timestamp')
+  if not isinstance(value,(int,float)) or isinstance(value,bool) or not math.isfinite(value) or value<=0:value=float(message.get('at',time.time()))*1000
+  message={**message,'timestamp':int(value)}
   chats=read_chats(s);chat=chats.setdefault(pid,{}).setdefault(key,[]);chat.append(message);chats[pid][key]=chat
   path=s.DATA/'agent-conversations.json';path.parent.mkdir(parents=True,exist_ok=True);temp=path.with_suffix('.tmp');temp.write_text(json.dumps(chats,ensure_ascii=False),'utf-8');temp.replace(path)
 

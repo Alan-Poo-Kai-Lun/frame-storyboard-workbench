@@ -33,7 +33,7 @@ class UpgradeChecks(unittest.TestCase):
  def test_planner_sends_requested_output_language_separately(self):
   snapshots=[];manager=SimpleNamespace(add=lambda kind,payload,cfg,snap:(snapshots.append(snap) or {'id':'plan'}))
   with patch('task_backend.manager',return_value=manager),patch.object(server,'settings',return_value={'ai':{'model':'test','endpoint':'http://local'}}):writing.enqueue(server,{'projectId':self.p['projectId'],'story':'故事','count':1,'duration':5,'outputLanguage':'ms','dialogueLanguage':'Cantonese'})
-  snap=snapshots[0];output={'segments':[{'title':'故事','story':'人物站立','shots':[{'start':0,'end':5,'action':'站立','startState':'门口','endState':'门口'}]}]}
+  snap=snapshots[0];output={'segments':[{'title':'故事','story':'人物站立','shots':[{'start':0,'end':5,'action':'站立','startState':'门口','endState':'门口','references':[]}]}]}
   with patch.object(server,'ai_call',return_value=json.dumps(output)) as call:result=writing.analyze(server,{},snap,{})
   self.assertIn('Bahasa Melayu',call.call_args.args[1][0]['content']);self.assertEqual(result['segments'][0]['dialogueLanguage'],'Cantonese')
 

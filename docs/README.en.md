@@ -2,15 +2,28 @@
 
 A local workspace for stories, project assets, shot lists, H3 prompts and uploaded video records.
 
-**V3.29 Beta 1 · Windows · Basic storyboarding works without AI.** Publicly visible source; all rights reserved. See [LICENSE](../LICENSE).
+**V3.32 Beta 1 · Windows · Basic storyboarding works without AI.** Publicly visible source; all rights reserved. See [LICENSE](../LICENSE).
 
-[**Download Windows EXE — no Python required**](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.29-beta.1/FRAME-Workbench-Windows-x64-v3.29-beta.1.exe) · [ZIP updater](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.29-beta.1/FRAME-Storyboard-Workbench-v3.29-beta.1.zip) · [Release notes and checksums](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/tag/v3.29-beta.1)
+[**Download Windows EXE — no Python required**](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.32-beta.1/FRAME-Workbench-Windows-x64-v3.32-beta.1.exe) · [Full source / BAT ZIP](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.32-beta.1/FRAME-Storyboard-Workbench-v3.32-beta.1.zip) · [Release notes and checksums](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/tag/v3.32-beta.1)
 
-[中文](../README.md) · [Complete changelog, V2.1–V3.29](../CHANGELOG.md) · [Step-by-step tutorial (Chinese)](quick-start.md) · [Troubleshooting](faq.md)
+[中文](../README.md) · [Complete changelog, V2.1–V3.32](../CHANGELOG.md) · [Step-by-step tutorial (Chinese)](quick-start.md) · [Troubleshooting](faq.md)
 
 ![Actual V3.29 home screen with project covers and search](assets/screenshots/home-v3.29.jpg)
 
-> The main branch also contains unreleased dynamic backgrounds, responsive home cards, floating-panel improvements and Prompt quick actions. The V3.29 downloads above remain unchanged. See the [changelog](../CHANGELOG.md).
+## New in V3.32
+
+This release includes the V3.30–V3.32 local iterations. Canvas and card views share editing, saving and task services; the independent detailed editor is removed. Hidden legacy lists are no longer rebuilt, and view resources are disposed on exit while background tasks remain available.
+
+- Optional selection glow, a 180-screen-pixel spotlight grid, junction pads and glass panels. Save options in appearance profiles; reduced motion and background-tab suspension are supported.
+- Inline node details, editing and prompt copying; real PNG clipboard import/export and asset duplication.
+- Full-name asset mentions with image previews; story planning binds real selected assets, preserves continuity and spatial start/end states, and restores deleted shots from saved plans.
+- H3 Subject references and S1/S2 dialogue voice labels, writing-skill filters/editing/rules drawers, Agent bubbles and timestamps.
+
+![Actual V3.32 canvas effects and settings](assets/screenshots/canvas-effects-v3.32.png)
+
+[Light theme](assets/screenshots/canvas-light-v3.32.png) · [Full release notes](release-v3.32-beta.1.md) · [Screenshot provenance](assets/screenshots/README.md)
+
+Local validation: 106 backend tests, 29 UI integration groups, lifecycle/effects/PNG clipboard checks, and isolated EXE self-test passed. DOM counts dropped by about one third in synthetic 100/500-node projects; CPU, GPU and process memory were not benchmarked. GitHub Actions runs its own Linux checks and Windows build before publishing.
 
 ## Get started
 
@@ -20,9 +33,9 @@ A local workspace for stories, project assets, shot lists, H3 prompts and upload
 
 Configure Ollama or a compatible API in settings when you need AI. Image analysis requires a vision-capable model. Cloud requests are sent to the configured service.
 
-## What's included in V3.29
+## Existing project and appearance features
 
-This public release includes the cumulative V3.25–V3.29 local iterations. Individual local versions do not imply separate published installers.
+The previously published V3.25–V3.29 features remain available. Individual local versions do not imply separate published installers.
 
 - **Project hub:** media covers, an official sample, grid/list views, search, duplicate, rename, Director Pack export and recoverable deletion. Single-click selects; double-click opens the last mode.
 - **Two Agent entry points:** project conversations for ideas and planning; segment, shot or asset conversations for targeted edits. Topics have separate histories and recoverable deletion. Preview changes before applying them.
@@ -40,7 +53,7 @@ This public release includes the cumulative V3.25–V3.29 local iterations. Indi
 
 Screenshots use isolated sample projects, not private user projects. The Agent screenshot shows the interface without fabricated model replies. See [screenshot provenance](assets/screenshots/README.md).
 
-Validation: **93 backend tests, 26 DOM integration groups, GitHub Linux/Windows builds and an isolated EXE self-test passed.** Real model-output quality and GPU video generation were not tested. [V3.29 notes (Chinese)](release-v3.29-beta.1.md).
+V3.29 historical validation: **93 backend tests, 26 DOM integration groups, GitHub Linux/Windows builds and an isolated EXE self-test passed.** Real model-output quality and GPU video generation were not tested. [V3.29 notes (Chinese)](release-v3.29-beta.1.md).
 
 ## Export to ComfyUI
 

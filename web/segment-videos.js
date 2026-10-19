@@ -2,7 +2,7 @@
 let segmentVideoOwner='';
 function videoMediaSource(v){const b=P?.media?.[v.path];return b?'data:'+(v.mime||'video/mp4')+';base64,'+b:''}
 function syncSegmentVideos(){
- const owner=P?.projectId+':'+seg()?.id,list=$('segmentVideoList');if(!list)return;
+ const owner=P?.projectId+':'+seg()?.id,list=$('segmentVideoList');if(!list?.isConnected)return;
  if(owner===segmentVideoOwner)return;segmentVideoOwner=owner;
  const videos=seg()?.videos||[];$('segmentVideoCount').textContent='('+videos.length+')';
  list.innerHTML=videos.map(v=>`<article class="segmentVideoCard"><b>${esc(v.title||v.name)}</b>${videoMediaSource(v)?`<video controls preload="none" playsinline src="${videoMediaSource(v)}"></video>`:'<p class="warning">视频文件缺失，请重新添加</p>'}<small>${esc(v.name||'')} · ${((v.size||0)/1048576).toFixed(1)} MB · ${esc(v.createdAt||'')}</small><p class="videoNote">${esc(v.note||'暂无备注')}</p><div class="row"><button data-video-edit="${esc(v.id)}">修改名称 / 备注</button><button data-video-download="${esc(v.id)}">下载视频</button><button data-video-delete="${esc(v.id)}" class="danger">删除记录</button></div></article>`).join('')||'<p class="muted">本片段尚无视频记录。</p>';

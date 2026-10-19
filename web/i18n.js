@@ -1,6 +1,77 @@
 /* UI localization only. Never translates project values, prompts or editable content. */
 (()=>{
  const pairs=`
+工业质感与交互动效|Surface and interaction effects
+选中节点双层呼吸微光|Selected node breathing glow
+鼠标探照灯网格|Cursor spotlight grid
+电路汇聚焊盘|Circuit junction pads
+微光倒角与玻璃浮层|Bevel highlights and glass panels
+减少动态|Reduce motion
+跟随主题高亮；装饰不表示生成进度。减少动态时保留静态选中轮廓。|Uses the theme accent. Decorative effects do not indicate generation progress. Reduced motion preserves the static selection outline.
+确认全部公共素材|Confirm all shared assets
+确认本片段素材|Confirm this segment's assets
+提示词反推|Reverse prompt
+✎ 编辑|Edit
+保存修改|Save changes
+取消编辑|Cancel editing
+内置规则保持原样；保存为自定义副本，并替换本次勾选。|Built-in rules remain unchanged. Save a custom copy and replace this selection.
+修改当前自定义技能|Edit this custom skill
+Enter 保存 · Shift+Enter 换行 · Esc 取消|Enter saves · Shift+Enter adds a line · Esc cancels
+复制图片|Copy image
+创建副本|Duplicate asset
+画面动作|Visual action
+角色对白|Character dialogue
+外貌 / 服装与素材备注|Appearance / clothing and notes
+关联片段 / 镜头|Referenced by segments / shots
+暂无明确引用|No explicit references
+本段汇总|Segment summary
+📋 复制本镜提示词|📋 Copy shot prompt
+📋 复制全部 Prompt|📋 Copy full prompt
+节点就地详情|Inline node details
+收起节点详情|Collapse node details
+完整写作规则|Complete writing rules
+关闭完整规则|Close complete rules
+查看完整规则|View full rules
+技能分类|Skill category
+全部|All
+🎬 分镜|🎬 Storyboard
+📝 剧本|📝 Script
+🥋 动作|🥋 Action
+🎭 喜剧/表演|🎭 Comedy / Performance
+时间未记录|Time not recorded
+你|You
+未填写外貌 / 服装备注|No appearance / clothing notes
+
+段间引导与空间承接|Segment guidance and spatial continuity
+文字拆镜继承上一段结束状态|Carry the previous segment end state into shot planning
+H3 视频段间引导（确认创建时启用项目全局引导）|H3 video guidance (enable project guidance when applying)
+每个镜头都必须有起始位置 / 朝向 / 姿态与结束位置 / 动作结果。视频引导由外部 H3 导演台执行。|Every shot requires start and end spatial states. External H3 Director executes video guidance.
+本次规划素材 · 逐镜头绑定|Planning references - per-shot bindings
+选择实际使用的素材，点击 @ 插入。综合海报默认只作信息参考；人物身份、产品或场景用途须明确选择。|Select references and insert @ labels. Composite posters provide information only unless a specific role is selected.
+综合信息参考|General information
+人物身份|Character identity
+产品外观|Product appearance
+场景布局|Scene layout
+画面风格|Visual style
+@ 插入|@ Insert
+没有可用图片，不会生成虚构素材编号。|No images available. No reference numbers will be invented.
+镜头素材|Shot references
+起始位置 / 朝向 / 姿态|Start position / orientation / posture
+结束位置 / 动作结果|End position / action result
+旧规划未记录逐镜头绑定|Legacy plan has no per-shot bindings
+未记录|Not recorded
+已核对项目变化，仍按旧结果追加（不覆盖现有片段，素材须仍有效）|I reviewed source changes; append the saved result while preserving existing segments and validating references
+预览恢复此片段 / 镜头|Preview segment / shot restoration
+预览恢复缺失片段 / 镜头|Preview missing segment / shot restoration
+添加镜头 · 时间安排|Add shot - timing
+延长片段 3 秒|Extend segment by 3 seconds
+保留总时长并均分|Keep duration and redistribute evenly
+＋ 镜头|+ Shot
+＋ 前插镜头|+ Insert before
+＋ 后插镜头|+ Insert after
+＋ 在此镜头前插入|+ Insert shot before
+＋ 在此镜头后插入|+ Insert shot after
+
 📋 复制完整 Prompt|📋 Copy full Prompt
 ✓ 已复制|✓ Copied
 ↕ 折叠|↕ Collapse
