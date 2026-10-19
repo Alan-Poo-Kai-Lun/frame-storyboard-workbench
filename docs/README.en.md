@@ -1,75 +1,107 @@
 # FRAME Storyboard Workbench
 
-A local workspace for stories, project assets, shot lists, H3 prompts and uploaded video records.
+**Turn a story into shots, then hand prompts and reference assets to your video-generation tool.**
 
-**V3.32 Beta 1 · Windows · Basic storyboarding works without AI.** Publicly visible source; all rights reserved. See [LICENSE](../LICENSE).
+Write stories, organize character and location references, and edit shot actions and dialogue. AI assistance is optional. FRAME does not generate video; add externally generated videos back to the project to review and record them.
 
-[**Download Windows EXE — no Python required**](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.32-beta.1/FRAME-Workbench-Windows-x64-v3.32-beta.1.exe) · [Full source / BAT ZIP](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.32-beta.1/FRAME-Storyboard-Workbench-v3.32-beta.1.zip) · [Release notes and checksums](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/tag/v3.32-beta.1)
+**Windows · Runs locally · V3.32 Beta 1**　[中文](../README.md)
 
-[中文](../README.md) · [Complete changelog, V2.1–V3.32](../CHANGELOG.md) · [Step-by-step tutorial (Chinese)](quick-start.md) · [Troubleshooting](faq.md)
+## 1. Download and open
 
-![Actual V3.29 home screen with project covers and search](assets/screenshots/home-v3.29.jpg)
+**New Windows users: choose the EXE. Python is not required.**
 
-## New in V3.32
+[**Download Windows EXE**](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.32-beta.1/FRAME-Workbench-Windows-x64-v3.32-beta.1.exe)
 
-This release includes the V3.30–V3.32 local iterations. Canvas and card views share editing, saving and task services; the independent detailed editor is removed. Hidden legacy lists are no longer rebuilt, and view resources are disposed on exit while background tasks remain available.
+Run it and keep the small launcher window open. The workbench opens in your browser but runs on your computer.
 
-- Optional selection glow, a 180-screen-pixel spotlight grid, junction pads and glass panels. Save options in appearance profiles; reduced motion and background-tab suspension are supported.
-- Inline node details, editing and prompt copying; real PNG clipboard import/export and asset duplication.
-- Full-name asset mentions with image previews; story planning binds real selected assets, preserves continuity and spatial start/end states, and restores deleted shots from saved plans.
-- H3 Subject references and S1/S2 dialogue voice labels, writing-skill filters/editing/rules drawers, Agent bubbles and timestamps.
+[Full source / BAT ZIP](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.32-beta.1/FRAME-Storyboard-Workbench-v3.32-beta.1.zip) is for source users and requires Python. EXE users do not also need this ZIP. [Release and checksums](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/tag/v3.32-beta.1) · [Installation and data](install-and-data.md)
 
-![Actual V3.32 canvas effects and settings](assets/screenshots/canvas-effects-v3.32.png)
+## 2. Try the sample without AI
 
-[Light theme](assets/screenshots/canvas-light-v3.32.png) · [Full release notes](release-v3.32-beta.1.md) · [Screenshot provenance](assets/screenshots/README.md)
+1. Open the **Official sample** project on Home and follow the prompt to create a copy.
+2. Select a **segment** to read its story, then a **shot** to inspect actions and dialogue.
+3. Edit a shot action. Leave the text field and check the save status. Inline details and the property panel both support editing.
+4. Select its **H3 final prompt** node to view and copy the segment prompt.
+5. Use **Project pack → Save project backup / handoff** to download a project backup.
 
-Local validation: 106 backend tests, 29 UI integration groups, lifecycle/effects/PNG clipboard checks, and isolated EXE self-test passed. DOM counts dropped by about one third in synthetic 100/500-node projects; CPU, GPU and process memory were not benchmarked. GitHub Actions runs its own Linux checks and Windows build before publishing.
+This is the basic workflow: read the story, edit a shot, inspect the prompt, and back up the project. Opening the sample makes no model calls; its video is an existing file.
 
-## Get started
+![Actual V3.32 workbench and appearance settings](assets/screenshots/canvas-effects-v3.32.png)
 
-1. Run the EXE and keep its launcher open. The workbench opens in your browser.
-2. Open the official Cyber Cultivation v5 sample to create a copy, create a blank project, or import a Director Pack. The sample contains two reference images, four segments, twelve shots and one existing video.
-3. Select a segment to write its story, then select a shot to edit. Use cards for grouped content or the free canvas for relationships. Save a project backup or export a Director Pack.
+This screenshot uses an isolated tutorial project. [Screenshot provenance](assets/screenshots/README.md)
 
-Configure Ollama or a compatible API in settings when you need AI. Image analysis requires a vision-capable model. Cloud requests are sent to the configured service.
+## 3. Create your own project
 
-## Existing project and appearance features
+A **segment** is a short piece of the story, such as 15 seconds. A **shot** is one planned view within it. An **asset** is a reference file, such as a character, location or product image.
 
-The previously published V3.25–V3.29 features remain available. Individual local versions do not imply separate published installers.
+1. Choose **Create project** on Home and give it a name.
+2. Drop reference images onto empty canvas space. Name each asset, describe what is actually visible, and confirm the description.
+3. Use **Add segment**, select it, and write its story. Type `@` and choose an asset by name to reference it.
+4. Use **Add shot** beside the segment or inside its card. Set actions, dialogue and timing, or configure AI to propose shots for review.
 
-- **Project hub:** media covers, an official sample, grid/list views, search, duplicate, rename, Director Pack export and recoverable deletion. Single-click selects; double-click opens the last mode.
-- **Two Agent entry points:** project conversations for ideas and planning; segment, shot or asset conversations for targeted edits. Topics have separate histories and recoverable deletion. Preview changes before applying them.
-- **Docking:** drag Agent and property panels to the left, right or floating position. Resize, snap to an edge and collapse with edge arrows; panel state is remembered.
-- **Independent project assets:** the asset dock remains visible with zero segments. Uploading assets creates no implicit segment; deleting a segment preserves project media. Categories follow the asset library, including custom categories.
-- **Planning recovery and languages:** choose output and dialogue languages separately. Saved original plans can restore deleted segments without another model call.
-- **Appearance:** independent light/dark palettes, card-container colors and named reusable profiles. Twelve built-in profiles are available on a fresh installation; local profiles with the same name take priority.
-- **Canvas styles:** film, octagon, pill and badge roots; rounded, shared-bus and dotted lines; additional decorative effects and terminal markers. Effects never represent render progress.
+An `@` reference binds an asset; it does **not** mean a model has inspected the image. Run image analysis separately and confirm the result, or use your own verified description.
 
-![Actual V3.29 free canvas and independent project asset dock](assets/screenshots/director-canvas-v3.29.jpg)
+Canvas and **Card mode** edit the same project. [Full tutorial (Chinese)](quick-start.md)
 
-![Actual V3.29 project Agent docked on the left](assets/screenshots/agent-docked-v3.29.jpg)
+## 4. Connect AI only when needed
 
-![V3.29 appearance controls and film-frame root](assets/screenshots/appearance-v3.29.jpg)
+Manual editing, asset organization and saving require no model. AI planning, image analysis and Agent chat require a configured service.
 
-Screenshots use isolated sample projects, not private user projects. The Agent screenshot shows the interface without fabricated model replies. See [screenshot provenance](assets/screenshots/README.md).
+Open **Home settings → AI connection settings** and choose:
 
-V3.29 historical validation: **93 backend tests, 26 DOM integration groups, GitHub Linux/Windows builds and an isolated EXE self-test passed.** Real model-output quality and GPU video generation were not tested. [V3.29 notes (Chinese)](release-v3.29-beta.1.md).
+| Option | What to prepare |
+|---|---|
+| Local Ollama | Run Ollama, install the required model, and select its actual model name |
+| Compatible API | Your provider's endpoint, model ID and API key; provider fees may apply |
 
-## Export to ComfyUI
+Text planning needs a text model. Image analysis needs a vision-capable model. Test the connection before using AI tools.
 
-Director Packs target [AIMixer / ComfyUI MiniMax H3 Director](https://github.com/AIMixer/ComfyUI_MiniMaxH3_Director). Import the `.mmxpack.zip` using the director node's pack-import control. Install its plugin, workflow and models separately. See [compatibility details](h3-director-compatibility.md).
+Watch jobs in **Task Center**. A completed task still needs **review and explicit application** before it changes the project. Cloud requests and relevant content go to your configured provider. [Troubleshooting](faq.md)
 
-T2V, I2V, FL2V, R2V, V2V, RV2V and MIXED projects have explicit media requirements. FRAME plans, edits and records; images and videos are generated externally and added back to the project. FRAME does not render, edit or concatenate final videos.
+## 5. Back up, copy prompts or hand off
 
-## Source, data and updates
+| Goal | Action |
+|---|---|
+| Continue later or back up | Save a project backup (`.frame.json`); import it from Home later |
+| Use prompts in another tool | Copy the shot or final prompt and prepare references as that tool requires |
+| Use ComfyUI's H3 Director | Export a Director Pack (`.mmxpack.zip`) after checking the project |
+| Keep generated video records | Drop existing video onto the matching segment output node |
 
-Source users need Python 3.10+. Install Pillow for project-cover thumbnail processing:
+**A Director Pack is neither a video nor a generic ComfyUI workflow.** It targets [AIMixer's MiniMax H3 Director](https://github.com/AIMixer/ComfyUI_MiniMaxH3_Director). Prepare that plugin, workflow and models separately, then use its **Import Director Pack** control. [Compatibility details](h3-director-compatibility.md)
+
+You can save project backups without installing the director. This version uses manual export/import; it does not provide one-click ComfyUI video generation from the workbench.
+
+## Explore when you need it
+
+Home includes search, grid/list views, duplicate, rename and Trash. Single-click selects; double-click opens. The workbench includes full-name asset mentions, image clipboard operations, planning recovery, writing skills, Agent conversations, twelve appearance profiles and reduced motion.
+
+V3.32 uses canvas/card editing and removes the separate detailed-editor page. [Version notes](release-v3.32-beta.1.md) · [Changelog](../CHANGELOG.md)
+
+## Updates, data and help
+
+- EXE data defaults to `%LOCALAPPDATA%\FRAME\Workbench\data`. Back it up, exit the old launcher, then run the new EXE.
+- Source data defaults to the application's `data/` directory. [Install, update and migrate](install-and-data.md).
+- [Troubleshooting](faq.md) · [Report an issue](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/issues/new/choose). Include your version and reproduction steps; keep API keys and private projects out of reports.
+
+<details>
+<summary>Developers: run from source and licensing</summary>
+
+Python 3.10+ is required:
 
 ```bash
 python -m pip install Pillow==12.3.0
 python server.py
 ```
 
-Open http://127.0.0.1:8787. On Windows you can use `Start-Windows.bat` after installing the dependency. The packaged EXE already includes it.
+Open `http://127.0.0.1:8787`. Windows users can also run `Start-Windows.bat`.
 
-Back up and keep the complete `data/` folder private; model settings may contain API keys. To update an existing Windows installation, close its server, drag the ZIP updater onto `Update-Windows.bat`, restart and hard-refresh. Program backups are kept in `versions/`. See [installation and data](install-and-data.md), [release maintenance](releasing.md), [LICENSE](../LICENSE) and [NOTICE](../NOTICE.md).
+```bash
+python -m unittest discover -s tests -v
+python tools/check_release.py
+```
+
+[Release maintenance](releasing.md) · [Contributing](../CONTRIBUTING.md) · [Security](../SECURITY.md)
+
+Source is publicly visible; **all rights reserved**. See [LICENSE](../LICENSE) and [NOTICE](../NOTICE.md). Test results and historical interfaces are documented in version notes; they do not guarantee model output or compatibility with every system.
+
+</details>
