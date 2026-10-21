@@ -71,5 +71,6 @@ class WritingChecks(unittest.TestCase):
   raw=json.dumps(obj,ensure_ascii=False);saved=[]
   manager=SimpleNamespace(store_input=lambda ident,value:saved.append(copy.deepcopy(value)))
   with patch.object(server,'ai_call',return_value=raw),patch('task_backend.manager',return_value=manager):
-   with self.assertRaisesRegex(ValueError,'第 2 段.*最后结束 4 秒'):writing.analyze(server,{},snap,{'_taskId':'test'})
+   result=writing.analyze(server,{},snap,{'_taskId':'test'})
+   self.assertEqual(len(result['segments']),2);self.assertEqual(result['segments'][1]['shots'][0]['end'],4);self.assertTrue(result['blockingIssues']);self.assertIn('第 2 段',result['warnings'][0]['message'])
   self.assertEqual(saved[0]['modelResponse'],raw)

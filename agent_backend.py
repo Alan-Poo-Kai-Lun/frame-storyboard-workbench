@@ -1,6 +1,7 @@
 """Bounded JSON tool agent. Inference never writes project sources; apply is explicit."""
 import base64,copy,json,math,re,time
 from pathlib import Path
+import plan_store
 import writing_backend as writing
 import planning_backend as planning
 from prompt_review import references
@@ -71,7 +72,13 @@ def info(s,body):
   except ValueError:exists=False
   rows=[r for r in read_threads(s).get(p['projectId'],{}).values() if scope_key(r['target'])==scope_key(target)]
   rows.sort(key=lambda r:r['updatedAt'],reverse=True)
-  return {'messages':read_chats(s).get(p['projectId'],{}).get(key,[]),'scopeKey':key,'threadId':key,'threads':rows,'targetExists':exists,'deleted':bool(thread.get('deletedAt'))}
+  messages=read_chats(s).get(p['projectId'],{}).get(key,[])
+  import plan_store
+  archive=plan_store.records(s,p)
+  for message in messages:
+   if message.get('role')=='assistant' and message.get('taskId') in archive:
+    row=archive[message['taskId']];message['result']=copy.deepcopy(row.get('result',{}));message['planId']=row['id'];message['appliedAt']=row.get('appliedAt');message['undoneAt']=row.get('undoneAt');message['appliedVia']=row.get('appliedVia')
+  return {'messages':messages,'scopeKey':key,'threadId':key,'threads':rows,'targetExists':exists,'deleted':bool(thread.get('deletedAt'))}
 
 def thread_action(s,body):
  import task_backend as tasks
@@ -174,6 +181,24 @@ def checked_changes(s,p,snap,changes):
   out.append({'target':target,'fields':candidate,'before':{k:copy.deepcopy(item.get(k,'')) for k in candidate}})
  return out
 
+def checked_story_plan(s,p,snap,value,recover=False):
+ if snap['target']['kind']!='project':raise ValueError('只有项目对话可以创建片段方案')
+ if not isinstance(value,dict):raise ValueError('片段方案格式无效')
+ rows=value.get('segments');duration=value.get('duration')
+ if not isinstance(rows,list) or not 1<=len(rows)<=20:raise ValueError('片段方案需要 1–20 段')
+ if isinstance(duration,bool) or not isinstance(duration,(int,float)) or not math.isfinite(duration) or not 1<=duration<=60:raise ValueError('片段方案每段时长需要 1–60 秒')
+ for key in ['continuity','guideFromPrev']:
+  if key in value and not isinstance(value[key],bool):raise ValueError('片段承接开关无效')
+ refs=[]
+ context_ids={a['id'] for a in snap['context']['assets']}
+ for a in writing.project_assets(s,p):
+  if a['id'] not in context_ids:continue
+  refs.append({'id':a['id'],'number':a.get('pictureNumber',p['assets'].index(a)+1),'name':a['name'],'kind':a.get('kind',''),'description':a.get('description',''),'role':'general','sourceHash':writing.digest({k:a.get(k) for k in ['id','path','description','kind']}),'mediaHash':writing.digest(p.get('media',{}).get(a.get('path'),''))})
+ # New plans cannot silently bind the private discussion attachment or invent references.
+ plan_snap={'inferAgentDuration':True,'schemaVersion':2,'count':len(rows),'duration':duration,'refs':refs,'signature':snap['signature'],'rules':snap.get('rules',[]),'story':snap['message'],'dialogueLanguage':('Malay' if __import__('re').search(r'马来(?:文|语)|\bMalay\b',snap['message'],__import__('re').I) else 'auto'),'continuity':value.get('continuity',True),'guideFromPrev':value.get('guideFromPrev',False)}
+ return writing.recover(s,copy.deepcopy(value),plan_snap) if recover else writing.validate(s,copy.deepcopy(value),plan_snap)
+
+
 def analyze(s,cfg,snap,payload):
  import task_backend as tasks
  ident=payload.get('_taskId');context=snap['context'];pid=context['projectId'];key=snap.get('threadId') or scope_key(snap['target']);trace=[]
@@ -181,6 +206,7 @@ def analyze(s,cfg,snap,payload):
 {"tool":"read_project","args":{}} 读取整个项目；{"tool":"list_assets","args":{}} 查询素材；{"tool":"read_node","args":{"target":{"kind":"segment|shot|asset","segmentId":"...","shotId":"...","assetId":"..."}}} 读取节点；{"tool":"check_project","args":{}} 检查时间线和引用。
 最终输出 {"reply":"给用户的中文答复","changes":[{"target":{"kind":"segment|shot|asset|project","segmentId":"...","shotId":"...","assetId":"..."},"fields":{...}}]}。没有修改则 changes 为 []。
 可修改：project.title；segment.title/storyText/shots；shot.action/camera/expression/dialogue/sound/startState/endState；asset.name/description。不得输出命令、文件路径、网络请求或其他字段。定点对话只能修改目标对象。项目对话可提出创意方案，用户只要求讨论时不得生成修改。修改时间线要完整覆盖片段时长，从0开始连续，无重叠。Picture 编号使用项目稳定编号。保留人物、原对白、道具、镜头媒体和结局；图片不明处明确不确定，不能把素材说明当作已看图事实。写作技能仅辅助风格。用户给图提出方案时先回复方案，不自动创建片段。所有修改都只是草案，未应用。'''
+ system+=' 必须按用户指定的段数、每段时长和对白语言生成；duration 是每段秒数，绝不是整篇总秒数。收尾说明写入上一段 summary，不得单独生成无镜头片段。reply 中的统计必须与 storyPlan 完全一致。项目对话中，若用户请求完整新分镜方案，可额外返回 storyPlan={"duration":15,"continuity":true,"guideFromPrev":false,"segments":[{"title":"标题","story":"剧情","summary":"摘要","language":"Mandarin","shots":[{"start":0,"end":15,"action":"画面动作","camera":"运镜","dialogue":"原台词","sound":"音效","startState":"起始空间状态","endState":"结束空间状态","references":[]}]}]}。每段共用 duration，必须连续覆盖 0–duration；references 使用真实 Picture 稳定编号，无素材时为空。只绑定实际涉及的素材。有素材但镜头不使用它时不得编造。storyPlan 仅为待确认创建的新片段，不放进 changes，不自动应用；用户仅聊天或信息不足时可省略。reply 用可读文字概述，不得混入 JSON、tool_calls 或 raw_json。'
  messages=[{'role':'system','content':system},{'role':'user','content':json.dumps({'request':snap['message'],'target':snap['target'],'rules':snap['rules'],'preserveDialogue':snap['preserveDialogue'],'history':snap['history'],'projectSummary':{'title':context['title'],'segments':[{'id':v['id'],'title':v['title'],'duration':v['duration']} for v in context['segments']]}},ensure_ascii=False)}]
  if snap.get('image'):
   image=snap['image'];user=messages[-1]
@@ -217,7 +243,14 @@ def analyze(s,cfg,snap,payload):
    p=s.load_project()
    if not p or p['projectId']!=pid:raise ValueError('项目已切换，Agent 结果未写入新项目')
    clean=checked_changes(s,p,snap,changes) if changes else []
+   story_plan=None;plan_error=''
+   if obj.get('storyPlan') is not None:
+    try:story_plan=checked_story_plan(s,p,snap,obj['storyPlan'],recover=True)
+    except (ValueError,KeyError,TypeError,OverflowError) as error:plan_error='片段方案待完善：'+str(error)
   result={'reply':reply,'changes':clean,'signature':snap['signature'],'target':snap['target'],'scopeKey':key,'trace':trace,'calls':iteration+1,'attachmentName':snap.get('attachment',{}).get('name','') if snap.get('attachment') else '','threadId':key,'attachmentAvailable':bool(snap.get('attachment')),'addToLibrary':snap.get('addToLibrary',False)}
+  if story_plan:result.update(storyPlan=story_plan,storyPlanSource=copy.deepcopy(obj['storyPlan']))
+  if obj.get('storyPlan') is not None:result['storyPlanSource']=copy.deepcopy(obj['storyPlan'])
+  if plan_error:result['planError']=plan_error
   tasks.check_cancel(s,ident)
   store_chat(s,pid,key,{'role':'assistant','content':reply,'taskId':ident,'at':time.time()});tasks.manager(s).patch(ident,agentCalls=iteration+1,agentTrace=trace)
   return result
@@ -225,7 +258,8 @@ def analyze(s,cfg,snap,payload):
 
 def planning_attachment(s,p,ident):
  import task_backend as tasks
- row=tasks.manager(s).get(ident)
+ import plan_store
+ row=plan_store.task(s,ident)
  if not row or row.get('type')!='agent' or row.get('status')!='done' or row.get('projectId')!=p['projectId']:raise ValueError('原方案任务不存在或不属于当前项目')
  snap=tasks.manager(s).input(row) or {};attachment=snap.get('attachment')
  return copy.deepcopy(attachment)
@@ -241,12 +275,17 @@ def add_attachment(s,p,image):
 def apply(s,body):
  import task_backend as tasks
  with s.LOCK:
-  manager=tasks.manager(s);row=manager.get(body.get('id'))
+  manager=tasks.manager(s);row=manager.get(body.get('id')) or plan_store.task(s,body.get('id'))
   if not row or row['type']!='agent' or row['status']!='done':raise ValueError('Agent 任务尚未完成')
   if row.get('appliedAt'):raise ValueError('已应用此结果，不能重复应用')
   p=s.load_project();result=row['result'];snap=manager.input(row)
   if not p or p['projectId']!=row['projectId'] or writing.signature(p)!=result['signature']:raise ValueError('项目内容已变化，请重新对话；旧建议仍可查看')
   changes=checked_changes(s,p,snap,[{'target':c['target'],'fields':c['fields']} for c in result['changes']]) if result['changes'] else []
+  created=0
+  if result.get('storyPlan'):
+   if changes:raise ValueError('新建片段方案与已有节点修改请分别确认')
+   plan=checked_story_plan(s,p,snap,result['storyPlanSource'])
+   created=writing.append_plan(s,p,plan,[{'title':v['title'],'storyText':v['storyText']} for v in plan['segments']],'agent:'+row['id'],snap)
   touched=set()
   for change in changes:
    item,seg=resolve(p,change['target']);item.update(copy.deepcopy(change['fields']))
@@ -261,19 +300,19 @@ def apply(s,body):
     seg['prompt']=s.rebuild({**seg,'defaultDialogueLanguage':seg.get('dialogueLanguage',p.get('dialogueLanguage','')),'assetReferences':refs})
   attachment=snap.get('attachment');added=''
   if attachment and snap.get('addToLibrary'):
-   asset,created=add_attachment(s,p,attachment)
-   if created:added=asset['id'];path=asset['path']
-  if not changes and not added:raise ValueError('此回复只有建议，没有可应用的修改')
-  undo={'before':{k:copy.deepcopy(v) for k,v in s.load_project().items() if k not in ['media','originalZip']},'addedPath':path if added else '', 'afterSignature':writing.signature(p)}
+   asset,image_created=add_attachment(s,p,attachment)
+   if image_created:added=asset['id'];path=asset['path']
+  if not changes and not added and not created:raise ValueError('此回复只有建议，没有可应用的修改')
+  undo={'before':{k:copy.deepcopy(v) for k,v in s.load_project().items() if k not in ['media','originalZip','planArchive']},'addedPath':path if added else '', 'afterSignature':writing.signature(p)}
   # Undo lives in the private task input rather than exported project data.
-  snap['undo']=undo;manager.store_input(row['id'],snap);s.save(p);manager.patch(row['id'],appliedAt=time.time(),agentAddedAsset=added)
-  return {'project':p}
+  snap['undo']=undo;manager.store_input(row['id'],snap);s.save(p);manager.patch(row['id'],appliedAt=time.time(),agentAddedAsset=added);plan_store.put(s,{**row,'appliedAt':time.time()},snap)
+  return {'project':p,'created':created}
 
 def undo(s,body):
  import task_backend as tasks
  with s.LOCK:
-  manager=tasks.manager(s);row=manager.get(body.get('id'))
+  manager=tasks.manager(s);row=manager.get(body.get('id')) or plan_store.task(s,body.get('id'))
   if not row or row['type']!='agent' or not row.get('appliedAt') or row.get('undoneAt'):raise ValueError('没有可撤销的 Agent 修改')
   record=manager.input(row).get('undo');p=s.load_project()
   if not record or not p or p['projectId']!=row['projectId'] or writing.signature(p)!=record['afterSignature']:raise ValueError('后续内容已变化，为避免覆盖，请手动核对')
-  before=record['before'];before['originalZip']=p.get('originalZip','');before['media']={k:v for k,v in p.get('media',{}).items() if k!=record.get('addedPath')};before['overviewLayout']=p.get('overviewLayout',{});s.save(before);manager.patch(row['id'],undoneAt=time.time());return {'project':before}
+  before=record['before'];before['originalZip']=p.get('originalZip','');before['media']={k:v for k,v in p.get('media',{}).items() if k!=record.get('addedPath')};before['overviewLayout']=p.get('overviewLayout',{});s.save(before);manager.patch(row['id'],undoneAt=time.time());plan_store.put(s,{**row,'undoneAt':time.time()},manager.input(row));return {'project':before}

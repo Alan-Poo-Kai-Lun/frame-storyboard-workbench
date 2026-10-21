@@ -40,3 +40,7 @@
 .frameAgentCompare{grid-template-columns:minmax(0,1fr)}
 .frameAgentCompare pre{max-height:160px}
 @media(max-width:720px){.frameAgentTopics{width:130px}.frameAgentHandle small{display:none}.frameAgentProject{max-height:65%}.frameAgentHandle{flex-wrap:nowrap}}
+
+/* One native editing surface: no duplicated contenteditable/highlight layer. */
+.frameAgentComposer{flex:0 0 auto;position:relative;background:var(--bg)}.frameAgentComposer textarea[data-native-agent]{display:block;color:var(--ink)!important;caret-color:var(--ink);height:82px;min-height:82px;max-height:120px;overflow:auto;line-height:1.6;resize:vertical;box-sizing:border-box;white-space:pre-wrap}
+.frameAgentMain>[data-agent-body]{flex:1 1 0!important;min-height:60px;max-height:none!important;overscroll-behavior:contain}.frameAgentHistory{user-select:text}.agentMoreCommands{margin:5px 0;padding:0;border:0}.agentMoreCommands summary{font-size:11px;cursor:pointer;color:var(--muted)}.agentCommandGrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;max-height:180px;overflow:auto;padding:7px 0}.agentCommandGrid button{white-space:normal;text-align:left;font-size:11px;padding:6px 8px}.commonPromptChips{display:flex;flex-wrap:wrap;white-space:normal;overflow:visible!important;gap:6px}.commonPromptChips button{font-size:11px;padding:6px 8px;white-space:normal}.planNeedsReview{outline:2px solid #eab308}.planPreviewDialog [data-plan-warning]{max-height:110px;overflow:auto}.planPreviewDialog [data-plan-warning] button{font-size:11px;margin-left:8px}

@@ -29,6 +29,11 @@ jobs:
           NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_canvas_clipboard.cjs
           NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_canvas_effects.cjs
           NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_canvas_lifecycle.cjs
+          NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_agent_input.cjs
+          NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_asset_mentions.cjs
+          NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_canvas_input.cjs
+          NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_appearance_panel.cjs
+          NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_plan_ui.cjs
       - name: Build clean installer
         run: python tools/build_release.py
       - uses: actions/upload-artifact@v4

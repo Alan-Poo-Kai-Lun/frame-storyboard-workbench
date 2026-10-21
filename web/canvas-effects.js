@@ -1,4 +1,4 @@
-/* Event-driven 180 screen-pixel spotlight. Static grid and graph stay untouched. */
+/* Event-driven 150 screen-pixel spotlight. Static grid and graph stay untouched. */
 window.createFrameCanvasEffects=function(o){
  const {dialog,map}=o,abort=new AbortController(),signal=abort.signal,motion=matchMedia('(prefers-reduced-motion: reduce)');
  const canvas=document.createElement('canvas');canvas.className='canvasSpotlight';canvas.setAttribute('aria-hidden','true');map.prepend(canvas);
@@ -14,7 +14,7 @@ window.createFrameCanvasEffects=function(o){
  function sync(){style=o.appearance();const color=/^#[0-9a-f]{6}$/i.test(style.highlight||'')?style.highlight:'#38bdf8';accent=color.slice(1).match(/../g).map(v=>parseInt(v,16)).join(',');dialog.style.setProperty('--canvas-glow-rgb',accent);dialog.dataset.nodeGlow=String(style.nodeGlow===true);dialog.dataset.glassPanels=String(style.glassPanels===true);dialog.dataset.junctionPads=String(style.junctionPads===true&&style.pins!==false);dialog.dataset.reduceMotion=String(quiet());dialog.dataset.effectsPaused=String(document.hidden);canvas.hidden=!allowed();if(!allowed()){stop();opacity=0;clear()}else request()}
  function draw(now){raf=0;if(!allowed())return;if(now-last<1000/30){request();return}last=now;
   const target=mouse.inside&&!moving()?1:0;opacity+=(target-opacity)*.24;if(Math.abs(target-opacity)<.01)opacity=target;clear();
-  if(opacity>0){const v=o.view(),step=Math.max(8,(style.gridSize||28)*v.z),radius=180,ox=((v.x%step)+step)%step,oy=((v.y%step)+step)%step,x=mouse.x,y=mouse.y;
+  if(opacity>0){const v=o.view(),step=Math.max(8,(style.gridSize||28)*v.z),radius=150,ox=((v.x%step)+step)%step,oy=((v.y%step)+step)%step,x=mouse.x,y=mouse.y;
    const fade=ctx.createRadialGradient(x,y,0,x,y,radius);fade.addColorStop(0,`rgba(${accent},${opacity*.045})`);fade.addColorStop(1,`rgba(${accent},0)`);ctx.fillStyle=fade;ctx.fillRect(Math.max(0,x-radius),Math.max(0,y-radius),radius*2,radius*2);
    if(style.pattern!=='none')for(let px=ox+Math.ceil((x-radius-ox)/step)*step;px<Math.min(rect.width,x+radius);px+=step)for(let py=oy+Math.ceil((y-radius-oy)/step)*step;py<Math.min(rect.height,y+radius);py+=step){if(px<0||py<0)continue;const distance=Math.hypot(px-x,py-y);if(distance>=radius)continue;ctx.fillStyle=`rgba(${accent},${opacity*.5*(1-distance/radius)**2})`;ctx.beginPath();ctx.arc(px,py,1.1,0,Math.PI*2);ctx.fill()}
   }
@@ -26,5 +26,5 @@ window.createFrameCanvasEffects=function(o){
  document.addEventListener('visibilitychange',sync,{signal});motion.addEventListener('change',sync,{signal});
  const observer=new MutationObserver(sync);observer.observe(dialog,{attributes:true,attributeFilter:['class','open']});
  const size=new ResizeObserver(resize);size.observe(map);resize();sync();
- return {sync,dispose(){disposed=true;stop();abort.abort();observer.disconnect();size.disconnect();clear();canvas.remove()}};
+ return {sync,point(point){mouse=point?{x:point.x-rect.left,y:point.y-rect.top,inside:true}:{...mouse,inside:false};request()},dispose(){disposed=true;stop();abort.abort();observer.disconnect();size.disconnect();clear();canvas.remove()}};
 };

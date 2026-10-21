@@ -46,6 +46,11 @@ jobs:
           node tests/test_canvas_clipboard.cjs
           node tests/test_canvas_effects.cjs
           node tests/test_canvas_lifecycle.cjs
+          node tests/test_agent_input.cjs
+          node tests/test_asset_mentions.cjs
+          node tests/test_canvas_input.cjs
+          node tests/test_appearance_panel.cjs
+          node tests/test_plan_ui.cjs
       - name: Build source updater ZIP
         run: python tools/build_release.py
       - name: Build single-file Windows EXE

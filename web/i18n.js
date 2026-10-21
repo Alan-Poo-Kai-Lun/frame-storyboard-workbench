@@ -1,6 +1,74 @@
 /* UI localization only. Never translates project values, prompts or editable content. */
 (()=>{
  const pairs=`
+动效强度 / 亮度|Animation intensity / brightness
+动态主题类型|Animated theme
+深渊脉冲星环|Abyssal Pulse
+黑客数据流星雨|Matrix Digital Rain
+深空微尘星轨|Cosmic Starfield and Dust
+雷达全息波束|Holo Radar Scanner
+关闭后停止重绘；后台暂停，交互时自动降频。|Stops when off; pauses in background and throttles during interaction.
+演示模式|Presentation
+退出演示|Exit presentation
+工业深空点阵|Minimal dot grid
+柔焦极光呼吸|Soft aurora glow
+启用极光呼吸|Enable aurora breathing
+背景方案|Background scheme
+画布背景|Canvas background
+⛶ 放大 / 还原|⛶ Maximize / Restore
+
+
+已保存规划方案|Saved planning proposals
+剧情、摘要与对白语言|Story, summary and dialogue language
+编辑时间范围|Edit time range
+音效、表情、起止空间与素材绑定|Sound, expression, spatial states and references
+镜头素材 · 请核对真实引用|Shot assets · Check actual references
+
+已保存方案|Saved proposals
+查看方案|View proposal
+画幅、影调与镜头密度|Aspect ratio, tone and shot density
+视觉影调|Visual tone
+镜头密度|Shot density
+商业广告 · 干净明亮自然光|Commercial · Clean natural light
+赛博朋克 · 冷蓝霓虹对撞|Cyberpunk · Cool neon contrast
+电影质感 · 高反差暗调胶片|Cinema · High contrast dark film
+日系动漫 · 清新通透高明度|Anime · Clear bright tones
+自定义描述（沿用剧情框所写）|Custom · Use the story description
+标准节奏 · 每段 2–3 镜|Standard · 2–3 shots per segment
+紧凑快剪 · 每段 3–4 镜|Fast cuts · 3–4 shots per segment
+沉浸长镜 · 每段 1–2 镜|Long takes · 1–2 shots per segment
+已有工程沿用当前画幅；方案画幅不同，应用前需明确确认变更。|Existing projects keep their aspect ratio. Confirm a different proposal ratio before applying.
+规划片段目录|Planned segments
+当前片段编辑|Current segment editor
+保存草稿|Save draft
+恢复原始规划|Restore original proposal
+校验当前草稿|Validate draft
+已核对来源变化|I have reviewed source changes
+确认变更项目画幅|Confirm project aspect change
+✨ 确认应用并生成到画布|✨ Apply proposal to canvas
+✨ 预览并应用分镜方案|✨ Preview and apply storyboard
+查看完整方案说明|Read full proposal notes
+本段无对白|No dialogue
+片段标题|Segment title
+片段时长（秒）|Segment duration (seconds)
+角色台词 / 对白|Character dialogue
+运镜机位|Camera and framing
+按画面中的有效引用绑定|Bind valid references from the action
+Agent 灵感指令|Agent inspiration prompts
+开局|Start
+微调|Refine
+交付|Deliver
+✨ 基于现有素材一键出方案|✨ Plan from existing assets
+🛒 商业带货广告|🛒 Product advertisement
+🎭 戏剧反转对峙|🎭 Dramatic confrontation
+🎬 纯视觉情绪片|🎬 Visual mood film
+⚡ 加快镜头节奏|⚡ Faster pacing
+🔍 强化微距质感|🔍 Macro detail
+🗣️ 润色口语对白|🗣️ Natural dialogue
+📐 规范轴线机位|📐 Camera continuity
+📦 紧凑精简 Prompt|📦 Compact prompt
+🌐 转为通用英文 Prompt|🌐 English prompt copy
+
 工业质感与交互动效|Surface and interaction effects
 选中节点双层呼吸微光|Selected node breathing glow
 鼠标探照灯网格|Cursor spotlight grid

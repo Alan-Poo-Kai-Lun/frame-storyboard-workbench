@@ -61,6 +61,10 @@ class Manager:
      step=row['stageHistory'][-1];step['endedMs']=row['finishedMs'];step['elapsedSeconds']=round((step['endedMs']-step['startedMs'])/1000,1)
   for row in self.rows:
    if row['type'] not in ['planning','analysis','reverse','assets','translation','story','agent'] and row['status'] not in TERMINAL:row.update(status='cancelled',error='精简版已移除该任务功能，旧记录保留',finishedAt=now())
+  for row in self.rows:
+   if row.get('type')=='story' and row.get('status') in TERMINAL:
+    snap=self.input(row) or {}
+    if snap.get('modelResponse'):row['outputSaved']=True
   self.write();threading.Thread(target=self.worker,daemon=True).start()
  def store_input(self,ident,value):
   folder=self.s.DATA/'task-inputs';folder.mkdir(parents=True,exist_ok=True)
@@ -96,6 +100,9 @@ class Manager:
  def action(self,body):
   action=body.get('action');ident=body.get('id')
   if action=='clear_done':
+   import plan_store
+   for row in self.snapshot():
+    if row['status']=='done':plan_store.preserve(self.s,row)
    with self.lock:
     removed=[r['id'] for r in self.rows if r['status']=='done']
     self.rows=[r for r in self.rows if r['status']!='done'];self.write()
@@ -109,7 +116,7 @@ class Manager:
    row=self.get(ident)
    if not row or row['status'] not in ['error','cancelled','interrupted']:raise ValueError('只有失败、取消或中断任务可以重试')
    snapshot=self.input(row)
-   if action=='regenerate' and row['type']!='planning':raise ValueError('重新推理仅用于分镜任务')
+   if action=='regenerate' and row['type'] not in ['planning','story']:raise ValueError('重新推理仅用于分镜任务')
    if row['type']=='planning':
     import planning_backend
     planning_backend.enqueue(self.s,{**row['payload'],'smartRepair':bool((snapshot or {}).get('smartRepair')),'instruction':(snapshot or {}).get('instruction','重新生成分镜'),'mode':(snapshot or {}).get('mode','quick')},cached_snapshot=snapshot if action=='retry' and (snapshot or {}).get('modelResponse') else None)
@@ -120,8 +127,14 @@ class Manager:
     import agent_backend
     image=snapshot.get('attachment')
     agent_backend.enqueue(self.s,{'projectId':row['projectId'],'target':snapshot['target'],'threadId':snapshot.get('threadId'),'message':snapshot['message'],'preserveDialogue':snapshot.get('preserveDialogue',True),'addToLibrary':snapshot.get('addToLibrary',False),'attachment':{'name':image['name'],'data':'data:'+image['mime']+';base64,'+image['b64']} if image else None})
-   else:self.add(row['type'],row['payload'],row['config'],snapshot)
+   else:
+    if action=='regenerate':snapshot.pop('modelResponse',None)
+    self.add(row['type'],row['payload'],row['config'],snapshot)
    return self.public()
+  if action=='delete':
+   import plan_store
+   saved=self.get(ident)
+   if saved:plan_store.preserve(self.s,saved)
   with self.lock:
    if action in ['pause','resume']:
     self.paused=action=='pause';self.write();self.event.set();return self.public()
@@ -182,7 +195,12 @@ class Manager:
      import studio_backend as studio
      stage(s,ident,'视觉模型解析中');result=studio.analyze(s,row['config'],self.input(row),payload)
    finish_stage(s,ident)
-   check_cancel(s,ident);self.patch(ident,status='done',result=result,stage='已完成，结果可查看',finishedAt=now(),finishedMs=int(time.time()*1000))
+   check_cancel(s,ident)
+   if row['type'] in ['story','agent']:
+    import plan_store
+    plan_store.put(s,{**row,'status':'done','result':result},self.input(row))
+   warning=bool(result.get('warnings') or result.get('storyPlan',{}).get('warnings'))
+   self.patch(ident,status='done',result=result,stage='完成（带警告）' if warning else '已完成，结果可查看',finishedAt=now(),finishedMs=int(time.time()*1000))
   except Exception as e:
    finish_stage(s,ident)
    cancelled=self.cancelled(ident);self.patch(ident,status='cancelled' if cancelled else 'error',error=str(e),stage='已取消跟踪' if cancelled else '执行失败',finishedAt=now(),finishedMs=int(time.time()*1000))

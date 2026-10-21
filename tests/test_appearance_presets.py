@@ -42,7 +42,7 @@ class AppearancePresetsChecks(unittest.TestCase):
   value={**self.value,'enableDynamicBg':True,'bgIntensity':8,'themeDynamicBg':{'dark':{'enableDynamicBg':True,'bgIntensity':8},'light':{'enableDynamicBg':False,'bgIntensity':3}}}
   self.save(appearance=value)
   self.assertEqual(next(r for r in profiles.listing(self.data)['items'] if not r.get('builtin'))['appearance'],value)
-  for key,v in [('bgIntensity',31),('bgIntensity',-1),('bgIntensity',True),('enableDynamicBg',1),('themeDynamicBg',{'dark':{'secret':'x'}})]:
+  for key,v in [('bgIntensity',41),('bgIntensity',-1),('bgIntensity',True),('enableDynamicBg',1),('themeDynamicBg',{'dark':{'secret':'x'}})]:
    with self.subTest(key=key,value=v),self.assertRaises(ValueError):profiles.validate({key:v})
 
  def test_visual_effect_flags_round_trip(self):
@@ -52,3 +52,18 @@ class AppearancePresetsChecks(unittest.TestCase):
   for key in flags:
    self.assertIs(saved[key],True)
    with self.subTest(key=key),self.assertRaises(ValueError):profiles.validate({key:1})
+
+ def test_four_dynamic_modes_and_legacy_zero(self):
+  for mode in ['abyss','matrix','starfield','radar']:
+   value={**self.value,'enableDynamicBg':True,'bgIntensity':40,'dynamicBgMode':mode,'themeDynamicBg':{'dark':{'enableDynamicBg':True,'bgIntensity':0,'dynamicBgMode':mode}}}
+   self.assertEqual(profiles.validate(value),value)
+  with self.assertRaises(ValueError):profiles.validate({'dynamicBgMode':'unknown'})
+
+ def test_extended_dynamic_settings_round_trip_and_bounds(self):
+  for mode in ['nature','cyber','ink','wave','sparkle']:
+   dynamic={'dynamicBgMode':mode,'bgParticleCount':150,'bgSpeed':3,'bgPulsePeriod':.5,'bgGlowRadius':150,'bgDirection':'outward'}
+   value={**self.value,**dynamic,'themeDynamicBg':{'dark':dynamic,'light':{'enableDynamicBg':False}}}
+   saved=self.save(appearance=value)
+   self.assertEqual(next(r for r in saved['items'] if r['id']==saved['savedId'])['appearance'],value)
+  for k,v in [('bgParticleCount',151),('bgSpeed',0),('bgPulsePeriod',float('nan')),('bgGlowRadius',49),('bgDirection','random')]:
+   with self.subTest(key=k),self.assertRaises(ValueError):profiles.validate({k:v})

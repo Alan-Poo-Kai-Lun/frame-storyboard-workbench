@@ -7,6 +7,8 @@ STARTER='presets/starter-project.mmxpack.zip'
 STARTER_SHA256='2976b88232c9cd469ca0f2411c51d3d6e83d47e7d49e533a0b2ac99b6006d67a'
 def inputs(root=ROOT):
  names=json.loads((root/'release-manifest.json').read_text('utf-8'))
+ vendor=json.loads((root/'vendor-manifest.json').read_text('utf-8')).get('files',{}) if (root/'vendor-manifest.json').exists() else {}
+ if any(not str(name).startswith('web/vendor/mediapipe/') for name in vendor):raise ValueError('Invalid vendor allowlist')
  if not isinstance(names,list) or not names or len(names)!=len(set(names)):raise ValueError('Missing or duplicate release manifest entries')
  for name in names:
   if not isinstance(name,str):raise ValueError('Invalid manifest entry')
@@ -16,6 +18,9 @@ def inputs(root=ROOT):
   if p.parts[0]=='versions' and name!='versions/README.txt':raise ValueError('Archived program in release')
   file=root/name
   if not file.is_file() or file.is_symlink() or any(parent.is_symlink() for parent in file.parents if parent!=root.parent):raise ValueError('Missing or linked input: '+name)
+  if name in vendor:
+   if hashlib.sha256(file.read_bytes()).hexdigest()!=vendor[name]:raise ValueError('Third party resource checksum mismatch: '+name)
+   continue
   if name==STARTER:
    if hashlib.sha256(file.read_bytes()).hexdigest()!=STARTER_SHA256:raise ValueError('Starter project changed; inspect and approve its checksum before packaging')
    with zipfile.ZipFile(file) as z:

@@ -77,6 +77,9 @@ def load_project():
         import asset_lifecycle
         p=asset_lifecycle.normalize(json.loads(STATE.read_text('utf-8')))
         if not p.get('projectId'): p['projectId']=uid(); save(p)
+        import plan_store
+        archive=plan_store.records(sys.modules[__name__],p)
+        if archive:p['planArchive']=archive
         return p
 def backup_project():
     if STATE.exists():
@@ -186,7 +189,7 @@ def readzip(blob):
             path=video.get('path','')
             if path in files:media[path]=base64.b64encode(files[path]).decode()
     shared=json.loads(files.get('shared_params/shared_params.json',b'{}'))
-    project={'overviewLayout':side.get('overviewLayout',{}),'storySeparated':side.get('storySeparated',False),'dialogueLanguage':side.get('dialogueLanguage',''),'writingRuleIds':side.get('writingRuleIds',[]),'storyPlans':side.get('storyPlans',[]),'intent':side.get('intent',{}),'groupAssetsCollapsed':side.get('groupAssetsCollapsed',{}),'nextPictureNumber':side.get('nextPictureNumber',1),'showDeletedAssets':side.get('showDeletedAssets',False),'assetsManaged':side.get('assetsManaged',False),'assetsCollapsed':side.get('assetsCollapsed',False),'version':1,'projectId':uid(),'title':side.get('title','导入的导演项目'),'script':side.get('script',''),'aspect':side.get('aspect',aspect_from_output(pack.get('output',{}))),'fps':timeline.get('frameRate',24),'segments':segs,'assets':side.get('assets') or [{**r,'id':uid(),'name':f'Picture {r.get("index",i)+1}','kind':'人物','path':r.get('imageFile',''),'locked':True} for i,r in enumerate(shared.get('refs',[]))],'media':media,'originalZip':base64.b64encode(blob).decode()}
+    project={'overviewLayout':side.get('overviewLayout',{}),'storySeparated':side.get('storySeparated',False),'dialogueLanguage':side.get('dialogueLanguage',''),'writingRuleIds':side.get('writingRuleIds',[]),'planArchive':side.get('planArchive',{}),'planningOptions':side.get('planningOptions',{}),'storyPlans':side.get('storyPlans',[]),'intent':side.get('intent',{}),'groupAssetsCollapsed':side.get('groupAssetsCollapsed',{}),'nextPictureNumber':side.get('nextPictureNumber',1),'showDeletedAssets':side.get('showDeletedAssets',False),'assetsManaged':side.get('assetsManaged',False),'assetsCollapsed':side.get('assetsCollapsed',False),'version':1,'projectId':uid(),'title':side.get('title','导入的导演项目'),'script':side.get('script',''),'aspect':side.get('aspect',aspect_from_output(pack.get('output',{}))),'fps':timeline.get('frameRate',24),'segments':segs,'assets':side.get('assets') or [{**r,'id':uid(),'name':f'Picture {r.get("index",i)+1}','kind':'人物','path':r.get('imageFile',''),'locked':True} for i,r in enumerate(shared.get('refs',[]))],'media':media,'originalZip':base64.b64encode(blob).decode()}
     project['directorGuide']=guide_settings({'directorGuide':side.get('directorGuide',{})},pack.get('output',{}))
     if not side.get('assetsManaged'):
         for segment in segs:
@@ -567,7 +570,7 @@ def export_pack(p,force=False):
     if workspace is not None: workspace.setdefault('globalCommon',{})['refs']=copy.deepcopy(existing)
     files['timeline.json']=json.dumps(tl,ensure_ascii=False,indent=2).encode()
     generation_backend.export(files,p,pack,tl,scoped_assets)
-    side={k:p.get(k) for k in ['generation','generationManaged','sourceVideo','sourceVideoClips','version','title','script','aspect','assets','assetsManaged','assetsCollapsed','nextPictureNumber','showDeletedAssets','groupAssetsCollapsed','intent','writingRuleIds','dialogueLanguage','storySeparated','directorGuide','overviewLayout','storyPlans']}
+    side={k:p.get(k) for k in ['generation','generationManaged','sourceVideo','sourceVideoClips','version','title','script','aspect','assets','assetsManaged','assetsCollapsed','nextPictureNumber','showDeletedAssets','groupAssetsCollapsed','intent','writingRuleIds','dialogueLanguage','storySeparated','directorGuide','overviewLayout','storyPlans','planningOptions']}
     side['directorGuide']=guide_settings(p,pack.get('output',{}))
     side['segments']=[{**{k:s[k] for k in ['generation','id','title','shots','storyText','storyHistory','videos','planning','promptHistory','continuity','guideFromPrev','shotHistory','dialogueLanguage','writingRuleIds','promptTranslations','promptExportLanguage'] if k in s},'workingPrompt':s['prompt'],'promptHash':digest(output[i]['prompt'])} for i,s in enumerate(p['segments'])]
     files['storyboard.json']=json.dumps(side,ensure_ascii=False,indent=2).encode()
@@ -623,6 +626,9 @@ def save(p):
     with LOCK:
         import asset_lifecycle
         previous=json.loads(STATE.read_text('utf-8')) if STATE.exists() else None
+        import plan_store
+        archive=plan_store.records(sys.modules[__name__],p)
+        if archive:p['planArchive']=archive
         asset_lifecycle.normalize(p,previous)
         project_store.before_save(DATA,STATE,p)
         temp=STATE.with_suffix('.tmp');temp.write_text(json.dumps(p,ensure_ascii=False),'utf-8');temp.replace(STATE)
@@ -821,6 +827,9 @@ class Handler(BaseHTTPRequestHandler):
                 import agent_backend as agent
                 action={'/api/agent-threads':agent.thread_action,'/api/agent-info':agent.info,'/api/agent-send':agent.enqueue,'/api/agent-apply':agent.apply,'/api/agent-undo':agent.undo}[route]
                 return self.respond(action(sys.modules[__name__],body))
+            if route=='/api/plan-record':
+                import plan_store
+                return self.respond(plan_store.endpoint(sys.modules[__name__],body))
             if route in ['/api/writing-rules','/api/story-plan','/api/story-restore','/api/story-apply']:
                 import writing_backend as writing
                 action={'/api/writing-rules':writing.library,'/api/story-plan':writing.enqueue,'/api/story-restore':writing.restore,'/api/story-apply':writing.apply}[route]

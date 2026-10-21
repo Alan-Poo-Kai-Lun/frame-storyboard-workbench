@@ -23,7 +23,7 @@ FRAME 的代码授权以 [LICENSE](LICENSE) 为准。本声明区分程序、示
 
 ## 外部工具兼容性
 
-导演包的目标接收端为 AIMixer 的 [ComfyUI MiniMax H3 Director](https://github.com/AIMixer/ComfyUI_MiniMaxH3_Director)。引用名称用于说明文件对接对象，不表示认证、合作或联合发布。FRAME 不随包分发其插件、工作流或模型，也不随包分发 Ollama、ComfyUI 或 AI 模型权重。
+导演包的目标接收端为 AIMixer 的 [ComfyUI MiniMax H3 Director](https://github.com/AIMixer/ComfyUI_MiniMaxH3_Director)。引用名称用于说明文件对接对象，不表示认证、合作或联合发布。FRAME 不随包分发其插件、工作流或模型，也不随包分发 Ollama、ComfyUI 或视频生成模型权重。
 
 ## Windows EXE 与第三方依赖
 
@@ -35,3 +35,7 @@ Windows EXE 使用 PyInstaller 打包 Python、Tkinter/Tcl/Tk 和 Pillow。它�
 - [PyInstaller 许可与 bootloader 分发例外](https://github.com/pyinstaller/pyinstaller/blob/develop/COPYING.txt)
 - [Tcl/Tk 许可](https://www.tcl-lang.org/software/tcltk/license.html)
 - [Pillow 许可](https://github.com/python-pillow/Pillow/blob/main/LICENSE)
+
+## V3.37 分发调整
+
+已移除隔空手势功能及其 MediaPipe 运行库、WASM 和模型；新版不包含摄像头识别依赖。此前发布物的许可声明不受本次调整影响。
