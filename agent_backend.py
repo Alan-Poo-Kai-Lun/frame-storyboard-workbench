@@ -117,8 +117,14 @@ def picture(value):
  if not valid:raise ValueError('图片内容与文件类型不匹配')
  return {'name':str(value.get('name','参考图片'))[:150],'mime':mime,'b64':match[2]}
 
+def media_context(p,a):
+ import media_analysis
+ value=media_analysis.current(a,p.get('media',{}))
+ if not value:return {'analysisStatus':'metadata_only'}
+ return {'analysisStatus':'saved_actual_analysis','mediaAnalysis':{'coverageSeconds':value['analyzedDuration'],'partial':value.get('partial',False),'frameTimes':value.get('frameTimes',[]),'facts':value['facts'],'warnings':value.get('warnings',[])}}
+
 def project_context(s,p):
- return {'projectId':p['projectId'],'title':p['title'],'aspect':p.get('aspect'),'intent':p.get('intent',{}),'segments':[{k:seg.get(k) for k in ['id','title','duration','storyText','dialogueLanguage','shots']} for seg in p['segments']],'assets':[{k:a.get(k) for k in ['id','name','description','kind','scope','segmentId','pictureNumber']} for a in writing.project_assets(s,p)]}
+ return {'projectId':p['projectId'],'title':p['title'],'aspect':p.get('aspect'),'intent':p.get('intent',{}),'segments':[{k:seg.get(k) for k in ['id','title','duration','storyText','dialogueLanguage','shots']} for seg in p['segments']],'assets':[dict({k:a.get(k) for k in ['id','name','description','kind','scope','segmentId','pictureNumber']},mediaType=s.generation_backend.media_type(a),available=bool(p.get('media',{}).get(a['path'])),referenceLabel=s.generation_backend.project_label(p,a),**media_context(p,a)) for a in s.generation_backend.project_assets(p)]}
 
 def enqueue(s,body):
  import task_backend as tasks
@@ -196,7 +202,8 @@ def checked_story_plan(s,p,snap,value,recover=False):
   refs.append({'id':a['id'],'number':a.get('pictureNumber',p['assets'].index(a)+1),'name':a['name'],'kind':a.get('kind',''),'description':a.get('description',''),'role':'general','sourceHash':writing.digest({k:a.get(k) for k in ['id','path','description','kind']}),'mediaHash':writing.digest(p.get('media',{}).get(a.get('path'),''))})
  # New plans cannot silently bind the private discussion attachment or invent references.
  plan_snap={'inferAgentDuration':True,'schemaVersion':2,'count':len(rows),'duration':duration,'refs':refs,'signature':snap['signature'],'rules':snap.get('rules',[]),'story':snap['message'],'dialogueLanguage':('Malay' if __import__('re').search(r'马来(?:文|语)|\bMalay\b',snap['message'],__import__('re').I) else 'auto'),'continuity':value.get('continuity',True),'guideFromPrev':value.get('guideFromPrev',False)}
- return writing.recover(s,copy.deepcopy(value),plan_snap) if recover else writing.validate(s,copy.deepcopy(value),plan_snap)
+ result=writing.recover(s,copy.deepcopy(value),plan_snap) if recover else writing.validate(s,copy.deepcopy(value),plan_snap)
+ return s.generation_backend.attach_plan_media(p,result,value,snap['message'])
 
 
 def analyze(s,cfg,snap,payload):
@@ -206,8 +213,9 @@ def analyze(s,cfg,snap,payload):
 {"tool":"read_project","args":{}} 读取整个项目；{"tool":"list_assets","args":{}} 查询素材；{"tool":"read_node","args":{"target":{"kind":"segment|shot|asset","segmentId":"...","shotId":"...","assetId":"..."}}} 读取节点；{"tool":"check_project","args":{}} 检查时间线和引用。
 最终输出 {"reply":"给用户的中文答复","changes":[{"target":{"kind":"segment|shot|asset|project","segmentId":"...","shotId":"...","assetId":"..."},"fields":{...}}]}。没有修改则 changes 为 []。
 可修改：project.title；segment.title/storyText/shots；shot.action/camera/expression/dialogue/sound/startState/endState；asset.name/description。不得输出命令、文件路径、网络请求或其他字段。定点对话只能修改目标对象。项目对话可提出创意方案，用户只要求讨论时不得生成修改。修改时间线要完整覆盖片段时长，从0开始连续，无重叠。Picture 编号使用项目稳定编号。保留人物、原对白、道具、镜头媒体和结局；图片不明处明确不确定，不能把素材说明当作已看图事实。写作技能仅辅助风格。用户给图提出方案时先回复方案，不自动创建片段。所有修改都只是草案，未应用。'''
+ system+=' 素材清单包含图片、音频和视频。available=true 表示已有文件，严禁再要求用户上传同一现有文件。音视频 analysisStatus=metadata_only 时只提供文件信息与用户说明，不得声称听过或看过。saved_actual_analysis 包含已保存的实际音轨或抽样帧分析，可引用该结果但必须标明范围与不确定项；不包含音轨或声音识别。可以把已提供的音视频作为后续H3参考条件。storyPlan 镜头可加 mediaAssetIds 数组，值只能是素材清单中音频/视频的真实id；不要把音视频写入图片 references 数字数组。'
  system+=' 必须按用户指定的段数、每段时长和对白语言生成；duration 是每段秒数，绝不是整篇总秒数。收尾说明写入上一段 summary，不得单独生成无镜头片段。reply 中的统计必须与 storyPlan 完全一致。项目对话中，若用户请求完整新分镜方案，可额外返回 storyPlan={"duration":15,"continuity":true,"guideFromPrev":false,"segments":[{"title":"标题","story":"剧情","summary":"摘要","language":"Mandarin","shots":[{"start":0,"end":15,"action":"画面动作","camera":"运镜","dialogue":"原台词","sound":"音效","startState":"起始空间状态","endState":"结束空间状态","references":[]}]}]}。每段共用 duration，必须连续覆盖 0–duration；references 使用真实 Picture 稳定编号，无素材时为空。只绑定实际涉及的素材。有素材但镜头不使用它时不得编造。storyPlan 仅为待确认创建的新片段，不放进 changes，不自动应用；用户仅聊天或信息不足时可省略。reply 用可读文字概述，不得混入 JSON、tool_calls 或 raw_json。'
- messages=[{'role':'system','content':system},{'role':'user','content':json.dumps({'request':snap['message'],'target':snap['target'],'rules':snap['rules'],'preserveDialogue':snap['preserveDialogue'],'history':snap['history'],'projectSummary':{'title':context['title'],'segments':[{'id':v['id'],'title':v['title'],'duration':v['duration']} for v in context['segments']]}},ensure_ascii=False)}]
+ messages=[{'role':'system','content':system},{'role':'user','content':json.dumps({'request':snap['message'],'target':snap['target'],'rules':snap['rules'],'preserveDialogue':snap['preserveDialogue'],'history':snap['history'],'assetInventory':context['assets'],'mediaAnalysis':{'rule':'只可引用 assetInventory 中已保存的实际分析；未分析素材仅有文件信息。视频仅做视觉抽样分析。视频为带时间点抽样。'},'projectSummary':{'title':context['title'],'segments':[{'id':v['id'],'title':v['title'],'duration':v['duration']} for v in context['segments']]}},ensure_ascii=False)}]
  if snap.get('image'):
   image=snap['image'];user=messages[-1]
   if cfg.get('provider')=='ollama':user['images']=[image['b64']]

@@ -33,6 +33,15 @@ jobs:
           architecture: x64
       - name: Install image processing dependency
         run: python -m pip install Pillow==12.3.0
+      - name: Ensure local video decoding tools
+        shell: pwsh
+        run: |
+          if (-not (Get-Command ffmpeg -ErrorAction SilentlyContinue)) {
+            choco install ffmpeg --no-progress -y
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+          ffmpeg -version
+          ffprobe -version
       - name: Validate public package and backend tests
         run: |
           python tools/check_release.py
@@ -51,6 +60,9 @@ jobs:
           node tests/test_canvas_input.cjs
           node tests/test_appearance_panel.cjs
           node tests/test_plan_ui.cjs
+          node tests/test_agent_media.cjs
+          node tests/test_media_analysis.cjs
+          node tests/test_semantic_drawer.cjs
       - name: Build source updater ZIP
         run: python tools/build_release.py
       - name: Build single-file Windows EXE

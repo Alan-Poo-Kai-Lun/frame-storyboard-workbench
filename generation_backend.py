@@ -154,3 +154,68 @@ def export(files, project, pack, timeline, scoped_assets):
     files['shared_params/shared_params.json'] = json.dumps(shared, ensure_ascii=False, indent=2).encode()
     files['timeline.json'] = json.dumps(timeline, ensure_ascii=False, indent=2).encode()
     files['pack.json'] = json.dumps(pack, ensure_ascii=False, indent=2).encode()
+
+# Project labels are model-facing identifiers; H3 slot numbers are resolved per segment.
+def project_assets(project):
+    owners={s['id'] for s in project.get('segments',[])}
+    return [a for a in project.get('assets',[]) if not a.get('deleted') and a.get('path') and (a.get('scope','public')!='segment' or a.get('segmentId') in owners)]
+
+
+def project_label(project,asset):
+    kind=media_type(asset)
+    number=asset.get('pictureNumber',project.get('assets',[]).index(asset)+1) if kind=='image' else [a for a in project_assets(project) if media_type(a)==kind].index(asset)+1
+    return FIELDS[kind][2]+' '+str(number)
+
+
+def attach_plan_media(project,result,raw,message):
+    import re
+    assets=[a for a in project_assets(project) if media_type(a)!='image']
+    chosen=[a['id'] for a in assets if (a.get('name') and a['name'] in message) or re.search(r'(?<!\w)@?'+re.escape(project_label(project,a))+r'(?!\d)',message,re.I)]
+    result['mediaReferences']=media_inventory(project)
+    valid={a['id'] for a in assets}
+    raw_rows=[v for v in raw.get('segments',[]) if isinstance(v,dict) and v.get('shots')]
+    for row,source in zip(result.get('segments',[]),raw_rows):
+        for shot,original in zip(row.get('shots',[]),source.get('shots',[])):
+            ids=original.get('mediaAssetIds',[])
+            if not isinstance(ids,list):ids=[]
+            # An explicit user reference applies even when the model omits its binding.
+            shot['mediaAssetIds']=list(dict.fromkeys([v for v in ids if isinstance(v,str) and v in valid]+chosen))
+            for a in assets:
+                if a['id'] in shot['mediaAssetIds']:
+                    shot['sound']=(shot.get('sound','')+'\n' if shot.get('sound') else '')+'参考 <'+project_label(project,a)+'>（'+a.get('name','')+'）'
+    return result
+
+
+def bind_plan_media(project,segment,uid):
+    """Resolve stable media IDs to current local H3 slots, preserving original dialogue."""
+    import re
+    by_id={a['id']:a for a in project_assets(project) if media_type(a)!='image'}
+    cloned={}
+    for shot in segment.get('shots',[]):
+        bound=[]
+        for ident in shot.get('mediaAssetIds',[]):
+            a=by_id.get(ident)
+            if not a or not project.get('media',{}).get(a['path']):
+                segment.setdefault('planning',{}).setdefault('warnings',[]).append('音视频参考已失效，未猜测替换：'+str(ident));continue
+            if a.get('scope')=='segment' and a.get('segmentId')!=segment['id']:
+                if ident not in cloned:
+                    item=copy.deepcopy(a);item.update(id=uid(),segmentId=segment['id'],pictureNumber=max([x.get('pictureNumber',i+1) for i,x in enumerate(project['assets'])]+[0])+1);project['assets'].append(item);cloned[ident]=item
+                a=cloned[ident]
+            bound.append(a)
+        shot['mediaAssetIds']=[a['id'] for a in bound]
+        shot['assetIds']=list(dict.fromkeys(shot.get('assetIds',[])+shot['mediaAssetIds']))
+        labels={};slot_by_id={}
+        for a in bound:
+            kind=media_type(a);active=[x for x in project.get('assets',[]) if not x.get('deleted') and x.get('path') and media_type(x)==kind and (x.get('scope','public')!='segment' or x.get('segmentId')==segment['id'])]
+            active.sort(key=lambda x:x.get('scope')=='segment')
+            label=FIELDS[kind][2]+' '+str(active.index(a)+1)
+            original=next((x for x in by_id.values() if x['id']==a['id'] or cloned.get(x['id']) is a),a)
+            labels[project_label(project,original).lower()]=label;slot_by_id[a['id']]=label
+        shot['sound']=re.sub(r'<?@?(Audio|Video)\s+(\d+)>?',lambda m:'<'+labels.get((m[1]+' '+m[2]).lower(),m[1]+' '+m[2])+'>',shot.get('sound',''),flags=re.I)
+        for a in bound:
+            label=slot_by_id[a['id']]
+            if not re.search(r'\b'+re.escape(label)+r'\b',shot['sound'],re.I):shot['sound']+=(('\n' if shot['sound'] else '')+'参考 <'+label+'>（'+a.get('name',media_type(a))+'）')
+
+
+def media_inventory(project):
+    return [{'id':a['id'],'name':a.get('name',''),'mediaType':media_type(a),'referenceLabel':project_label(project,a),'available':bool(project.get('media',{}).get(a['path']))} for a in project_assets(project) if media_type(a)!='image']

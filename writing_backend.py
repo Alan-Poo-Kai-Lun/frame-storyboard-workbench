@@ -189,7 +189,7 @@ def append_plan(s,p,r,edits,plan_id,snapshot,copy_plan=False):
   edit=edits[i]
   if not isinstance(edit,dict) or any(not isinstance(edit.get(k),str) or not edit[k].strip() or len(edit[k])>20000 for k in ['title','storyText']):raise ValueError('请填写有效标题与剧情')
   # Editing a story makes its generated shots a draft needing review; never silently regenerate.
-  seg={'id':s.uid(),'title':edit['title'][:200],'storyText':edit['storyText'],'duration':item.get('duration',r['duration']),'originalDuration':item.get('duration',r['duration']),'prompt':'','originalPrompt':'','shots':copy.deepcopy(item['shots']),'refs':[],'continuity':bool(p['segments'] or additions) and r.get('continuity',True),'guideFromPrev':bool(p['segments'] or additions) and r.get('guideFromPrev',False),'dialogueLanguage':item['dialogueLanguage'],'writingRuleIds':r['ruleIds'],'planning':{'h3PromptVersion':2,'visualTone':r.get('visualTone','custom'),'shotDensity':r.get('shotDensity','standard'),'referenceRoles':copy.deepcopy(resolved_roles),'summary':item['summary'],'warnings':[w['message'] for w in r.get('warnings',[]) if isinstance(w,dict) and w.get('segment')==i]+(['规划后的剧情已手动调整，请核对镜头与剧情一致性'] if edit['storyText']!=item['storyText'] else [])},'videos':[]}
+  seg={'id':s.uid(),'title':edit['title'][:200],'storyText':edit['storyText'],'duration':item.get('duration',r['duration']),'originalDuration':item.get('duration',r['duration']),'prompt':'','originalPrompt':'','shots':copy.deepcopy(item['shots']),'refs':[],'continuity':bool(p['segments'] or additions) and r.get('continuity',True),'guideFromPrev':bool(p['segments'] or additions) and edit.get('guideFromPrev',r.get('guideFromPrev',False)),'dialogueLanguage':item['dialogueLanguage'],'writingRuleIds':r['ruleIds'],'planning':{'h3PromptVersion':2,'visualTone':r.get('visualTone','custom'),'shotDensity':r.get('shotDensity','standard'),'referenceRoles':copy.deepcopy(resolved_roles),'summary':item['summary'],'warnings':[w['message'] for w in r.get('warnings',[]) if isinstance(w,dict) and w.get('segment')==i]+(['规划后的剧情已手动调整，请核对镜头与剧情一致性'] if edit['storyText']!=item['storyText'] else [])},'videos':[]}
   texts=[seg['storyText'],seg['planning']['summary']]+[sh.get(k,'') for sh in seg['shots'] for k in planning.FIELDS if k!='dialogue']
   used=set().union(*(references(v) for v in texts))|{n for h in seg['shots'] for n in h.get('referenceNumbers',[])}
   if used-set(numbers):raise ValueError('预览引用了不存在的图片素材')
@@ -205,8 +205,9 @@ def append_plan(s,p,r,edits,plan_id,snapshot,copy_plan=False):
    for k in planning.FIELDS:sh[k]=planning.map_dialogue_speakers(sh.get(k,''),lambda n:mapping.get(n,n)) if k=='dialogue' else normalize(sh.get(k,''),lambda n:mapping[n])
   active=[a for a in p['assets'] if a.get('pictureNumber') in set(mapping.values()) and a.get('path') and not a.get('deleted') and s.generation_backend.media_type(a)=='image' and (a.get('scope','public')=='public' or a.get('segmentId')==seg['id'])]
   refs=[{'index':a.get('pictureNumber',p['assets'].index(a)+1),'name':a['name'],'kind':a.get('kind',''),'description':a.get('description','')} for a in active]
+  s.generation_backend.bind_plan_media(p,seg,s.uid)
   seg['prompt']=s.rebuild({**seg,'defaultDialogueLanguage':seg['dialogueLanguage'],'assetReferences':refs});additions.append(seg)
- if r.get('guideFromPrev'):p['directorGuide']={**s.guide_settings(p),'continuityEnabled':True}
+ if any(seg.get('guideFromPrev') for seg in additions):p['directorGuide']={**s.guide_settings(p),'continuityEnabled':True}
  p['segments'].extend(additions)
  p.setdefault('storyPlans',[]).append({'id':s.uid() if copy_plan else plan_id,'createdAt':__import__('time').time(),'templates':copy.deepcopy(additions),'source':copy.deepcopy(r),'integrity':digest(additions)})
  return len(additions)
@@ -356,6 +357,7 @@ def refresh_plan_references(s,p,result):
  if result.get('pendingImage'):
   pending=next((r for r in old if r.get('number')==result['pendingImage']['number']),None)
   if pending and not any(r['number']==pending['number'] for r in result['references']):result['references'].append(pending)
+ media=s.generation_backend.media_inventory(p);ids={r['id'] for r in media};result['mediaReferences']=media+[{**r,'missing':True,'available':False} for r in result.get('mediaReferences',[]) if r['id'] not in ids]
  result['missingReferences']=missing;result['referenceRemap']=mapping
  return result
 
@@ -369,6 +371,7 @@ def validate_edits(s,result,edits):
  def warn(i,j,message):warnings.append({'segment':i,'shot':j,'message':message})
  for i,edit in enumerate(edits):
   if not isinstance(edit,dict):raise ValueError('片段草稿格式无效')
+  if 'guideFromPrev' in edit and not isinstance(edit['guideFromPrev'],bool):raise ValueError('逐段引导开关格式无效')
   duration=edit.get('duration',result.get('duration',15))
   if isinstance(duration,bool) or not isinstance(duration,(int,float)) or not math.isfinite(duration) or not 1<=duration<=60:raise ValueError(f'第 {i+1} 段时长须为 1–60 秒')
   rows=edit.get('shots',[])
@@ -397,6 +400,12 @@ def validate_edits(s,result,edits):
    shot['referenceNumbers']=sorted(refs&set(available));
    if shot['referenceNumbers'] and not (used&set(available)) and shot['action'].strip():shot['action']=' '.join('@Picture '+str(n) for n in shot['referenceNumbers'])+' · '+shot['action']
    shot['assetIds']=[available[n]['id'] for n in shot['referenceNumbers'] if available[n].get('id')]
+   media_ids=h.get('mediaAssetIds',[]);allowed_media={r['id'] for r in result.get('mediaReferences',[]) if r.get('available',True) and not r.get('missing')}
+   shot['mediaAssetIds']=[v for v in media_ids if isinstance(v,str) and v in allowed_media] if isinstance(media_ids,list) else []
+   if isinstance(media_ids,list) and set(v for v in media_ids if isinstance(v,str))-allowed_media:
+    warn(i,j,'音视频参考已删除或文件缺失，已解除失效绑定，未猜测替换')
+    for r in result.get('mediaReferences',[]):
+     if r['id'] in media_ids and r['id'] not in allowed_media:shot['sound']=re.sub(r'<?@?'+re.escape(r['referenceLabel'])+r'>?(?!\d)','[音视频参考已移除]',shot['sound'],flags=re.I)
    if available and not shot['referenceNumbers']:warn(i,j,'未绑定素材；按当前文字应用，可在画布补选')
    if not shot['startState'].strip() or not shot['endState'].strip():warn(i,j,'起始 / 结束空间状态未填写，已保留为空')
    if not shot['action'].strip():warn(i,j,'画面动作未填写，已保留为空')

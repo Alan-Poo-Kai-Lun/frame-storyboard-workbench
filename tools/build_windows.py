@@ -50,7 +50,7 @@ def build():
  name='FRAME-Workbench-Windows-x64-'+release
  command=[sys.executable,'-m','PyInstaller','--clean','--noconfirm','--onefile','--windowed','--name',name,'--icon',str(icon),'--distpath',str(output),'--workpath',str(work/'pyinstaller'),'--specpath',str(work)]
  for src,dest in [(resources/'web','web'),(resources/'presets','presets'),(resources/'version.json','.'),(resources/'LICENSE','.'),(resources/'NOTICE.md','.'),(resources/'vendor-manifest.json','.'),(notices,'third-party-notices'),(icon,'.')]:command+=['--add-data',str(src)+os.pathsep+dest]
- for module in ['server','plan_store','h3_compiler','creative_library','prompt_translation','writing_backend','agent_backend','asset_lifecycle','project_hub','appearance_presets','PIL.Image','PIL.ImageOps','editor_presets','runtime_paths','update_check','task_backend','studio_backend','reverse_backend','planning_backend','asset_analysis','prompt_review','visual_library','reference_packs','project_store','ai_runtime','update_workbench']:command+=['--hidden-import',module]
+ for module in ['media_analysis','server','plan_store','h3_compiler','creative_library','prompt_translation','writing_backend','agent_backend','asset_lifecycle','project_hub','appearance_presets','PIL.Image','PIL.ImageOps','editor_presets','runtime_paths','update_check','task_backend','studio_backend','reverse_backend','planning_backend','asset_analysis','prompt_review','visual_library','reference_packs','project_store','ai_runtime','update_workbench']:command+=['--hidden-import',module]
  command.append(str(ROOT/'windows_launcher.py'));subprocess.run(command,check=True,cwd=ROOT)
  exe=output/(name+'.exe');assert exe.is_file()
  sums=output/'SHA256SUMS.txt';old=sums.read_text('utf-8') if sums.exists() else ''

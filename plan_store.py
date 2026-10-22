@@ -51,6 +51,21 @@ def endpoint(s,body):
    row=task(s,ident)
    if not row or row['projectId']!=p['projectId']:raise ValueError('原方案不属于当前项目')
    preserve(s,row);record=get(s,ident,p)
+  guide_input=body.get('guideSettings')
+  guide=s.guide_settings({**p,'directorGuide':{**s.guide_settings(p),**(record.get('guideSettings') or {}),**(guide_input if isinstance(guide_input,dict) else {})}})
+  applied_plan=next((v for v in p.get('storyPlans',[]) if v.get('id')==ident),None)
+  target_ids={v['id'] for v in applied_plan.get('templates',[])} if applied_plan else set()
+  if applied_plan and guide_input is None:guide=s.guide_settings(p)
+  guide_targets=[{'id':v['id'],'title':v['title'],'guideFromPrev':bool(v.get('guideFromPrev')),'hasPrevious':i>0} for i,v in enumerate(p['segments']) if v['id'] in target_ids]
+  if action=='guide':
+   if not applied_plan:raise ValueError('方案尚未应用，请使用确认应用')
+   rows=body.get('segmentGuides',[])
+   if not isinstance(rows,list) or any(not isinstance(v,dict) or v.get('id') not in target_ids or not isinstance(v.get('guideFromPrev'),bool) for v in rows):raise ValueError('逐段引导目标无效')
+   flags={v['id']:v['guideFromPrev'] for v in rows}
+   for i,v in enumerate(p['segments']):
+    if v['id'] in flags:v['guideFromPrev']=i>0 and flags[v['id']]
+   p['directorGuide']=guide;s.save(p);record['guideSettings']=guide;write(s,record)
+   return {'project':p}
   result=record.get('result',{})
   plan=result.get('storyPlan') if record['type']=='agent' else result
   if action=='reparse':
@@ -67,7 +82,7 @@ def endpoint(s,body):
   if action=='draft':
    draft=body.get('segments')
    if not isinstance(draft,list) or len(json.dumps(draft))>2_000_000:raise ValueError('预览草稿无效')
-   record['draft']=copy.deepcopy(draft);write(s,record)
+   record['draft']=copy.deepcopy(draft);record['guideSettings']=guide;write(s,record)
   if plan:
    plan=writing.normalize_plan_structure(plan,infer=record['type']=='agent' and not record.get('draft'))
    live=writing.refresh_plan_references(s,p,plan)
@@ -91,8 +106,9 @@ def endpoint(s,body):
     if body.get('acceptAspectChange') is True:p['aspect']=aspect
     else:checked.setdefault('warnings',[]).append({'message':'保留当前项目画幅，未覆盖为方案画幅'})
    count=writing.append_plan(s,p,checked,checked['segments'],ident,record['snapshot'])
+   p['directorGuide']=guide;record['guideSettings']=guide
    s.save(p);record['appliedAt']=time.time();record['appliedVia']='plan-preview';record.pop('draft',None);write(s,record)
    import task_backend
    task_backend.manager(s).patch(ident,appliedAt=record['appliedAt'],appliedVia='plan-preview')
    return {'project':s.load_project(),'created':count,'warnings':checked.get('warnings',[])}
-  return {'id':ident,'projectId':p['projectId'],'plan':plan,'draft':writing.refresh_plan_references(s,p,{**(result.get('storyPlan') if record['type']=='agent' else result),'segments':record['draft']})['segments'] if record.get('draft') else None,'appliedAt':record.get('appliedAt'),'raw':record.get('snapshot',{}).get('modelResponse',''),'reply':result.get('reply','')}
+  return {'id':ident,'projectId':p['projectId'],'plan':plan,'draft':writing.refresh_plan_references(s,p,{**(result.get('storyPlan') if record['type']=='agent' else result),'segments':record['draft']})['segments'] if record.get('draft') else None,'appliedAt':record.get('appliedAt'),'guideSettings':guide,'guideTargets':guide_targets,'raw':record.get('snapshot',{}).get('modelResponse',''),'reply':result.get('reply','')}

@@ -6,7 +6,9 @@
 
 提示词就是描述“画面里有什么、怎么动、怎么拍”的文字。FRAME 本身不生成视频。视频在外部工具生成后，可以放回项目中播放、备注和保存。
 
-**Windows · 本地运行 · V3.37 Beta 1**　[English](docs/README.en.md)
+**Windows · 本地运行 · V3.37 Beta 4**　[English](docs/README.en.md)
+
+Beta 4 增加连线语义分色与悬停聚焦，修复详情抽屉单击切换，并将视频拆解改为纯视觉左右分栏报告。音频分析已移除，声音参考播放、绑定与导出保留。详见[本版说明](docs/release-v3.37-beta.4.md)。
 
 V3.37 更新：素材名称提及与预览、可调尺寸的节点详情、常驻全屏入口，以及静态点阵/柔焦极光两种背景。已移除隔空手势与顶栏重复恢复入口，旧方案和用户素材保留。[本版说明](docs/release-v3.37-beta.1.md)。下方提供新版 EXE、完整源码／BAT ZIP 与校验文件；已有桌面程序不会自动覆盖。
 
@@ -14,11 +16,11 @@ V3.37 更新：素材名称提及与预览、可调尺寸的节点详情、常�
 
 **Windows 新手推荐下载 EXE，双击即可启动，不需要安装 Python。**
 
-[**下载 Windows EXE**](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.37-beta.1/FRAME-Workbench-Windows-x64-v3.37-beta.1.exe)
+[**下载 Windows EXE**](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.37-beta.4/FRAME-Workbench-Windows-x64-v3.37-beta.4.exe)
 
 下载后双击运行，保持小启动器窗口打开，浏览器会自动打开工作台。界面虽然显示在浏览器里，程序仍运行在你的电脑上。
 
-其他下载：[完整源码／BAT ZIP](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.37-beta.1/FRAME-Storyboard-Workbench-v3.37-beta.1.zip) · [版本下载页与校验文件](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/tag/v3.37-beta.1)
+其他下载：[完整源码／BAT ZIP](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.37-beta.4/FRAME-Storyboard-Workbench-v3.37-beta.4.zip) · [版本下载页与校验文件](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/tag/v3.37-beta.4)
 
 ZIP 供源码用户启动或更新，需要 Python。第一次使用 EXE 的用户不用再下载它。[安装、更新与数据迁移](docs/install-and-data.md)
 

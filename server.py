@@ -408,21 +408,21 @@ def portable_pack_media(files, project):
     mapping={}
     if project.get('assetsManaged'):
         public=scoped_assets(project)
-        entries=[(a,'shared_params',i) for i,a in enumerate(public)]
+        entries=[(a,'shared_params',i) for kind in generation_backend.FIELDS for i,a in enumerate(x for x in public if generation_backend.media_type(x)==kind)]
         for n,segment in enumerate(project['segments']):
             active=scoped_assets(project,segment)
             for kind, (_, _, _, limit) in generation_backend.FIELDS.items():
                 if sum(generation_backend.media_type(a)==kind for a in active)>limit: raise ValueError(f'{segment["title"]} 的 {kind} 参考超出 {limit} 个')
             folder=str(Path(segment.get('groupPath',f'asset_groups/{n+1:02d}/group.json')).parent)
-            entries.extend((a,folder,i) for i,a in enumerate(active) if a.get('scope')=='segment')
+            entries.extend((a,folder,i) for kind in generation_backend.FIELDS for i,a in enumerate(x for x in active if generation_backend.media_type(x)==kind) if a.get('scope')=='segment')
         for a,folder,i in entries:
             name=a['path'];ext=Path(name).suffix.lower()
             if ext=='.jpeg': ext='.jpg'
             kind=generation_backend.media_type(a)
             allowed={'image':{'.png','.jpg','.webp','.bmp','.gif','.tif','.tiff'},'audio':{'.wav','.mp3','.flac','.ogg','.m4a','.aac'},'video':{'.mp4','.webm','.mov','.mkv'}}
             if ext not in allowed[kind]: raise ValueError('不支持的参考素材格式：'+a.get('name',name))
-            if name not in source: raise ValueError('缺少素材图片：'+a.get('name',name)+'。请替换该素材后重新导出')
-            mapping.setdefault(name,f'{folder}/Picture{i+1}{ext}' if kind=='image' else f'{folder}/{generation_backend.FIELDS[kind][2]}_{hashlib.sha256(name.encode()).hexdigest()[:12]}{ext}')
+            if name not in source: raise ValueError('缺少参考素材文件：'+a.get('name',name)+'。请替换该素材后重新导出')
+            mapping.setdefault(name,f'{folder}/Picture{i+1}{ext}' if kind=='image' else f'{folder}/{generation_backend.FIELDS[kind][2]}{i+1}{ext}')
     for name in project.get('media',{}):
         if name not in mapping and (not name.startswith(H3_MEDIA_PREFIXES) or not re.fullmatch(r'[A-Za-z0-9_./]+',name)):
             ext=Path(name).suffix.lower()
@@ -583,12 +583,14 @@ def export_pack(p,force=False):
     active.update(v['videoFile'] for v in p.get('sourceVideoClips',[]) if v.get('videoFile'))
     p={**p,'media':{k:v for k,v in p.get('media',{}).items() if not k.startswith('extra/segment_videos/') or k in active}}
     for path in active:
-        if not p['media'].get(path):raise ValueError('片段视频文件缺失：'+str(path))
+        if not p['media'].get(path):raise ValueError('参考素材或成片文件缺失：'+str(path))
     files.pop('extra/forced-export-report.json',None)
     files.pop('extra/forced_export_report.json',None)
     if force:
         report={'forced':True,'exportedAt':time.strftime('%Y-%m-%d %H:%M:%S'),'projectId':p['projectId'],'notice':'用户选择保留现有内容，跳过提示词冲突检查；结构和媒体检查仍执行。','segments':[{'id':seg['id'],'title':seg['title'],'issues':prompt_review.quality(sys.modules[__name__],p,seg)} for seg in p['segments']]}
         files['extra/forced_export_report.json']=json.dumps(report,ensure_ascii=False,indent=2).encode()
+    inventory={'notice':'公共参考在接收端公共参数中；本组空槽位不表示公共音频或视频未导出。音视频是参考条件，不是片段成片。','public':{key:copy.deepcopy(tl.get('global',{}).get(key,[])) for key in ['refs','refAudios','refVideos']},'segments':[{'title':s['title'],**{key:copy.deepcopy(target.get(key,[])) for key in ['refs','refAudios','refVideos']}} for s,target in zip(p['segments'],tl['segments'])]}
+    files['extra/reference_inventory.json']=json.dumps(inventory,ensure_ascii=False,indent=2).encode()
     portable_pack_media(files,p)
     if sum(len(v) for v in files.values())>400*1024*1024:raise ValueError('导演包素材超过 400MB，请减少视频或压缩后再导出')
     canonicalize_pack_paths(files)
@@ -871,6 +873,15 @@ class Handler(BaseHTTPRequestHandler):
                 p=load_project()
                 if not p or p.get('projectId')!=body.get('projectId'):raise ValueError('项目已切换')
                 return self.respond(guide_settings(p))
+            if route in ['/api/analyze-media','/api/media-analysis-status','/api/edit-media-analysis']:
+                import media_analysis
+                if route=='/api/analyze-media':return self.respond(media_analysis.enqueue(sys.modules[__name__],body))
+                if route=='/api/edit-media-analysis':return self.respond(media_analysis.update(sys.modules[__name__],body))
+                p=load_project()
+                if not p or p['projectId']!=body.get('projectId'):raise ValueError('项目已切换')
+                a=next((v for v in p['assets'] if v['id']==body.get('assetId') and not v.get('deleted')),None)
+                if not a:raise ValueError('素材已删除')
+                return self.respond({'result':media_analysis.current(a,p['media']),'stale':bool(a.get('mediaAnalysis') and not media_analysis.current(a,p['media']))})
             if route=='/api/asset-analysis-status':
                 p=load_project()
                 if not p or p['projectId']!=body.get('projectId'):raise ValueError('项目已切换')
@@ -888,6 +899,10 @@ class Handler(BaseHTTPRequestHandler):
                         draft=original.get('analysisDraft') if original else None
                         if draft and draft.get('signature')==asset_analysis.signature(a,body.get('media',{})):a['analysisDraft']=copy.deepcopy(draft)
                         else:a.pop('analysisDraft',None)
+                        import media_analysis
+                        analysis=media_analysis.current(original,body.get('media',{})) if original and original.get('path')==a.get('path') else None
+                        if analysis:a['mediaAnalysis']=copy.deepcopy(analysis)
+                        else:a.pop('mediaAnalysis',None)
                     save(body)
                 return self.respond({'ok':True})
             if route=='/api/settings': return self.respond(save_settings(body))

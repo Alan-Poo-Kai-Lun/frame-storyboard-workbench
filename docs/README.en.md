@@ -4,7 +4,9 @@
 
 Write stories, organize character and location references, and edit shot actions and dialogue. AI assistance is optional. FRAME does not generate video; add externally generated videos back to the project to review and record them.
 
-**Windows · Runs locally · V3.37 Beta 1**　[中文](../README.md)
+**Windows · Runs locally · V3.37 Beta 4**　[中文](../README.md)
+
+Beta 4 adds semantic edge colors and hover focus, fixes single-click detail switching, and presents visual-only video analysis in a wide split report. Audio analysis is removed; audio playback, reference binding and export remain. See [release notes](release-v3.37-beta.4.md).
 
 V3.37 adds named asset previews, resizable node details, visible fullscreen controls and two minimal backgrounds. Hand tracking and the duplicate recovery toolbar entry are removed; existing plans remain intact. Download the new EXE or source/BAT ZIP below. Existing desktop installations are not overwritten automatically. [Release notes](release-v3.37-beta.1.md).
 
@@ -12,11 +14,11 @@ V3.37 adds named asset previews, resizable node details, visible fullscreen cont
 
 **New Windows users: choose the EXE. Python is not required.**
 
-[**Download Windows EXE**](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.37-beta.1/FRAME-Workbench-Windows-x64-v3.37-beta.1.exe)
+[**Download Windows EXE**](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.37-beta.4/FRAME-Workbench-Windows-x64-v3.37-beta.4.exe)
 
 Run it and keep the small launcher window open. The workbench opens in your browser but runs on your computer.
 
-[Full source / BAT ZIP](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.37-beta.1/FRAME-Storyboard-Workbench-v3.37-beta.1.zip) is for source users and requires Python. EXE users do not also need this ZIP. [Release and checksums](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/tag/v3.37-beta.1) · [Installation and data](install-and-data.md)
+[Full source / BAT ZIP](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.37-beta.4/FRAME-Storyboard-Workbench-v3.37-beta.4.zip) is for source users and requires Python. EXE users do not also need this ZIP. [Release and checksums](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/tag/v3.37-beta.4) · [Installation and data](install-and-data.md)
 
 ## 2. Try the sample without AI
 
