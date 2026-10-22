@@ -17,6 +17,8 @@ jobs:
           python-version: '3.12'
       - name: Install image processing dependency
         run: python -m pip install Pillow==12.3.0
+      - name: Install video decoding dependency
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - name: Validate package inputs
         run: python tools/check_release.py
       - name: Structure and update tests
@@ -34,6 +36,9 @@ jobs:
           NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_canvas_input.cjs
           NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_appearance_panel.cjs
           NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_plan_ui.cjs
+          NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_agent_media.cjs
+          NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_media_analysis.cjs
+          NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_semantic_drawer.cjs
       - name: Build clean installer
         run: python tools/build_release.py
       - uses: actions/upload-artifact@v4
