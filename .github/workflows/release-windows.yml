@@ -4,6 +4,8 @@ on:
     branches: [main]
     paths:
       - 'version.json'
+      - 'server.py'
+      - '.gitattributes'
       - 'windows_launcher.py'
       - 'runtime_paths.py'
       - 'update_check.py'
