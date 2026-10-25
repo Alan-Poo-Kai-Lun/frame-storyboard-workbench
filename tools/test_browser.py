@@ -9,10 +9,10 @@ ROOT=Path(__file__).resolve().parents[1]
 def main():
  output=Path(os.environ.get('FRAME_QA_OUTPUT',ROOT/'dist/browser-checks.json')).resolve();output.parent.mkdir(parents=True,exist_ok=True)
  with tempfile.TemporaryDirectory(prefix='frame-browser-') as directory:
-  work=Path(directory);media=work/'reference.mp4'
+  work=Path(directory);media=work/'reference.webm'
   ffmpeg=shutil.which('ffmpeg')
   if not ffmpeg:raise RuntimeError('ffmpeg is required for the video playback and Range checks')
-  subprocess.run([ffmpeg,'-hide_banner','-loglevel','error','-f','lavfi','-i','color=c=teal:s=320x180:r=24','-f','lavfi','-i','sine=frequency=440:sample_rate=44100','-t','2','-c:v','libx264','-pix_fmt','yuv420p','-c:a','aac','-shortest',str(media)],check=True)
+  subprocess.run([ffmpeg,'-hide_banner','-loglevel','error','-f','lavfi','-i','color=c=teal:s=320x180:r=24','-f','lavfi','-i','sine=frequency=440:sample_rate=44100','-t','2','-c:v','libvpx','-pix_fmt','yuv420p','-c:a','libopus','-shortest',str(media)],check=True)
   class Model(BaseHTTPRequestHandler):
    def log_message(self,*args):pass
    def do_POST(self):
