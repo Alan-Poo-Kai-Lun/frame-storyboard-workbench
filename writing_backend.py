@@ -6,9 +6,28 @@ RULE_FILES={'fight':'fight-director-rules.md','slapstick':'elastic-slapstick-rul
 BUILTINS=[{'id':ident,'name':name+' · 详细版','category':category,'description':description,'rules':(Path(__file__).parent/'presets/writing-rules'/RULE_FILES[ident]).read_text('utf-8')} for ident,name,category,description in [('fight','动作导演','动作','角色动作差异、攻防因果、摄影职责与空间连续性'),('slapstick','弹性喜剧','喜剧','喜剧因果链、道具路径、撞击反应与可恢复形变'),('expression','抽象表情','表演','情绪触发、立体本体形变、全身表演与恢复')]]
 
 def digest(value):return hashlib.sha256(json.dumps(value,ensure_ascii=False,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+def seed_library(s):
+ """Seed each bundled custom ID once; existing edits and later deletions win."""
+ source=Path(__file__).parent/'presets/writing-skills-baseline.json'
+ if not source.exists():return
+ baseline=json.loads(source.read_text('utf-8'));stamp=s.DATA/'writing-baseline.json'
+ state=json.loads(stamp.read_text('utf-8')) if stamp.exists() else {'seededIds':[]}
+ seen=set(state.get('seededIds',[]));path=s.DATA/'writing-rules.json';hp=s.DATA/'writing-rules-hidden.json'
+ rows=json.loads(path.read_text('utf-8')) if path.exists() else [];hidden=json.loads(hp.read_text('utf-8')) if hp.exists() else []
+ new=[r for r in baseline['items'] if r['id'] not in seen];known={r['id'] for r in rows}
+ if not new and stamp.exists():return
+ for r in new:
+  if r['id'] not in known:rows.append(copy.deepcopy(r));known.add(r['id'])
+ for ident in baseline.get('hidden',[]):
+  if ident not in seen and ident not in hidden:hidden.append(ident)
+ s.DATA.mkdir(parents=True,exist_ok=True)
+ for target,value in [(path,rows),(hp,hidden),(stamp,{'version':1,'seededIds':sorted(seen|{r['id'] for r in new})})]:
+  temp=target.with_suffix('.tmp');temp.write_text(json.dumps(value,ensure_ascii=False,indent=2),'utf-8');temp.replace(target)
+
 def library(s,body=None):
  path=s.DATA/'writing-rules.json';hidden_path=s.DATA/'writing-rules-hidden.json'
  with s.LOCK:
+  seed_library(s)
   rows=json.loads(path.read_text('utf-8')) if path.exists() else []
   hidden=json.loads(hidden_path.read_text('utf-8')) if hidden_path.exists() else []
   revision=digest([rows,hidden]);body=body or {};action=body.get('action')
@@ -35,20 +54,20 @@ def library(s,body=None):
    temp=target.with_suffix('.tmp');temp.write_text(json.dumps(value,ensure_ascii=False,indent=2),'utf-8');temp.replace(target);revision=digest([rows,hidden])
   return {'revision':revision,'items':[{**r,'builtin':True,'hidden':r['id'] in hidden} for r in BUILTINS]+[{**r,'hidden':r['id'] in hidden} for r in rows]}
 
-def selected(s,p,segment=None,ids=None):
+def selected(s,p,segment=None,ids=None,allow_missing=False):
  ids=ids if ids is not None else (segment or {}).get('writingRuleIds',p.get('writingRuleIds',[]))
  if not isinstance(ids,list) or len(ids)>5 or any(not isinstance(i,str) for i in ids):raise ValueError('最多选择 5 项写作技能')
  items={r['id']:r for r in library(s)['items']}
- if any(i not in items for i in ids):raise ValueError('选中的写作技能已删除，请重新选择')
+ if not allow_missing and any(i not in items for i in ids):raise ValueError('选中的写作技能已删除，请重新选择')
  # Hiding is presentation only; stopping an applied rule requires applying a new selection.
- return [copy.deepcopy(items[i]) for i in dict.fromkeys(ids)]
+ return [copy.deepcopy(items[i]) for i in dict.fromkeys(ids) if i in items]
 
 def project_assets(s,p):
  return [a for a in p.get('assets',[]) if not a.get('deleted') and a.get('path') and s.generation_backend.media_type(a)=='image' and (a.get('scope','public')=='public' or a.get('segmentId') in {v['id'] for v in p.get('segments',[])})]
 
 def signature(p):
  # Compare editable project sources; canvas navigation and harmless layout saves do not invalidate output.
- return digest({k:v for k,v in p.items() if k not in ['overviewLayout','updatedAt','savedAt','originalZip','media','planArchive'] }|{'media':{k:hashlib.sha256(v.encode()).hexdigest() for k,v in p.get('media',{}).items()}})
+ return digest({k:v for k,v in p.items() if k not in ['overviewLayout','updatedAt','savedAt','originalZip','originalZipHash','mediaIndex','media','planArchive'] }|{'media':{k:(v if re.fullmatch('[0-9a-f]{64}',v) else hashlib.sha256(v.encode()).hexdigest()) for k,v in p.get('media',{}).items() if isinstance(v,str)}})
 
 def enqueue(s,body):
  import task_backend

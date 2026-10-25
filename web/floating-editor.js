@@ -11,8 +11,9 @@
   panel.append(inspector);panel.classList.add('unifiedEditorPanel');
   const docking=dialog._frameDocking||(dialog._frameDocking=frameDocking.create(dialog));
   const tether=document.createElement('div');tether.className='floatingEditorTether';tether.hidden=true;workspace.append(tether);
-  const persist=()=>{};function connect(){const target=current&&node(current.id);tether.hidden=controller?.mode()!=='floating'||!target||target.hidden||!target.isConnected;if(tether.hidden)return;const n=target.getBoundingClientRect(),p=panel.getBoundingClientRect(),w=workspace.getBoundingClientRect(),x=n.left+n.width/2-w.left,y=n.top+n.height/2-w.top,dx=p.left-w.left-x,dy=p.top+25-w.top-y;tether.style.left=x+'px';tether.style.top=y+'px';tether.style.width=Math.hypot(dx,dy)+'px';tether.style.transform='rotate('+Math.atan2(dy,dx)+'rad)'}
+  const persist=()=>{};function connect(){const target=current&&node(current.id);tether.hidden=window.frameCardFlow?.isOpen||controller?.mode()!=='floating'||!target||target.hidden||!target.isConnected;if(tether.hidden)return;const n=target.getBoundingClientRect(),p=panel.getBoundingClientRect(),w=workspace.getBoundingClientRect(),x=n.left+n.width/2-w.left,y=n.top+n.height/2-w.top,dx=p.left-w.left-x,dy=p.top+25-w.top-y;tether.style.left=x+'px';tether.style.top=y+'px';tether.style.width=Math.hypot(dx,dy)+'px';tether.style.transform='rotate('+Math.atan2(dy,dx)+'rad)'}
   const controller=docking.register({key:'editor',panel,handle:panel.querySelector('.floatingEditorHandle'),label:'属性',defaultMode:mode==='side'?'right':'floating',before:()=>save(false),onMode:value=>{mode=value==='floating'?'floating':'side';dialog.classList.toggle('floatingEditorMode',mode==='floating')}});
+  panel._dock=controller;
   function apply(){panel.hidden=closed;connect()}
   async function changeMode(){await controller.set(controller.mode()==='floating'?'right':'floating')}
   async function move(delta){if(current?.kind!=='shot')return;const s=current.segment,i=s.shots.indexOf(current.item),next=s.shots[i+delta];if(next)await select('h:'+s.id+':'+next.id)}

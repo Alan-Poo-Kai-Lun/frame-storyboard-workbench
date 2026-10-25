@@ -1,3 +1,5 @@
+> 当前发布：`v3.38-canvas-r10`。发布前执行 `python tools/check_release.py`、后端测试及 `python tools/test_browser.py`。浏览器回归使用隔离项目、生成的短视频与本地模拟模型，覆盖当前 React Flow；历史 JSDOM 旧画布测试保留作参考，不再当作当前界面的 CI。Windows 工作流构建和验证后发布 EXE、Python 运行源码 ZIP 及校验文件。
+
 # GitHub 版本与发布管理
 
 ## 初次创建

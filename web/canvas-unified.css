@@ -1,0 +1,141 @@
+/* Unified-only additions to the existing product appearance. */
+#frameFlowRoot .rfa-asset{height:100%;display:flex;flex-direction:column}
+#frameFlowRoot .rfa-asset>.rfa-media{flex:1;min-height:135px}
+#frameFlowRoot .rfa-asset>header{flex:none}
+#frameFlowRoot .rfa-asset footer{flex:none;flex-wrap:wrap}
+#frameFlowRoot .rfa-group>header{flex-wrap:wrap;gap:5px;min-height:55px}
+#frameFlowRoot .rfa-group>header strong{flex:1;min-width:90px}
+#frameFlowRoot .rfa-group>header button{padding:3px 6px;font-size:12px}
+#frameFlowRoot .rfa-media-missing{display:grid;place-content:center;text-align:center;height:100%;min-height:100px;padding:10px;color:var(--rfa-muted)}
+.flow-media-preview{position:relative;width:100%;height:100%;min-height:135px;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+.flow-video-poster{width:100%;height:100%;object-fit:contain}
+.flow-media-symbol{display:flex;gap:10px;align-items:center;justify-content:center;font-size:32px;min-height:120px;color:var(--rfa-accent)}
+.flow-media-symbol small{font-size:12px}
+.flow-media-preview .flow-media-open{position:absolute;right:4px;top:4px;padding:3px 6px!important;background:var(--rfa-card)!important;font-size:11px!important;opacity:.95}
+.flow-wave{display:block;width:100%;height:64px;min-height:64px;fill:var(--rfa-accent)}
+.flow-wave text{fill:var(--rfa-muted);font-size:12px}
+.flow-media-preview audio{display:block;width:100%;height:38px;min-height:38px}
+#frameFlowRoot footer.rfa-refs button{border:1px solid var(--rfa-accent);border-radius:14px;padding:3px 7px;font-size:12px;max-width:47%;overflow:hidden;text-overflow:ellipsis}
+.flow-ref-hover{position:absolute;z-index:70;width:280px;max-height:245px;padding:10px;background:var(--rfa-card);border:1px solid var(--rfa-line);border-radius:9px;box-shadow:0 5px 18px #0005;pointer-events:none;color:var(--rfa-text)}
+.flow-ref-hover strong,.flow-ref-hover small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.flow-ref-hover>img{width:100%;max-height:155px;object-fit:contain;display:block;margin-top:5px}
+.flow-ref-hover .flow-media-preview{height:145px;min-height:100px}
+.flow-preview-backdrop{position:absolute;inset:0;z-index:90;background:#0009;display:flex;align-items:center;justify-content:center;padding:22px}
+.flow-preview-dialog{background:var(--rfa-card);color:var(--rfa-text);border:1px solid var(--rfa-line);border-radius:12px;width:min(100%,950px);max-height:96%;overflow:auto;padding:12px;box-shadow:0 10px 45px #0007}
+#frameFlowRoot .flow-preview-dialog>header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 4px 12px}
+.flow-preview-dialog>img,.flow-preview-dialog>video{display:block;width:100%;max-height:65vh;object-fit:contain}
+.flow-preview-dialog>audio{display:block;width:100%;margin:30px 0;min-height:50px}
+.flow-gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.flow-gallery>article{border:1px solid var(--rfa-line);padding:8px;border-radius:8px;min-width:0}
+.flow-gallery .flow-media-preview,.flow-gallery img{height:170px;width:100%;object-fit:contain}
+.flow-note textarea{display:block;min-height:150px;width:100%;padding:12px;color:var(--rfa-text);background:var(--rfa-bg);border:0;font:inherit;resize:vertical}
+#frameFlowRoot .rfa-context section>small{display:block;padding:6px 10px;color:var(--rfa-muted);font-size:11px}
+#frameFlowRoot .rfa-context section+section{border-top:1px solid var(--rfa-line);margin-top:5px}
+.flowLibraryRow{display:flex;align-items:center;gap:5px;margin:5px 0;border:1px solid var(--line);border-radius:8px;padding:3px}
+.flowLibraryRow .canvasSegmentLink{flex:1;min-width:0;margin:0!important;border:0!important}
+.flowLibraryRow>button:not(.canvasSegmentLink){flex:none;padding:5px 7px}
+.unifiedModeMenu [aria-pressed=true]{border-color:var(--canvas-glow);color:var(--canvas-glow)}
+#overviewDialog[data-cardflow=true] .canvasHeadActions .unifiedModeMenu>summary{color:var(--canvas-glow);border-color:var(--canvas-glow);background:color-mix(in srgb,var(--canvas-glow) 10%,var(--bg))}
+
+/* Reference wires never steal typing, hover or file-drop events from cards. */
+#frameFlowRoot .react-flow__edge,#frameFlowRoot .react-flow__edge-interaction{pointer-events:none!important}
+
+/* Connector appearance: markers, line effects, endpoint pads and container tints
+   all resolve from the same appearance object as the settings panel. */
+#frameFlowRoot .rfa-arrow-defs{position:absolute;left:0;top:0;width:0;height:0;overflow:hidden;pointer-events:none}
+/* Dynamic background: one canvas, two drifting lights, behind the flow. */
+#frameFlowRoot .rfa-aurora-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:.08;transition:opacity .45s ease}
+#frameFlowRoot .rfa-flow-stage>.react-flow{position:relative;z-index:2}
+#frameFlowRoot .rfa-backdrop{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:0;background-size:cover;background-position:center;transition:opacity var(--rfa-transition,750ms) ease}
+#frameFlowRoot .rfa-backdrop::after{content:'';position:absolute;inset:0;background:rgba(0,0,0,var(--rfa-backdrop-dim,.35));box-shadow:inset 0 0 200px rgba(0,0,0,var(--rfa-vignette,.35))}
+#frameFlowRoot .rfa-backdrop-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;pointer-events:none;opacity:calc(1 - var(--rfa-backdrop-dim,.35))}
+#frameFlowRoot .rfa-particles{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
+.canvasThemeSection{border:1px solid var(--rfa-line);border-radius:10px;padding:10px;margin:0 0 12px}
+.canvasThemeSection h3{margin:0 0 4px;font-size:13px}
+.themePresetGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:8px 0}
+.themePresetGrid button{display:flex;flex-direction:column;gap:2px;align-items:flex-start;padding:7px 8px;border:1px solid var(--rfa-line);border-radius:8px;background:transparent;color:inherit;cursor:pointer;text-align:left}
+.themePresetGrid button strong{font-size:12px;font-weight:500}
+.themePresetGrid button small{font-size:11px;opacity:.65}
+.themePresetGrid button[aria-pressed=true]{border-color:var(--rfa-accent);background:color-mix(in srgb,var(--rfa-accent) 14%,transparent)}
+#frameFlowRoot .rfa-flow-mark{pointer-events:none}
+#frameFlowRoot .rfa-flow-mark *{pointer-events:none;stroke:var(--rfa-edge,var(--rfa-accent));fill:var(--rfa-edge,var(--rfa-accent))}
+#frameFlowRoot .react-flow__edge.rfa-edge .react-flow__edge-path{transition:opacity .18s ease,stroke-width .18s ease}
+#frameFlowRoot [data-line-effect=pulse] .rfa-edge .react-flow__edge-path{stroke-dasharray:10 8;filter:drop-shadow(0 0 4px var(--rfa-edge,var(--rfa-accent)))}
+#frameFlowRoot [data-line-effect=dual] .rfa-edge .react-flow__edge-path{filter:drop-shadow(0 2.4px 0 var(--rfa-edge,var(--rfa-accent)))}
+#frameFlowRoot [data-line-effect=neon] .rfa-edge .react-flow__edge-path{filter:drop-shadow(0 0 3px var(--rfa-edge,var(--rfa-accent))) drop-shadow(0 0 9px var(--rfa-edge,var(--rfa-accent)))}
+#frameFlowRoot [data-line-effect=ants] .rfa-edge .react-flow__edge-path{stroke-dasharray:3 7}
+#frameFlowRoot [data-line-effect=comet] .rfa-edge .react-flow__edge-path{stroke-dasharray:34 210;stroke-linecap:round}
+#frameFlowRoot [data-line-effect=grain] .rfa-edge .react-flow__edge-path{stroke-dasharray:1 4;opacity:.72}
+#frameFlowRoot [data-flow=on][data-motion=on][data-line-effect=pulse] .rfa-edge .react-flow__edge-path{animation:rfaEdgeDash var(--rfa-flow-duration,6s) linear infinite}
+#frameFlowRoot [data-flow=on][data-motion=on][data-line-effect=ants] .rfa-edge .react-flow__edge-path{animation:rfaEdgeDash var(--rfa-flow-duration,6s) linear infinite reverse}
+#frameFlowRoot [data-flow=on][data-motion=on][data-line-effect=comet] .rfa-edge .react-flow__edge-path{animation:rfaEdgeComet var(--rfa-flow-duration,6s) linear infinite}
+#frameFlowRoot [data-flow=on][data-motion=on][data-line-effect=breathing] .rfa-edge .react-flow__edge-path{animation:rfaEdgeBreath 3.2s ease-in-out infinite}
+@keyframes rfaEdgeDash{to{stroke-dashoffset:-36}}
+@keyframes rfaEdgeComet{to{stroke-dashoffset:-244}}
+@keyframes rfaEdgeBreath{0%,100%{opacity:.45}50%{opacity:1}}
+/* Endpoint pads hide without losing the drag-to-connect hit area. */
+#frameFlowRoot [data-pins=off] .react-flow__handle{opacity:0;transition:opacity .15s ease}
+#frameFlowRoot [data-pins=off] .react-flow__node:hover .react-flow__handle{opacity:.55}
+#frameFlowRoot [data-node-glow=off] .rfa-card.chosen{box-shadow:0 0 0 2px color-mix(in srgb,var(--rfa-accent) 45%,transparent)}
+#frameFlowRoot .rfa-group{background:var(--rfa-group-bg,color-mix(in srgb,var(--rfa-node) 55%,transparent));border-color:var(--rfa-group-border,var(--rfa-line))}
+#frameFlowRoot .rfa-group>header{background:var(--rfa-group-head,transparent);border-radius:13px 13px 0 0}
+@media(prefers-reduced-motion:reduce){#frameFlowRoot .react-flow__edge .react-flow__edge-path{animation:none!important}}
+.rfa-inline-fields{padding:10px 12px;display:grid;gap:9px;flex-shrink:0}
+.rfa-inline-fields textarea,.rfa-inline-fields input{box-sizing:border-box;width:100%;background:var(--rfa-bg);color:var(--rfa-text);border:1px solid var(--rfa-line);border-radius:5px;padding:7px;font:inherit;resize:vertical;min-height:32px}
+.rfa-inline-fields textarea:focus,.rfa-inline-fields input:focus{outline:2px solid var(--rfa-accent)}
+.rfa-asset .rfa-media{min-height:150px;flex:0 0 auto;height:auto}
+.rfa-asset .rfa-media>img{height:146px;width:100%;object-fit:contain}
+.flow-card-player{width:100%;display:flex;flex-direction:column;gap:5px;min-width:0;color:var(--rfa-text)}
+.flow-card-player video{display:block;width:100%;height:128px;object-fit:contain;background:#090d12;cursor:pointer}
+.flow-card-player audio{display:none}
+.flow-card-player .flow-wave{position:static;width:100%;height:82px;fill:var(--rfa-accent)}
+.flow-player-row{display:flex;align-items:center;gap:8px;padding:0 5px;font-size:12px}
+.flow-player-row span{flex:1;font-variant-numeric:tabular-nums}
+.flow-player-row button{min-width:30px;min-height:28px;padding:2px 5px}
+.flow-card-player input[type=range]{display:block;width:calc(100% - 12px);margin:1px 6px 7px;min-width:0;height:22px;accent-color:var(--rfa-accent);cursor:pointer;touch-action:none}
+.flow-player-error{color:#fca5a5;padding:4px 8px}
+.flow-preview-dialog>.flow-card-player video{height:min(65vh,640px);cursor:pointer}
+.flow-preview-dialog>.flow-card-player .flow-wave{height:180px}
+.rfa-context.flow-quick-menu{overflow:visible;max-height:none;width:218px;box-sizing:border-box;padding:8px}
+.flow-quick-menu>small{display:block;padding:5px 8px 10px;color:var(--rfa-muted)}
+.flow-quick-menu>button{display:flex;justify-content:space-between;width:100%;min-height:38px}
+.flow-quick-menu>button[aria-expanded=true]{background:color-mix(in srgb,var(--rfa-accent) 12%,var(--rfa-node))}
+.flow-quick-submenu{position:absolute;box-sizing:border-box;width:240px;padding:8px;background:var(--rfa-node);border:1px solid var(--rfa-line);border-radius:10px;box-shadow:0 12px 36px #0006;max-height:calc(100vh - 160px);overflow-y:auto}
+.flow-quick-submenu>button{display:block;width:100%;min-height:36px;text-align:left}
+.flow-card-player .flow-player-poster{display:block;width:100%;height:128px;object-fit:contain;background:#090d12;cursor:pointer}
+.flow-player-placeholder{height:128px;display:block;width:100%;background:#090d12;color:var(--rfa-text)}
+.flow-preview-dialog .flow-player-poster{height:min(60vh,600px)}
+.rfa-inline-fields select,.rfa-edit-label select{display:block;width:100%;box-sizing:border-box;background:var(--rfa-bg);color:var(--rfa-text);border:1px solid var(--rfa-line);border-radius:5px;padding:7px;font:inherit;min-height:34px}
+.rfa-generation{border-bottom:1px solid var(--rfa-line)}
+.rfa-shot-fields>strong{display:block;color:var(--rfa-title);margin-top:8px}
+.rfa-result>header{display:flex;align-items:center;gap:8px}
+.rfa-result>header strong{flex:1;min-width:0}
+.flow-result-versions{padding:12px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.flow-result-versions>section{min-width:0;border:1px solid var(--rfa-line);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:7px}
+.flow-result-versions>section>strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.flow-result-versions .flow-player-poster,.flow-result-versions video{height:160px}
+.flow-compare-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.flow-compare-grid>section{min-width:0}
+.flow-compare-grid select{width:100%;margin:8px 0;padding:8px;background:var(--rfa-bg);color:var(--rfa-text);border:1px solid var(--rfa-line)}
+.flow-compare-grid .flow-player-poster,.flow-compare-grid video{height:230px}
+@media(max-width:1000px){.flow-compare-grid{grid-template-columns:1fr}}
+
+/* Fullscreen is independent of canvas zoom and modal dimensions. */
+.flow-card-player:fullscreen,.flow-image-viewer:fullscreen{width:100vw!important;height:100vh!important;max-width:none!important;max-height:none!important;background:#05080c;color:#e6f2f5;padding:16px;display:flex;flex-direction:column;box-sizing:border-box;gap:8px}
+.flow-card-player:fullscreen video,.flow-card-player:fullscreen .flow-player-poster{width:100%!important;flex:1;min-height:0;height:0!important;max-height:none!important;object-fit:contain}
+.flow-card-player:fullscreen .flow-player-row,.flow-card-player:fullscreen input{flex:none}
+.flow-image-viewer{display:flex;flex-direction:column;align-items:center;gap:8px}
+.flow-image-viewer img{width:100%;max-height:65vh;object-fit:contain}
+.flow-image-viewer:fullscreen img{flex:1;min-height:0;height:0;max-height:none}
+.flow-image-viewer:fullscreen button{flex:none;align-self:center}
+
+/* R7: node geometry, not intrinsic image dimensions, owns the preview area. */
+#frameFlowRoot .rfa-asset>.rfa-inline-fields{flex:none}
+#frameFlowRoot .rfa-asset>.rfa-media{flex:1 1 0;min-height:90px;height:auto;display:flex;align-items:stretch;justify-content:stretch}
+#frameFlowRoot .rfa-asset>.rfa-media>img{display:block;width:100%;height:100%;min-height:0;object-fit:contain}
+#frameFlowRoot .rfa-asset .rfa-media>.flow-card-player{height:100%;min-height:0}
+#frameFlowRoot .rfa-asset .rfa-media .flow-player-poster,#frameFlowRoot .rfa-asset .rfa-media video{flex:1;min-height:0;height:0;width:100%;object-fit:contain}
+#frameFlowRoot .rfa-asset .rfa-media .flow-wave{flex:1;min-height:40px;height:0}
+#frameFlowRoot .rfa-asset .rfa-media .flow-player-row,#frameFlowRoot .rfa-asset .rfa-media input{flex:none}
+#overviewDialog[data-flow-image-fit=cover] #frameFlowRoot .rfa-asset .rfa-media img,#overviewDialog[data-flow-image-fit=cover] #frameFlowRoot .rfa-asset .rfa-media video{object-fit:cover}
+.overviewWorkspace>.flow-quick-menu{z-index:140}

@@ -5,14 +5,33 @@ from urllib.request import Request,urlopen
 from urllib.error import HTTPError
 LOCAL=threading.local()
 THINK_CACHE={}
-def limit(cfg):return max(256,min(8192,int(cfg.get('_outputLimit') or cfg.get('maxOutputTokens') or 4096)))
+def limit(cfg):
+ want=max(256,int(cfg.get('_outputLimit') or cfg.get('maxOutputTokens') or 4096))
+ # 输出上限不能吃掉整个窗口：prompt 加 num_predict 超过 num_ctx 时 Ollama 会静默截断提示词。
+ # 留四分之一给输入，硬顶 32768，避免长输出把速度拖垮。
+ return max(256,min(want,32768,context(cfg)//4*3))
+def context(cfg):
+ # Ollama 按模型元数据预分配 KV cache。Qwen3 系列标称 256K 上下文，显存装不下
+ # 权重加窗口就溢出到 CPU：实测 14.5/21.6GB 驻留、解码跌到 4 tok/s。固定窗口后全驻显存。
+ return max(2048,min(131072,int(cfg.get('contextTokens') or 32768)))
+def need(cfg,messages,budget):
+ # 输入加输出必须一起装进窗口，否则 Ollama 静默截断提示词，输出结构崩坏。
+ # 中文约 1 token / 1.5 字符；只在输入超出预留空间时才向上扩窗口。
+ chars=sum(len(m['content']) for m in messages if isinstance(m.get('content'),str))
+ return max(context(cfg),min(131072,int(chars/1.5)+budget+256))
 def report(s,run,**values):
  if not run or not run.get('id'):return
  import task_backend as tasks
  tasks.progress(s,run['id'],**values)
+def queued(s):
+ try:
+  import task_backend as tasks
+  return any(r['status']=='waiting' for r in tasks.manager(s).rows)
+ except Exception:return False
 def release(s,run):
  cfg=run.get('loaded')
- if cfg and cfg.get('autoUnload',True):
+ # 队列还有任务时保留模型，避免连续任务反复重载十余 GB 权重（实测每次 28-40 秒）
+ if cfg and cfg.get('autoUnload',True) and not queued(s):
   report(s,run,activity='正在卸载 '+cfg['model'])
   s._unload_model(cfg)
  run['loaded']=None
@@ -51,7 +70,7 @@ def call(s,cfg,messages,json_mode):
   if ollama:run['loaded']=copy.deepcopy(cfg)
  stream=bool(run);body={'model':cfg['model'],'messages':messages,'stream':stream}
  if ollama:
-  body['options']={'num_predict':budget}
+  body['options']={'num_predict':budget,'num_ctx':need(cfg,messages,budget)}
   control,label=thinking_control(s,cfg)
   if control is not None:body['think']=control
   report(s,run,thinkingControl=label)

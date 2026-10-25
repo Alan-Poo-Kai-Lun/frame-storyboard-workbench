@@ -46,23 +46,17 @@ jobs:
         run: |
           python tools/check_release.py
           python -m unittest discover -s tests -v
-      - name: Check frontend interactions
+      - name: Install current browser regression dependencies
         run: |
-          npm install --prefix "$env:RUNNER_TEMP/frame-ui-check" jsdom@26.1.0 --ignore-scripts --no-audit --no-fund
-          $env:NODE_PATH="$env:RUNNER_TEMP/frame-ui-check/node_modules"
-          node tests/test_startup_ui.cjs
-          node tests/test_dynamic_background.cjs
-          node tests/test_canvas_clipboard.cjs
-          node tests/test_canvas_effects.cjs
-          node tests/test_canvas_lifecycle.cjs
-          node tests/test_agent_input.cjs
-          node tests/test_asset_mentions.cjs
-          node tests/test_canvas_input.cjs
-          node tests/test_appearance_panel.cjs
-          node tests/test_plan_ui.cjs
-          node tests/test_agent_media.cjs
-          node tests/test_media_analysis.cjs
-          node tests/test_semantic_drawer.cjs
+          npm install --prefix "$env:RUNNER_TEMP/frame-ui-check" playwright@1.56.1 --ignore-scripts --no-audit --no-fund
+          $env:PLAYWRIGHT_BROWSERS_PATH="$env:RUNNER_TEMP/frame-browsers"
+          node "$env:RUNNER_TEMP/frame-ui-check/node_modules/playwright/cli.js" install chromium
+      - name: Current React Flow browser regression
+        env:
+          NODE_PATH: ${{ runner.temp }}/frame-ui-check/node_modules
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/frame-browsers
+          FRAME_BROWSER: chromium
+        run: python tools/test_browser.py
       - name: Build source updater ZIP
         run: python tools/build_release.py
       - name: Build single-file Windows EXE

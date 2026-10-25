@@ -94,7 +94,8 @@ class StartupChecks(unittest.TestCase):
    with urlopen(Request(base+'/api/'+route,data=payload,headers=headers),timeout=30) as response:return response.read() if raw else json.load(response)
   try:
    p=call('new-project',{'example':True});layout={'canvas37':{'positions':{'project':{'x':12,'y':34}}}}
-   self.assertTrue(call('canvas-layout',{'projectId':p['projectId'],'layout':layout})['ok']);self.assertEqual(server.load_project()['media'],p['media'])
+   self.assertTrue(call('canvas-layout',{'projectId':p['projectId'],'layout':layout})['ok']);# The API ships media references; the server keeps the bytes. Compare the file set.
+   self.assertEqual(set(server.load_project()['media']),set(p['media']))
    image='data:image/png;base64,'+base64.b64encode(b'\x89PNG\r\n\x1a\nTEST').decode()
    call('visual-references',{'category':'size','title':'自定义参考','note':'面部特写','image':image});blob=call('visual-pack-export',raw=True);preview=call('visual-pack-preview',blob);self.assertEqual(preview['count'],1);self.assertEqual(call('visual-pack-apply',{**preview,'mode':'keep'})['skipped'],1)
    self.assertIsNone(call('visual-library-storage')['limit'])

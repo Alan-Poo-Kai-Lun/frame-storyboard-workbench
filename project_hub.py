@@ -29,7 +29,7 @@ def read(data,state,key):
     if not any(r['id']==key for r in index['projects']):raise ValueError('项目不存在')
     path=state if index.get('current')==key else data/'projects'/(store._key(key)+'.json')
     if path.is_symlink():raise ValueError('项目路径无效')
-    p=json.loads(path.read_text('utf-8'));store._meta(p)
+    p=store.read_project(path,data);store._meta(p)
     if p['projectId']!=key:raise ValueError('项目编号不一致')
     return p
 
@@ -45,7 +45,8 @@ def action(s,body):
     index=store.index(s.DATA,s.STATE)
     if kind=='rename' and index.get('current')==p['projectId']:s.save(p)
     else:
-        path=s.DATA/'projects'/(store._key(p['projectId'])+'.json');store._write(path,p)
+        import project_media
+        path=s.DATA/'projects'/(store._key(p['projectId'])+'.json');store._write(path,project_media.detach(p,s.DATA))
         row={**store._meta(p),**metadata(s.DATA,p)};index['projects']=[r for r in index['projects'] if r['id']!=p['projectId']]+[row];store._write(s.DATA/'projects-index.json',index)
     return {'id':p['projectId'],'projects':store.listing(s.DATA,s.STATE),'project':p if index.get('current')==p['projectId'] else None}
 

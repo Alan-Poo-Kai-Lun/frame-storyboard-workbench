@@ -33,3 +33,10 @@ Thumbs.db
 /build/
 *.spec
 *.exe
+
+# Portable profiles and local browser QA
+/FRAME-Canvas-*-Data/
+/temp/
+/logs/
+/qa*/
+/cache/

@@ -31,3 +31,8 @@ V3.29 截图展示实际运行的程序界面，非效果图。2026-10-18 在源
 
 - `canvas-effects-v3.32.png`：V3.32 Beta 1 隔离测试工程的真实浏览器截图，展示选中节点微光、四项效果开关；人物与店面来自仓库自绘教学示意素材。
 - `canvas-light-v3.32.png`：同一测试工程的日间主题与减少动态设置，未包含用户私有素材、模型或连接密钥。
+
+
+## Canvas R10
+
+`canvas-r10.png` is the maintainer-provided R10 screenshot of the official cyberpunk example. It is not a private user project.

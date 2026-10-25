@@ -1,5 +1,14 @@
 """Multiple local projects; current project is written once, archived only on switches."""
 import copy,hashlib,json,re,time,math
+from pathlib import Path
+import project_media
+
+def payload_has_media(p):
+    """Accept inline media and the content-addressed mediaIndex form."""
+    return isinstance(p,dict) and (isinstance(p.get('media'),dict) or isinstance(p.get('mediaIndex'),dict))
+def read_project(path,data):
+    import project_layout
+    return project_layout.apply(project_media.attach(json.loads(Path(path).read_text('utf-8')),data),data)
 
 def _write(path,value):
     path.parent.mkdir(parents=True,exist_ok=True);temp=path.with_suffix('.tmp');temp.write_text(json.dumps(value,ensure_ascii=False),'utf-8');temp.replace(path)
@@ -7,7 +16,7 @@ def _key(value):
     if not isinstance(value,str) or not re.fullmatch('[A-Za-z0-9_-]{1,120}',value):raise ValueError('项目编号无效')
     return hashlib.sha256(value.encode()).hexdigest()
 def _meta(p):
-    if not isinstance(p,dict) or p.get('version')!=1 or not isinstance(p.get('title'),str) or not isinstance(p.get('segments'),list) or not isinstance(p.get('assets'),list) or not isinstance(p.get('media'),dict):raise ValueError('项目结构无效')
+    if not isinstance(p,dict) or p.get('version')!=1 or not isinstance(p.get('title'),str) or not isinstance(p.get('segments'),list) or not isinstance(p.get('assets'),list) or not payload_has_media(p):raise ValueError('项目结构无效')
     for segment in p['segments']:
         if not isinstance(segment,dict) or not isinstance(segment.get('id'),str) or not isinstance(segment.get('title'),str) or not isinstance(segment.get('shots'),list):raise ValueError('片段结构无效')
         duration=segment.get('duration')
@@ -34,22 +43,27 @@ def after_save(data,state,p):
     value=index(data,state);rows={r['id']:r for r in value['projects']};from project_hub import metadata
     rows[p['projectId']]={**_meta(p),**metadata(data,p)};value.update(current=p['projectId'],projects=list(rows.values()));_write(data/'projects-index.json',value)
 def listing(data,state):
-    value=index(data,state);rows=[]
+    value=index(data,state);rows=[];dirty=False
     for row in value['projects']:
         is_current=row['id']==value['current'];path=state if is_current else data/'projects'/(_key(row['id'])+'.json')
         if ('coverUrl' not in row or 'videos' not in row) and path.is_file():
             try:
                 from project_hub import metadata
-                enriched=metadata(data,json.loads(path.read_text('utf-8')));enriched.pop('updatedMs',None);row.update(enriched)
+                enriched=metadata(data,read_project(path,data));enriched.pop('updatedMs',None);row.update(enriched);dirty=True
             except (ValueError,OSError):pass
         rows.append({**row,'current':is_current,'missing':not path.is_file()})
+    if dirty:
+        # Remember the derived fields: reading every media file on each home render
+        # is what made the home screen slow for large projects.
+        try:_write(data/'projects-index.json',value)
+        except OSError:pass
     return sorted(rows,key=lambda r:r['updatedAt'],reverse=True)
 def open_project(data,state,key,expected,save):
     value=index(data,state);_key(key)
     if value.get('current')!=expected:raise ValueError('当前项目已变化，请刷新后切换')
-    if key==value.get('current'):return json.loads(state.read_text('utf-8'))
+    if key==value.get('current'):return read_project(state,data)
     if not any(row['id']==key for row in value['projects']):raise ValueError('项目不存在')
-    p=json.loads((data/'projects'/(_key(key)+'.json')).read_text('utf-8'));_meta(p)
+    p=read_project(data/'projects'/(_key(key)+'.json'),data);_meta(p)
     if p.get('projectId')!=key or p.get('version')!=1 or not isinstance(p.get('segments'),list) or not isinstance(p.get('media'),dict):raise ValueError('项目文件损坏，请从备份恢复')
     save(p);return p
 def recover(data,state):
@@ -59,7 +73,7 @@ def recover(data,state):
             if path.is_symlink():raise ValueError('Linked backup')
             p=json.loads(path.read_text('utf-8'));key=p.get('projectId');_key(key);_meta(p)
             if key in known:continue
-            if p.get('version')!=1 or not isinstance(p.get('segments'),list) or not isinstance(p.get('media'),dict):raise ValueError('Invalid backup')
+            if p.get('version')!=1 or not isinstance(p.get('segments'),list) or not payload_has_media(p):raise ValueError('Invalid backup')
             folder=data/'projects';folder.mkdir(exist_ok=True);target=folder/(_key(key)+'.json');temp=target.with_suffix('.tmp');temp.write_bytes(path.read_bytes());temp.replace(target);row=_meta(p);row['updatedAt']=time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(path.stat().st_mtime));value['projects'].append(row);known.add(key);count+=1
         except (ValueError,TypeError,OSError,KeyError):skipped+=1
     _write(data/'projects-index.json',value);return {'recovered':count,'skipped':skipped,'projects':listing(data,state)}

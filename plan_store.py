@@ -67,6 +67,14 @@ def endpoint(s,body):
    p['directorGuide']=guide;s.save(p);record['guideSettings']=guide;write(s,record)
    return {'project':p}
   result=record.get('result',{})
+  if record['type']=='agent' and not result.get('storyPlan') and action=='get':
+   import agent_backend
+   try:
+    source=agent_backend.story_source(result.get('storyPlanSource') or result,record['snapshot'].get('message',''))
+    recovered=agent_backend.checked_story_plan(s,p,record['snapshot'],source,recover=True)
+    result.update(storyPlan=recovered,storyPlanSource=source);result.pop('planError',None)
+    record['result']=result;write(s,record)
+   except (ValueError,KeyError,TypeError,OverflowError) as error:result['planError']='分镜方案尚不能解析：'+str(error)
   plan=result.get('storyPlan') if record['type']=='agent' else result
   if action=='reparse':
    raw=body.get('raw',record['snapshot'].get('modelResponse',''))
@@ -74,9 +82,9 @@ def endpoint(s,body):
    snap=record['snapshot']
    if record['type']=='agent':
     import agent_backend
-    obj=writing.decode_plan(raw);source=obj.get('storyPlan',obj)
+    source=agent_backend.story_source(raw,snap.get('message',''))
     plan=agent_backend.checked_story_plan(s,p,snap,source,recover=True)
-    result['storyPlan']=plan;result['storyPlanSource']=source
+    result['storyPlan']=plan;result['storyPlanSource']=source;result.pop('planError',None)
    else:plan=writing.recover(s,raw,snap);result=plan
    record['result']=result;record['snapshot']['modelResponse']=raw;record.pop('draft',None);write(s,record)
   if action=='draft':
@@ -111,4 +119,4 @@ def endpoint(s,body):
    import task_backend
    task_backend.manager(s).patch(ident,appliedAt=record['appliedAt'],appliedVia='plan-preview')
    return {'project':s.load_project(),'created':count,'warnings':checked.get('warnings',[])}
-  return {'id':ident,'projectId':p['projectId'],'plan':plan,'draft':writing.refresh_plan_references(s,p,{**(result.get('storyPlan') if record['type']=='agent' else result),'segments':record['draft']})['segments'] if record.get('draft') else None,'appliedAt':record.get('appliedAt'),'guideSettings':guide,'guideTargets':guide_targets,'raw':record.get('snapshot',{}).get('modelResponse',''),'reply':result.get('reply','')}
+  return {'id':ident,'projectId':p['projectId'],'plan':plan,'draft':writing.refresh_plan_references(s,p,{**(result.get('storyPlan') or {} if record['type']=='agent' else result),'segments':record['draft']})['segments'] if record.get('draft') else None,'appliedAt':record.get('appliedAt'),'guideSettings':guide,'guideTargets':guide_targets,'raw':record.get('snapshot',{}).get('modelResponse','') or result.get('reply',''),'reply':result.get('reply',''),'notice':result.get('planError','')}

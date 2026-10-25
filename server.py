@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Local storyboard workbench. Python 3.10+, no third-party dependencies."""
-import base64,copy,hashlib,io,json,math,mimetypes,os,re,secrets,threading,time,uuid,webbrowser,zipfile
+import base64,collections,copy,hashlib,io,json,math,mimetypes,os,re,secrets,threading,time,uuid,webbrowser,zipfile
 import sys
 import generation_backend
 import task_backend as tasks
@@ -9,17 +9,27 @@ import reverse_backend as reverse
 import planning_backend as planning
 import asset_analysis
 import prompt_review
+import theme_backdrops
 from pathlib import Path,PurePosixPath
-from http.server import ThreadingHTTPServer,BaseHTTPRequestHandler
+from http.server import ThreadingHTTPServer as _ThreadingHTTPServer,BaseHTTPRequestHandler
+
+class ThreadingHTTPServer(_ThreadingHTTPServer):
+    # Chromium preconnects while loading the workbench's local scripts.
+    # Python 3.13's backlog of 5 can refuse a burst on Windows.
+    request_queue_size=64
+from urllib.parse import parse_qs,urlparse
 from urllib.request import Request,urlopen
 from urllib.error import HTTPError
 import runtime_paths
+runtime_paths.configure_temp()
 ROOT=runtime_paths.resource_dir()
 DATA=runtime_paths.data_dir(); DATA.mkdir(parents=True,exist_ok=True)
 STATE=DATA/'project.json'; CONFIG=DATA/'settings.json'
+LAYOUT=DATA/'layout.json'
 TOKEN=secrets.token_urlsafe(32)
 LOCK=threading.RLock()
 COMPUTE_LOCK=threading.RLock()
+_CACHE={'stamp':None,'project':None}
 def uid(): return uuid.uuid4().hex[:12]
 def digest(t): return hashlib.sha256(t.encode()).hexdigest()
 def parse_shots(prompt,duration):
@@ -43,7 +53,7 @@ def parse_shot_fields(body):
     result['action']=body[:matches[0].start()].strip() if matches else body.strip()
     for i,m in enumerate(matches):
         key=next(v for k,v in labels.items() if k.lower()==m[1].lower());value=body[m.end():matches[i+1].start() if i+1<len(matches) else len(body)].strip()
-        if key=='dialogueLanguage':value=value.split('。')[0].strip()
+        if key=='dialogueLanguage':value=re.split(r'[\r\n]',value.split('。')[0])[0].strip()[:120]
         result[key]=(result[key]+'\n'+value) if key=='dialogue' and result[key] else value
     return result
 ASPECTS=['1:1','2:3','3:4','3:5','4:5','5:7','5:8','7:9','9:16','9:19','9:21','9:32','3:2','4:3','5:3','5:4','7:5','8:5','9:7','16:9','19:9','21:9','32:9']
@@ -71,16 +81,108 @@ def archive_shots(segment,reason):
     if not segment.get('shots') and not segment.get('prompt'):return
     entry={'savedAt':time.strftime('%Y-%m-%d %H:%M:%S'),'reason':reason,'duration':segment['duration'],'shots':copy.deepcopy(segment.get('shots',[])),'prompt':segment.get('prompt',''),'planning':copy.deepcopy(segment.get('planning'))}
     segment['shotHistory']=(segment.get('shotHistory',[])+[entry])[-5:]
+def _state_stamp():
+    try:
+        info=STATE.stat();return (info.st_mtime_ns,info.st_size)
+    except OSError:return None
+def _remember(p):
+    # Cache an independent copy: callers keep mutating the object they were given,
+    # and a read must never see a half-applied edit. Media strings are shared.
+    snapshot=copy.deepcopy(p)
+    import project_layout
+    project_layout.apply(snapshot,DATA)
+    _CACHE['stamp']=_state_stamp();_CACHE['project']=snapshot
+def write_layout(project_id,layout):
+    import project_layout
+    project_layout.write(DATA,project_id,layout)
+DIAG={'errors':collections.deque(maxlen=25),'slow':collections.deque(maxlen=15)}
+
+def note_error(route,message):
+    try:DIAG['errors'].append({'at':time.strftime('%Y-%m-%d %H:%M:%S'),'route':str(route)[:120],'error':str(message)[:400]})
+    except Exception:pass
+
+def diagnostics():
+    """A single file the user can send when something goes wrong."""
+    project=load_project() if STATE.exists() else None
+    media_folder=DATA/'media'
+    media_files=[item for item in media_folder.iterdir() if item.is_file()] if media_folder.is_dir() else []
+    def size_of(path):
+        try:return path.stat().st_size
+        except OSError:return 0
+    settings_value=settings()
+    ai={key:value for key,value in (settings_value.get('ai') or {}).items() if key in ('provider','model','endpoint')}
+    version=json.loads((ROOT/'version.json').read_text('utf-8'))
+    return {
+        'generatedAt':time.strftime('%Y-%m-%d %H:%M:%S'),
+        'release':version.get('release'),'version':version.get('version'),
+        'runtime':'exe' if getattr(sys,'frozen',False) else 'source',
+        'python':sys.version.split()[0],'platform':sys.platform,
+        'dataDirectory':str(DATA),'port':None,
+        'project':None if not project else {
+            'id':project.get('projectId'),'title':project.get('title'),
+            'segments':len(project.get('segments') or []),
+            'shots':sum(len(s.get('shots') or []) for s in project.get('segments') or []),
+            'assets':len([a for a in project.get('assets') or [] if not a.get('deleted')]),
+            'mediaEntries':len(project.get('media') or {}),
+            'stateBytes':size_of(STATE),'layoutBytes':size_of(DATA/'layout.json'),
+            'projectFileMB':round(size_of(STATE)/1048576,2)
+        },
+        'media':{'files':len(media_files),'totalMB':round(sum(size_of(item) for item in media_files)/1048576,2)},
+        'ai':ai,'recentErrors':list(DIAG['errors']),'recentSlow':list(DIAG['slow'])
+    }
+
+def decoded_size(path):
+    size=path.stat().st_size
+    if size<=0:return 0
+    with open(path,'rb') as handle:
+        handle.seek(max(0,size-4));tail=handle.read()
+    return size//4*3-tail.count(b'=')
+
+def read_b64_range(path,start,end):
+    """Serve a byte range of a base64 file without decoding the whole thing."""
+    size=path.stat().st_size
+    first=start//3*4
+    last=min(size,(end//3+1)*4)
+    with open(path,'rb') as handle:
+        handle.seek(first);chunk=handle.read(max(0,last-first))
+    data=base64.b64decode(chunk)
+    offset=start-first//4*3
+    return data[offset:offset+(end-start+1)]
+
+def public_project(p):
+    """Ship the project without its media bytes: the browser asks for them by path."""
+    import project_media
+    media=p.get('media') if isinstance(p.get('media'),dict) else {}
+    index=p.get('mediaIndex') if isinstance(p.get('mediaIndex'),dict) else {}
+    if len(index)<len(media):
+        index=project_media.detach(p,DATA).get('mediaIndex') or {}
+    return {**{key:value for key,value in p.items() if key not in ('media','mediaIndex','originalZip','originalZipHash')},
+            'media':{path:index[path] for path in media if path in index}}
+
 def load_project():
     with LOCK:
         if not STATE.exists(): return None
-        import asset_lifecycle
-        p=asset_lifecycle.normalize(json.loads(STATE.read_text('utf-8')))
-        if not p.get('projectId'): p['projectId']=uid(); save(p)
+        stamp=_state_stamp()
+        p=_CACHE['project'] if (_CACHE['project'] is not None and _CACHE['stamp']==stamp) else None
+        if p is None:
+            import asset_lifecycle,project_media,project_layout
+            payload=json.loads(STATE.read_text('utf-8'))
+            # A project written before media was split out still carries the bytes inline.
+            legacy=bool(payload.get('media'))
+            p=project_layout.apply(asset_lifecycle.normalize(project_media.attach(payload,DATA)),DATA)
+            if not isinstance(p.get('mediaIndex'),dict) or len(p['mediaIndex'])<len(p.get('media') or {}):
+                # First load of a project saved before media was split out: index it now so
+                # /api/media can serve the files without another pass over the payload.
+                p['mediaIndex']=project_media.detach(p,DATA).get('mediaIndex') or {}
+            if not p.get('projectId'): p['projectId']=uid(); save(p)
+            elif repair_dialogue_languages(p) or legacy: save(p)
+            _remember(p)
+        # Plan archives live in their own folder and change without touching the project file.
         import plan_store
         archive=plan_store.records(sys.modules[__name__],p)
         if archive:p['planArchive']=archive
-        return p
+        else:p.pop('planArchive',None)
+        return copy.deepcopy(p)
 def backup_project():
     if STATE.exists():
         backup=DATA/'backups'; backup.mkdir(exist_ok=True)
@@ -112,6 +214,7 @@ def import_project(p):
     if not isinstance(p,dict) or p.get('version')!=1:raise ValueError('项目备份格式无效')
     import asset_lifecycle
     p=asset_lifecycle.normalize(copy.deepcopy(p))
+    repair_dialogue_languages(p)
     if not isinstance(p.get('title'),str) or not isinstance(p.get('script'),str) or not isinstance(p.get('aspect'),str):raise ValueError('项目基础字段无效')
     segments=p.get('segments');assets=p.get('assets');media=p.get('media')
     if not isinstance(segments,list) or len(segments)>500 or not isinstance(assets,list) or len(assets)>2000 or not isinstance(media,dict):raise ValueError('项目片段、素材或媒体格式无效')
@@ -288,11 +391,30 @@ def normalize_prompt_sections(text):
     return re.sub(r'(?im)^(summary|timeline):\s*(?:\1:\s*)+',lambda m:m[1]+':\n\n',text)
 
 def dialogue_language(value):
+    """Return a single-line language name; legacy prompts may carry extra lines."""
     if value is None: return ''
-    if not isinstance(value,str) or len(value)>120 or re.search(r'[\x00-\x1f]',value): raise ValueError('对白语言必须是 120 字内的单行名称')
-    value=value.strip()
+    if not isinstance(value,str): value=str(value)
+    value=re.split(r'[\r\n]',value)[0]
+    value=''.join(' ' if ord(ch)<32 else ch for ch in value).strip()
+    if len(value)>120: value=value[:120].strip()
     names={'中文':'Mandarin','中文（普通话）':'Mandarin','普通话':'Mandarin','英语':'English','英语（English）':'English','英文':'English','粤语':'Cantonese','广东话':'Cantonese','马来文':'Malay','马来语':'Malay','马来语（Bahasa Melayu）':'Malay','泰米尔语（தமிழ்）':'Tamil','印地语':'Hindi','混合语言（按台词）':'Mixed languages (as written)','日语':'Japanese','韩语':'Korean','泰语':'Thai','印尼语':'Indonesian','福建话':'Hokkien','法语':'French','德语':'German','西班牙语':'Spanish','无对白':'No dialogue'}
     return names.get(value,value)
+
+def repair_dialogue_languages(project):
+    """Normalise stored language fields so one bad import cannot block every save."""
+    changed=False
+    for segment in project.get('segments') or []:
+        if not isinstance(segment,dict): continue
+        if 'dialogueLanguage' in segment:
+            fixed=dialogue_language(segment.get('dialogueLanguage'))
+            if fixed!=segment.get('dialogueLanguage'): segment['dialogueLanguage']=fixed; changed=True
+        for shot in segment.get('shots') or []:
+            if not isinstance(shot,dict): continue
+            if 'dialogueLanguage' in shot:
+                fixed=dialogue_language(shot.get('dialogueLanguage'))
+                if fixed!=shot.get('dialogueLanguage'): shot['dialogueLanguage']=fixed; changed=True
+    return changed
+
 
 def rebuild(s):
     old=s['prompt']; matches=list(re.finditer(r'\[(\d+(?:\.\d+)?)\s*s?\s*[–—\-~到]\s*(\d+(?:\.\d+)?)\s*s?\]',old))
@@ -623,18 +745,43 @@ def _unload_model(cfg):
     result=json.loads(request(cfg['endpoint'].rstrip('/')+'/api/generate',{'model':model,'keep_alive':0,'stream':False},cfg.get('key',''),timeout=60))
     if result.get('error'): raise ValueError(result['error'])
     return {'message':'已请求 Ollama 卸载 '+model+'（释放内存，不删除模型文件）'}
-def save(p):
+def merge_project_delta(current,body):
+    """Reuse durable media for metadata saves; never trust client filesystem paths."""
+    if not current or not isinstance(body,dict):raise ValueError('项目不存在，请重新打开')
+    project=body.get('project');patch=body.get('media')
+    if not isinstance(project,dict) or project.get('projectId')!=current.get('projectId'):raise ValueError('项目已切换，修改未覆盖新项目')
+    if 'media' in project or 'originalZip' in project or not isinstance(patch,dict):raise ValueError('增量保存格式无效')
+    put=patch.get('put',{});remove=patch.get('remove',[])
+    if not isinstance(put,dict) or not isinstance(remove,list):raise ValueError('媒体变更格式无效')
+    for key in [*put,*remove]:
+        if not isinstance(key,str) or not key or key.startswith(('/', '\\')) or '..' in key or ':' in key:raise ValueError('媒体路径无效')
+    if any(not isinstance(value,str) for value in put.values()):raise ValueError('媒体内容无效')
+    media={**current.get('media',{}),**put}
+    for key in remove:media.pop(key,None)
+    original=body.get('originalZip',current.get('originalZip',''))
+    if not isinstance(original,str):raise ValueError('原始导演包格式无效')
+    return {**project,'media':media,'originalZip':original}
+
+def save(p,previous=None):
     import project_store
     with LOCK:
-        import asset_lifecycle
-        previous=json.loads(STATE.read_text('utf-8')) if STATE.exists() else None
+        import asset_lifecycle,project_media
+        if previous is None:
+            cached=_CACHE['project']
+            if cached is not None and _CACHE['stamp']==_state_stamp():previous=cached
+            elif STATE.exists():previous=project_media.attach(json.loads(STATE.read_text('utf-8')),DATA)
+            else:previous=None
         import plan_store
         archive=plan_store.records(sys.modules[__name__],p)
         if archive:p['planArchive']=archive
         asset_lifecycle.normalize(p,previous)
         project_store.before_save(DATA,STATE,p)
-        temp=STATE.with_suffix('.tmp');temp.write_text(json.dumps(p,ensure_ascii=False),'utf-8');temp.replace(STATE)
+        payload=project_media.detach(p,DATA)
+        p['mediaIndex']=payload['mediaIndex']
+        temp=STATE.with_suffix('.tmp');temp.write_text(json.dumps(payload,ensure_ascii=False),'utf-8');temp.replace(STATE)
         project_store.after_save(DATA,STATE,p)
+        write_layout(p.get('projectId',''),p.get('overviewLayout') or {})
+        _remember(p)
 def settings(): return json.loads(CONFIG.read_text('utf-8')) if CONFIG.exists() else {'ai':{'provider':'ollama','endpoint':'http://127.0.0.1:11434','model':'','key':''}}
 def save_settings(body,patch=False):
     if not isinstance(body,dict): raise ValueError('连接设置格式无效')
@@ -668,10 +815,39 @@ def unload_all_models(s):
 class Handler(BaseHTTPRequestHandler):
     def log_message(self,*args): pass
     def respond(self,data,code=200,mime='application/json',inline=False):
+        if mime=='application/json' and isinstance(data,dict) and data.get('projectId') and isinstance(data.get('media'),dict):
+            data=public_project(data)
         raw=json.dumps(data,ensure_ascii=False).encode() if mime=='application/json' else data
         self.send_response(code);
         if inline:self.send_header('Content-Disposition','inline')
         self.send_header('Content-Type',mime);self.send_header('Content-Length',str(len(raw)));self.send_header('Cache-Control','no-store');self.end_headers();self.wfile.write(raw)
+    def send_media(self,project_id,path,wanted):
+        """Stream one media file, honouring Range so video seeking works."""
+        project=load_project()
+        if not project or project.get('projectId')!=project_id:raise ValueError('项目已切换，请刷新后重试')
+        index=project.get('mediaIndex') if isinstance(project.get('mediaIndex'),dict) else {}
+        digest=index.get(path)
+        if not digest:raise ValueError('素材文件不存在')
+        if wanted and wanted!=digest:raise ValueError('素材已更新，请刷新后重试')
+        source=DATA/'media'/(digest+'.b64')
+        if not source.is_file():raise ValueError('素材文件缺失，请重新导入')
+        total=decoded_size(source)
+        start,end=0,max(0,total-1);partial=False
+        header=(self.headers.get('Range') or '').strip()
+        match=re.fullmatch(r'bytes=(\d*)-(\d*)',header) if header else None
+        if match and total:
+            if match.group(1):start=int(match.group(1));end=int(match.group(2)) if match.group(2) else total-1
+            else:start=max(0,total-int(match.group(2) or 0));end=total-1
+            start=max(0,min(start,total-1));end=max(start,min(end,total-1));partial=True
+        body=read_b64_range(source,start,end) if total else b''
+        self.send_response(206 if partial else 200)
+        self.send_header('Content-Type',mimetypes.guess_type(path)[0] or 'application/octet-stream')
+        self.send_header('Accept-Ranges','bytes')
+        self.send_header('Content-Length',str(len(body)))
+        self.send_header('ETag','"'+digest+'"')
+        self.send_header('Cache-Control','private, max-age=31536000, immutable')
+        if partial:self.send_header('Content-Range','bytes %d-%d/%d'%(start,end,total))
+        self.end_headers();self.wfile.write(body)
     def valid(self):
         host=self.headers.get('Host','').split(':')[0]
         return host in ['127.0.0.1','localhost'] and self.headers.get('X-Workbench-Token')==TOKEN
@@ -682,6 +858,16 @@ class Handler(BaseHTTPRequestHandler):
                 if self.headers.get('Sec-Fetch-Site') not in [None,'same-origin','none']: raise ValueError('跨站请求已拒绝')
                 version=json.loads((ROOT/'version.json').read_text('utf-8'))
                 return self.respond({'token':TOKEN,'version':version.get('version',''),'release':version.get('release',''),'appId':'frame-storyboard-workbench','runtimeMode':'exe' if getattr(sys,'frozen',False) else 'source','dataDirectory':str(DATA)})
+            if route=='/api/diagnostics': return self.respond(diagnostics())
+            if route=='/api/theme-backdrops': return self.respond(theme_backdrops.listing(DATA))
+            if route.startswith('/api/theme-backdrop/'):
+                if self.headers.get('Sec-Fetch-Site') not in [None,'same-origin','none']:raise ValueError('跨站请求已拒绝')
+                raw,mime=theme_backdrops.read(DATA,route.rsplit('/',1)[-1])
+                return self.respond(raw,200,mime)
+            if route=='/api/media':
+                query=parse_qs(urlparse(self.path).query)
+                if self.headers.get('Sec-Fetch-Site') not in [None,'same-origin','none']:raise ValueError('跨站请求已拒绝')
+                return self.send_media((query.get('p') or [''])[0],(query.get('path') or [''])[0],(query.get('h') or [''])[0])
             if route.startswith('/reference-media/'):
                 name=route.rsplit('/',1)[-1]
                 if not re.fullmatch(r'[a-f0-9]{64}\.(?:bin|png|jpg|webp|gif|mp4|webm)',name):raise ValueError('参考媒体路径无效')
@@ -720,7 +906,9 @@ class Handler(BaseHTTPRequestHandler):
             if route in ['/api/projects','/api/projects-trash']:
                 import project_store
                 with LOCK:return self.respond(project_store.trash_listing(DATA,STATE) if route.endswith('trash') else project_store.listing(DATA,STATE))
-            if route=='/api/project': return self.respond(load_project())
+            if route=='/api/project':
+                with LOCK:project=load_project()
+                return self.respond(project)
             if route=='/api/settings': return self.respond(settings())
             if route=='/api/check-updates':
                 import update_check
@@ -739,15 +927,21 @@ class Handler(BaseHTTPRequestHandler):
                 with LOCK:return self.respond(visual_library.read(DATA,public=True))
             if route=='/api/reverse-templates':return self.respond(reverse.templates(sys.modules[__name__]))
             if route=='/api/tasks':return self.respond(tasks.manager(sys.modules[__name__]).public())
-            if route=='/api/export': return self.respond(export_pack(json.loads(STATE.read_text('utf-8'))),mime='application/zip')
+            if route=='/api/export':
+                with LOCK:project=load_project()
+                if not project:raise ValueError('请先打开项目')
+                return self.respond(export_pack(project),mime='application/zip')
             path=ROOT/'web'/('index.html' if route=='/' else route.lstrip('/'))
             if not path.resolve().is_relative_to((ROOT/'web').resolve()): return self.respond({'error':'无效路径'},403)
             return self.respond(path.read_bytes(),mime=mimetypes.guess_type(str(path))[0] or 'application/octet-stream')
-        except Exception as e: self.respond({'error':str(e)},400)
+        except Exception as e: note_error(self.path,str(e));self.respond({'error':str(e)},400)
     def do_POST(self):
         if not self.valid(): return self.respond({'error':'请求验证失败'},403)
         try:
             size=int(self.headers.get('Content-Length',0));route=self.path.split('?')[0]
+            if route=='/api/theme-backdrops':
+                body=json.loads(self.rfile.read(size) or b'{}')
+                return self.respond(theme_backdrops.add(DATA,body))
             if size<0:raise ValueError('请求长度无效')
             if route not in {'/api/visual-references','/api/visual-pack-preview'} and size>550*1024*1024: raise ValueError('文件超过上传上限')
             raw=self.rfile.read(size)
@@ -778,7 +972,9 @@ class Handler(BaseHTTPRequestHandler):
                     p=load_project();layout=body.get('layout')
                     if not p or p['projectId']!=body.get('projectId'):raise ValueError('项目已切换，布局未覆盖新项目')
                     if not isinstance(layout,dict) or len(json.dumps(layout))>1024*1024:raise ValueError('布局无效或过大')
-                    p['overviewLayout']=layout;save(p);return self.respond({'ok':True})
+                    # Dragging a card is the most frequent write; keep it to the small layout file
+                    # instead of rewriting the whole project.
+                    p['overviewLayout']=layout;write_layout(p['projectId'],layout);return self.respond({'ok':True})
             if route in ['/api/project-action','/api/project-download']:
                 import project_hub
                 with LOCK:
@@ -889,9 +1085,11 @@ class Handler(BaseHTTPRequestHandler):
             if route=='/api/plan-shots': return self.respond(planning.enqueue(sys.modules[__name__],body))
             if route=='/api/settings-patch': return self.respond(save_settings(body,patch=True))
             if route=='/api/models': return self.respond({'models':list_models(body)})
-            if route=='/api/project':
+            if route in ['/api/project','/api/project-delta']:
                 with LOCK:
                     current=load_project()
+                    if route=='/api/project-delta':
+                        body=merge_project_delta(current,body)
                     if current and current.get('projectId')!=body.get('projectId'): return self.respond({'error':'当前项目已切换，请刷新页面，旧修改未覆盖新项目'},409)
                     # Background analysis drafts are server-owned: stale autosaves cannot erase them.
                     for a in body.get('assets',[]):
@@ -903,7 +1101,7 @@ class Handler(BaseHTTPRequestHandler):
                         analysis=media_analysis.current(original,body.get('media',{})) if original and original.get('path')==a.get('path') else None
                         if analysis:a['mediaAnalysis']=copy.deepcopy(analysis)
                         else:a.pop('mediaAnalysis',None)
-                    save(body)
+                    save(body,previous=current)
                 return self.respond({'ok':True})
             if route=='/api/settings': return self.respond(save_settings(body))
             if route=='/api/rebuild': return self.respond({'prompt':rebuild(body)})
@@ -911,10 +1109,10 @@ class Handler(BaseHTTPRequestHandler):
                 cfg=body; provider=cfg.get('provider')
                 text=ai_call(cfg,[{'role':'user','content':'Reply with OK only.'}]); return self.respond({'message':'AI 连接成功：'+text[:120]})
             raise ValueError('未知操作')
-        except Exception as e: self.respond({'error':str(e)},400)
+        except Exception as e: note_error(self.path,str(e));self.respond({'error':str(e)},400)
 if __name__=='__main__':
     import argparse
-    parser=argparse.ArgumentParser();parser.add_argument('--port',type=int,default=8787);parser.add_argument('--no-browser',action='store_true');args=parser.parse_args()
+    parser=argparse.ArgumentParser();parser.add_argument('--port',type=int,default=8845);parser.add_argument('--no-browser',action='store_true');args=parser.parse_args()
     from update_workbench import retire_old_modules
     try:
         archived=retire_old_modules(ROOT)

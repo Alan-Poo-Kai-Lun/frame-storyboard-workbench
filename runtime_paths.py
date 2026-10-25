@@ -2,16 +2,43 @@
 import json,os,shutil,sys,tempfile,time
 from pathlib import Path
 
+DATA_FOLDER='FRAME-Canvas-R10-Data'
+LEGACY_FOLDERS=('FRAME-Canvas-R9-Data',)
+LEGACY_HOMES=('FRAME-Canvas-R9',)
+_resolved=None
+
+def configure_temp():
+ """Keep application-owned temporary files on the requested D drive."""
+ if sys.platform!='win32':return
+ folder=Path(r'D:\Codex\FRAME\FRAME-Canvas-R10\temp')
+ folder.mkdir(parents=True,exist_ok=True)
+ os.environ['TEMP']=os.environ['TMP']=str(folder)
+ tempfile.tempdir=str(folder)
+
 def resource_dir():return Path(getattr(sys,'_MEIPASS',Path(__file__).resolve().parent))
 def program_dir():return Path(sys.executable).resolve().parent if getattr(sys,'frozen',False) else Path(__file__).resolve().parent
 def data_dir():
+ global _resolved
  if os.environ.get('FRAME_DATA_DIR'):return Path(os.environ['FRAME_DATA_DIR']).expanduser().resolve()
  if not getattr(sys,'frozen',False):return resource_dir()/'data'
- if sys.platform=='win32':
-  configured=os.environ.get('LOCALAPPDATA');home=Path(configured) if configured else Path.home()/'AppData'/'Local'
- else:
-  configured=os.environ.get('XDG_DATA_HOME');home=Path(configured) if configured else Path.home()/'.local/share'
- return home/'FRAME'/'Workbench'/'data'
+ if _resolved:return _resolved
+ target=program_dir()/DATA_FOLDER
+ if not target.exists() or not any(target.iterdir()):
+  # An update must not look like an empty workbench: copy the previous canvas data
+  # once, and leave the old folder untouched. The previous version may sit beside
+  # the new EXE or in its own sibling folder.
+  for source in legacy_candidates():
+   if source.is_dir() and any(source.iterdir()):
+    try: migrate_legacy_data(source,target)
+    except Exception: pass
+    break
+ _resolved=target
+ return target
+def legacy_candidates():
+ root=program_dir()
+ for name in LEGACY_FOLDERS: yield root/name
+ for home in LEGACY_HOMES:
+  for name in LEGACY_FOLDERS: yield root.parent/home/name
 def migrate_legacy_data(source,target):
  """Copy into an empty destination atomically; never overwrite or remove the source."""
  source=Path(source).resolve();target=Path(target).resolve()

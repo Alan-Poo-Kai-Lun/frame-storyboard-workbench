@@ -4,6 +4,7 @@ from pathlib import Path
 from urllib.request import Request,urlopen
 from logging.handlers import RotatingFileHandler
 import runtime_paths
+runtime_paths.configure_temp()
 
 def self_test(report):
  import server,tkinter as tk
@@ -11,6 +12,12 @@ def self_test(report):
  assert (server.ROOT/'web/startup.js').is_file()
  assert (server.ROOT/'web/overview-editor.js').is_file()
  assert (server.ROOT/'web/canvas-controls.js').is_file()
+ assert (server.ROOT/'web/canvas-unified-host.js').is_file()
+ assert (server.ROOT/'web/flow-operations.js').is_file()
+ assert (server.ROOT/'web/canvas-unified.css').is_file()
+ assert (server.ROOT/'web/vendor/reactflow-a/app.js').is_file()
+ assert (server.ROOT/'web/vendor/reactflow-a/reactflow.css').is_file()
+ assert (server.ROOT/'web/vendor/reactflow-a/LICENSES.txt').is_file()
  assert (server.ROOT/'web/visual-packs.js').is_file()
  assert (server.ROOT/'presets/starter-project.mmxpack.zip').is_file()
  assert server.DATA==runtime_paths.data_dir()
@@ -19,7 +26,7 @@ def self_test(report):
  try:
   with urlopen(base+'/api/bootstrap',timeout=5) as r:boot=json.load(r)
   assert boot['appId']=='frame-storyboard-workbench'
-  cache_version=boot['version'].removeprefix('V')
+  cache_version=boot['release'].removeprefix('v')
   with urlopen(base+'/',timeout=5) as r:
    html=r.read()
    for script in ['startup.js','overview-editor.js','canvas-controls.js']:assert (script+'?v='+cache_version).encode() in html,'页面资源版本不一致：'+script
@@ -32,12 +39,19 @@ def self_test(report):
   assert all(a['path'] in p['media'] for a in p['assets'])
   restored=server.readzip(server.export_pack(p))
   assert restored['media']==p['media'] and restored['segments']==p['segments']
-  result={'ok':True,'release':boot['release'],'runtime':boot['runtimeMode'],'tk':True,'resources':True,'http':True,'example':True}
+  import writing_backend
+  bundled_rules=json.loads((server.ROOT/'presets/writing-skills-baseline.json').read_text('utf-8'))['items']
+  library=writing_backend.library(server)['items']
+  for expected in bundled_rules:
+   actual=next(row for row in library if row['id']==expected['id'])
+   assert actual['rules']==expected['rules'] and len(actual['rules'])>1000
+  result={'ok':True,'release':boot['release'],'runtime':boot['runtimeMode'],'tk':True,'resources':True,'http':True,'httpBacklog':service.request_queue_size,'tempDirectory':tempfile.gettempdir(),'example':True}
+  result['writingSkills']=len(library)
   if report:Path(report).write_text(json.dumps(result,indent=2),'utf-8')
  finally:service.shutdown();service.server_close();thread.join(5)
  return 0
 
-def launch(port=8787,no_browser=False):
+def launch(port=8848,no_browser=False):
  import tkinter as tk
  from tkinter import ttk,messagebox,filedialog
  version=json.loads((runtime_paths.resource_dir()/'version.json').read_text('utf-8'))
@@ -48,7 +62,7 @@ def launch(port=8787,no_browser=False):
   if existing.get('appId')=='frame-storyboard-workbench' and existing.get('release')==version['release'] and existing.get('runtimeMode')=='exe' and existing.get('dataDirectory')==str(runtime_paths.data_dir()):
    webbrowser.open(base);return 0
  except Exception:pass
- root=tk.Tk();root.title('FRAME · 分镜工作台');root.geometry('480x355');root.minsize(450,335)
+ root=tk.Tk();root.title('FRAME · 画布 R10');root.geometry('480x355');root.minsize(450,335)
  try:root.iconbitmap(str(runtime_paths.resource_dir()/'FRAME.ico'))
  except Exception:pass
  folder=runtime_paths.data_dir();folder.parent.mkdir(parents=True,exist_ok=True)
@@ -57,7 +71,7 @@ def launch(port=8787,no_browser=False):
  status=tk.StringVar(value='正在启动…');path_label=tk.StringVar(value=str(folder));service=None;closing=False
  area=ttk.Frame(root,padding=25);area.pack(fill='both',expand=True)
  ttk.Label(area,text='FRAME',font=('Segoe UI',24,'bold')).pack(anchor='w')
- ttk.Label(area,text='分镜工作台 · '+version['version']+' Beta',font=('Microsoft YaHei UI',11)).pack(anchor='w',pady=(0,14))
+ ttk.Label(area,text='画布 R10 · '+version['version'],font=('Microsoft YaHei UI',11)).pack(anchor='w',pady=(0,14))
  ttk.Label(area,textvariable=status,wraplength=415).pack(anchor='w',pady=(0,12))
  def open_workbench():webbrowser.open(base)
  def open_data():
@@ -99,7 +113,7 @@ def launch(port=8787,no_browser=False):
   # Bind before migration, so a running older service prevents competing data writes.
   import server
   service=server.ThreadingHTTPServer(('127.0.0.1',port),server.Handler);service.daemon_threads=True
-  migrated=runtime_paths.migrate_legacy_data(runtime_paths.program_dir()/'data',folder)
+  migrated=False # Isolated comparison build never migrates other installations
   threading.Thread(target=service.serve_forever,daemon=True).start()
   status.set('已启动 · '+base+(' · 旧数据已复制迁移' if migrated else ''))
   if not no_browser:root.after(350,open_workbench)
@@ -112,7 +126,7 @@ def launch(port=8787,no_browser=False):
  root.mainloop();return 0
 
 def main():
- parser=argparse.ArgumentParser();parser.add_argument('--port',type=int,default=8787);parser.add_argument('--no-browser',action='store_true');parser.add_argument('--self-test',action='store_true');args=parser.parse_args()
+ parser=argparse.ArgumentParser();parser.add_argument('--port',type=int,default=8848);parser.add_argument('--no-browser',action='store_true');parser.add_argument('--self-test',action='store_true');args=parser.parse_args()
  if args.self_test:
   report=os.environ.get('FRAME_SELF_TEST_REPORT')
   try:return self_test(report)

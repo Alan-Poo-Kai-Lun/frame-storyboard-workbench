@@ -13,8 +13,8 @@ class WritingChecks(unittest.TestCase):
  def output(self):
   return {'segments':[{'title':'第一段','story':'人物走到门口','summary':'走近门口','language':'中文','shots':[{'start':0,'end':5,'action':'人物走到门口','camera':'固定','startState':'人物在路边','endState':'人物在门口','dialogue':'你好'}]},{'title':'第二段','story':'人物回头','language':'粤语','shots':[{'start':0,'end':5,'action':'人物回头','startState':'人物在门口','endState':'人物回头看路边'}]}]}
  def test_rule_revision_and_selection(self):
-  lib=writing.library(server);self.assertEqual(len(lib['items']),3)
-  r=writing.library(server,{'action':'save','revision':lib['revision'],'name':'自定义','rules':'保持故事因果','category':'测试'});self.assertEqual(len(r['items']),4)
+  lib=writing.library(server);self.assertEqual(len(lib['items']),7)
+  r=writing.library(server,{'action':'save','revision':lib['revision'],'name':'自定义','rules':'保持故事因果','category':'测试'});self.assertEqual(len(r['items']),8)
   with self.assertRaises(ValueError):writing.library(server,{'action':'delete','revision':lib['revision'],'id':r['items'][-1]['id']})
   self.assertEqual(writing.selected(server,self.p,ids=[r['items'][-1]['id']])[0]['name'],'自定义')
   with self.assertRaises(ValueError):writing.selected(server,self.p,ids=['missing'])
@@ -43,7 +43,7 @@ class WritingChecks(unittest.TestCase):
 
  def test_detailed_rules_and_visibility(self):
   lib=writing.library(server)
-  self.assertEqual({r['id'] for r in lib['items']},{'fight','slapstick','expression'})
+  self.assertTrue({'fight','slapstick','expression'}.issubset({r['id'] for r in lib['items']}))
   for r in lib['items']:self.assertTrue(1000<len(r['rules'])<=6000)
   lib=writing.library(server,{'action':'visibility','revision':lib['revision'],'id':'fight','hidden':True})
   self.assertTrue(next(r for r in lib['items'] if r['id']=='fight')['hidden'])

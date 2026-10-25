@@ -1,111 +1,159 @@
-# FRAME Storyboard Workbench
+# FRAME · Storyboard Workbench
 
-**Turn a story into shots, then hand prompts and reference assets to your video-generation tool.**
+**Turn a story into a set of shots, then hand the prompts and reference images to a video generation tool.**
 
-Write stories, organize character and location references, and edit shot actions and dialogue. AI assistance is optional. FRAME does not generate video; add externally generated videos back to the project to review and record them.
+Write the story, organise character and location images, plan what happens in each shot and what gets said — optionally with AI help. Basic editing works without any AI connection.
 
-**Windows · Runs locally · V3.37 Beta 4**　[中文](../README.md)
+A prompt is the text that describes what is in frame, how things move, and how the shot is framed. FRAME does not generate video itself. Once you generate video elsewhere, you can drop it back into the project to play, annotate and keep.
 
-Beta 4 adds semantic edge colors and hover focus, fixes single-click detail switching, and presents visual-only video analysis in a wide split report. Audio analysis is removed; audio playback, reference binding and export remain. See [release notes](release-v3.37-beta.4.md).
+**Windows · runs locally · V3.38 · Canvas R10**　[中文](../README.md)
 
-V3.37 adds named asset previews, resizable node details, visible fullscreen controls and two minimal backgrounds. Hand tracking and the duplicate recovery toolbar entry are removed; existing plans remain intact. Download the new EXE or source/BAT ZIP below. Existing desktop installations are not overwritten automatically. [Release notes](release-v3.37-beta.1.md).
+## What changed in R10
 
-## 1. Download and open
+> The product version is V3.38; "R10" is the tenth iteration of the canvas itself. Together: "V3.38 · Canvas R10".
 
-**New Windows users: choose the EXE. Python is not required.**
+In one sentence: **projects open much faster, mistakes can be undone, and the canvas can wear a theme.**
 
-[**Download Windows EXE**](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.37-beta.4/FRAME-Workbench-Windows-x64-v3.37-beta.4.exe)
+- **Opening is far quicker.** A large project used to take eight or nine seconds; it now takes two or three. The project file dropped from hundreds of megabytes to a few hundred kilobytes because media is loaded on demand instead of being embedded.
+- **Undo actually covers editing.** Text changes, deleted nodes, deleted segments, replaced media and pastes can all be undone with `Ctrl+Z` and redone with `Ctrl+Shift+Z`.
+- **The canvas takes themes.** Ten animated presets with a crossfade instead of a hard switch, plus particles (stardust, snow, fireflies, sparks and more) whose density, speed and strength you can tune — or turn off.
+- **Backdrops can be your own image or video.** A workbench-wide backdrop library means every project can reuse the same file without re-uploading.
+- **Problems are easier to report.** "Tools ▾ → Export diagnostics" writes a JSON with the version, data folder, project size and recent errors. Attach it when you file an issue.
 
-Run it and keep the small launcher window open. The workbench opens in your browser but runs on your computer.
+> Performance figures are single-machine measurements from an earlier test project. R10 retains that media architecture; timings are not guaranteed for every project or machine.
 
-[Full source / BAT ZIP](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.37-beta.4/FRAME-Storyboard-Workbench-v3.37-beta.4.zip) is for source users and requires Python. EXE users do not also need this ZIP. [Release and checksums](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/tag/v3.37-beta.4) · [Installation and data](install-and-data.md)
+We also removed things that did nothing: the faint project title painted on the canvas, the old "aurora breathing" background settings, and the "root node shape" option that never had any effect. The version number moves from V3.37 to V3.38.
 
-## 2. Try the sample without AI
+Beta 4 added semantic edge colours with hover focus, fixed single-click switching in the detail drawer, and turned video breakdown into a visual-only side-by-side report. Audio analysis was removed; audio reference playback, binding and export remain. See [the Beta 4 notes](release-v3.37-beta.4.md).
 
-1. Open the **Official sample** project on Home and follow the prompt to create a copy.
-2. Select a **segment** to read its story, then a **shot** to inspect actions and dialogue.
-3. Edit a shot action. Leave the text field and check the save status. Inline details and the property panel both support editing.
-4. Select its **H3 final prompt** node to view and copy the segment prompt.
-5. Use **Project pack → Save project backup / handoff** to download a project backup.
+V3.37 added asset name mentions with preview, resizable node details, a persistent fullscreen entry, and two background styles (static dot grid and soft aurora). Air gestures and the duplicate restore entry in the top bar were removed; existing presets and user media are kept. See [the V3.37 notes](release-v3.37-beta.1.md). New EXE, source/BAT ZIP and checksum files are linked below; an existing desktop copy is never overwritten automatically.
 
-This is the basic workflow: read the story, edit a shot, inspect the prompt, and back up the project. Opening the sample makes no model calls; its video is an existing file.
+## 1. First time here? Which file do I download?
 
-![Actual V3.32 workbench and appearance settings](assets/screenshots/canvas-effects-v3.32.png)
+**On Windows, download the EXE. Double-click to start — no Python needed.**
 
-This screenshot uses an isolated tutorial project. [Screenshot provenance](assets/screenshots/README.md)
+[**Download the Windows EXE**](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.38-canvas-r10/FRAME-Workbench-Windows-x64-v3.38-canvas-r10.exe)
 
-## 3. Create your own project
+The current Windows EXE retains the D: drive temporary-folder policy and needs a writable D: drive. Windows machines without D: have not been validated.
 
-A **segment** is a short piece of the story, such as 15 seconds. A **shot** is one planned view within it. An **asset** is a reference file, such as a character, location or product image.
+Run it and leave the small launcher window open; your browser opens the workbench. The interface lives in the browser, but the program and your data stay on your machine.
 
-1. Choose **Create project** on Home and give it a name.
-2. Drop reference images onto empty canvas space. Name each asset, describe what is actually visible, and confirm the description.
-3. Use **Add segment**, select it, and write its story. Type `@` and choose an asset by name to reference it.
-4. Use **Add shot** beside the segment or inside its card. Set actions, dialogue and timing, or configure AI to propose shots for review.
+Other downloads: [Python source / BAT runtime ZIP](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.38-canvas-r10/FRAME-Storyboard-Workbench-v3.38-canvas-r10.zip) · [release page and checksums](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/tag/v3.38-canvas-r10)
 
-An `@` reference binds an asset; it does **not** mean a model has inspected the image. Run image analysis separately and confirm the result, or use your own verified description.
+The ZIP runs or updates the Python source and needs Python; it does not include frontend development dependencies or tests. For React frontend development, download the [complete development source](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/archive/refs/tags/v3.38-canvas-r10.zip). If you are starting with the EXE, you do not need it. [Install, update and data migration](install-and-data.md)
 
-Canvas and **Card mode** edit the same project. [Full tutorial (Chinese)](quick-start.md)
+## 2. Try it once without configuring AI
 
-## 4. Connect AI only when needed
+1. On the home screen, click the **"Official example"** project ("赛博修仙 v5") and create a copy when prompted.
+2. Click a **segment** to read that part of the story, then click a **shot** to see its action, dialogue and prompt.
+3. Edit one line of shot action and click away; watch the save status. Nodes can be expanded for details, and the inspector panel edits the same fields.
+4. Press `Ctrl+Z` to undo that edit, then `Ctrl+Shift+Z` to bring it back.
+5. Click the **"H3 final prompt"** node to read and copy the prompt for that segment.
+6. To keep a standalone backup, use **Project pack → Save project backup / handoff**.
 
-Manual editing, asset organization and saving require no model. AI planning, image analysis and Agent chat require a configured service.
+That covers the whole loop: read the story → edit a shot → undo → read the prompt → save a backup. The videos in the example are existing files; opening the example never calls a model or renders anything.
 
-Open **Home settings → AI connection settings** and choose:
+![The workbench: shots in the middle, inspector on the right](assets/screenshots/canvas-r10.png)
 
-| Option | What to prepare |
+Screenshot from the isolated V3.38 Canvas R10 official example project; the people and locations are teaching assets. [Screenshot notes](assets/screenshots/README.md)
+
+## 3. Bring your own story and media
+
+Three words to know: a **segment** is a short piece of story (say 15 seconds), a **shot** is one frame inside it, and an **asset** is a reference file — a character, a location, a product.
+
+1. Go back to the home screen, choose **Create project**, and name it.
+2. Drag reference images onto empty canvas space to add assets. Click an asset, give it a name, describe what is actually visible, check it, then confirm.
+3. Use **+ Add segment** on the canvas to start a piece of story. Select it and write in **Story / script**; type `@` to reference an asset by name.
+4. Use **+ Add shot** next to a segment or inside its card to fill in action, dialogue and timing. If AI is configured, you can let it plan the shots first and apply after previewing.
+
+For example: add three assets — customer, barista, café — then write with `@`: "The customer walks into the café, the barista nods, the customer stops at the counter." Then split it into three shots: entering, greeting, replying.
+
+**Mentioning an `@` asset does not mean the AI has looked at the image.** Image analysis runs separately and needs confirmation. When you write the description yourself, the AI plans from your words. [Full tutorial for your first project](quick-start.md)
+
+The canvas is for arranging relationships freely; **Card mode** is for reading one segment at a time. Both edit the same project.
+
+## 4. Making the canvas yours
+
+Open the **inspector → Settings**. The first block is **Dynamic theme**:
+
+| I want to | Do this |
 |---|---|
-| Local Ollama | Run Ollama, install the required model, and select its actual model name |
-| Compatible API | Your provider's endpoint, model ID and API key; provider fees may apply |
+| Change the overall mood | Pick one of the ten presets (Cyber Reel, Aurora Deep, Darkroom Film…); switching crossfades |
+| Use my own image or video as a backdrop | *Backdrop & atmosphere* → choose from the backdrop list, or **Choose image / video from disk** |
+| Fewer particles, or none at all | Adjust particle density, speed and strength; pick "None" to remove them |
+| Stop the background fighting my content | Adjust **backdrop dim** and **vignette** |
+| No animation whatsoever | Tick **Advanced appearance → Reduce motion** |
 
-Text planning needs a text model. Image analysis needs a vision-capable model. Test the connection before using AI tools.
+Uploaded backdrops live in the **workbench-wide backdrop library**, so every project can reuse them; each file is capped at 60 MB and is not bundled into exports. Theme parameters are saved with the project. Uploaded backdrop files are not exported; copy the workbench backdrop library or select the files again when moving to another machine.
 
-Watch jobs in **Task Center**. A completed task still needs **review and explicit application** before it changes the project. Cloud requests and relevant content go to your configured provider. [Troubleshooting](faq.md)
+## 5. Connecting a model (only when you want AI help)
 
-## 5. Back up, copy prompts or hand off
+Writing the story, adding shots, organising assets and saving a project never need a model. AI shot splitting, image analysis and project chat do.
 
-| Goal | Action |
+Open **gear → AI connection** on the home screen and choose one:
+
+| Option | What you need |
 |---|---|
-| Continue later or back up | Save a project backup (`.frame.json`); import it from Home later |
-| Use prompts in another tool | Copy the shot or final prompt and prepare references as that tool requires |
-| Use ComfyUI's H3 Director | Export a Director Pack (`.mmxpack.zip`) after checking the project |
-| Keep generated video records | Drop existing video onto the matching segment output node |
+| Local Ollama | Ollama running, the model installed, and the exact model name selected |
+| OpenAI-compatible API | The provider's endpoint, model name and API key; billing follows the provider |
 
-**A Director Pack is neither a video nor a generic ComfyUI workflow.** It targets [AIMixer's MiniMax H3 Director](https://github.com/AIMixer/ComfyUI_MiniMaxH3_Director). Prepare that plugin, workflow and models separately, then use its **Import Director Pack** control. [Compatibility details](h3-director-compatibility.md)
+Text planning needs a text model; analysing images needs a vision-capable model. Test the connection before using the features.
 
-You can save project backups without installing the director. This version uses manual export/import; it does not provide one-click ComfyUI video generation from the workbench.
+AI jobs appear in the **Task centre**. **A finished job still needs to be reviewed and applied** before it touches your project. With cloud endpoints, requests and related content are sent to the provider you configured. [Configuration and troubleshooting](faq.md#模型与拆镜)
 
-## Explore when you need it
+## 6. Saving the project, or handing it to a video tool
 
-Home includes search, grid/list views, duplicate, rename and Trash. Single-click selects; double-click opens. The workbench includes full-name asset mentions, image clipboard operations, planning recovery, writing skills, Agent conversations, twelve appearance profiles and reduced motion.
+| Your goal | Use this |
+|---|---|
+| Keep editing later, or back up | Project pack → Save project backup / handoff, which writes a `.frame.json`; import it from the home screen later |
+| Copy text into an external video tool | Copy the prompt from a shot or the final-prompt node, and prepare assets for that tool |
+| Hand it to the ComfyUI H3 director | **Export director pack** at the top, review, then download `.mmxpack.zip` |
+| Keep generated video | Drag the video into the segment's **finished video** node, play it, add notes |
 
-V3.32 uses canvas/card editing and removes the separate detailed-editor page. [Version notes](release-v3.32-beta.1.md) · [Changelog](../CHANGELOG.md)
+**A director pack is not a video, and not a generic ComfyUI workflow.** The receiving side is currently [AIMixer's MiniMax H3 Director](https://github.com/AIMixer/ComfyUI_MiniMaxH3_Director): install its plugin, workflow and models separately, then use **Import director pack** inside the director. [Compatibility notes](h3-director-compatibility.md)
 
-## Updates, data and help
+If you have not set up the H3 director yet, just save a project backup. Exporting and importing the pack is manual today; there is no one-click ComfyUI render from inside the workbench.
 
-- EXE data defaults to `%LOCALAPPDATA%\FRAME\Workbench\data`. Back it up, exit the old launcher, then run the new EXE.
-- Source data defaults to the application's `data/` directory. [Install, update and migrate](install-and-data.md).
-- [Troubleshooting](faq.md) · [Report an issue](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/issues/new/choose). Include your version and reproduction steps; keep API keys and private projects out of reports.
+## More, when you need it
+
+- **Project management**: search, grid/list, rename, duplicate and trash on the home screen; single click selects, double click opens.
+- **Assets and references**: type `@` to pick an asset by name, hover to preview, copy images, paste into the library, duplicate.
+- **Undo and redo**: `Ctrl+Z` / `Ctrl+Shift+Z` covering edits, deletes, replacements and pastes, up to 30 steps.
+- **AI assistance**: whole-story planning, per-segment shot splitting, writing skills, project and node chat — always preview before applying.
+- **Recovering deletions**: saved plans can restore missing segments and shots.
+- **Appearance**: day/night themes, 12 built-in presets, custom colours; glow, spotlight, junction pads and glass can be switched off, with reduced-motion support.
+
+The workbench now uses one canvas / card-flow editor; the separate "detailed edit" page is gone. [Full changelog](../CHANGELOG.md)
+
+## Problems, backups and data
+
+- **Won't open, port in use, or black media**: see [FAQ](faq.md). Do not delete the data folder first.
+- **Something went wrong?** Use **Tools ▾ → Export diagnostics** and attach the JSON — it is far easier to act on than a screenshot.
+- **Updating the EXE**: back up your data, quit the old launcher, run the new EXE. The new build keeps data in **`FRAME-Canvas-R10-Data` next to the EXE**; an empty data directory can copy adjacent R9 data on first launch. For other versions, use the launcher migration option or import a project backup. Old directories are preserved.
+- **Source updates and migration**: [Install, update and data](install-and-data.md). A source copy keeps its data in `data/` next to the program.
+- **Reporting**: [open an issue](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/issues/new/choose) with version, steps and what happened. Never attach API keys or private projects.
 
 <details>
-<summary>Developers: run from source and licensing</summary>
+<summary>Developers: running from source, tests, licensing</summary>
 
-Python 3.10+ is required:
+Running from source needs Python 3.10+:
 
 ```bash
 python -m pip install Pillow==12.3.0
 python server.py
 ```
 
-Open `http://127.0.0.1:8787`. Windows users can also run `Start-Windows.bat`.
+`python server.py` uses `http://127.0.0.1:8845`; `Start-Windows.bat` uses **8828**. The EXE launcher uses **8848** and opens the browser. The `--port` argument overrides the port.
 
 ```bash
 python -m unittest discover -s tests -v
 python tools/check_release.py
 ```
 
-[Release maintenance](releasing.md) · [Contributing](../CONTRIBUTING.md) · [Security](../SECURITY.md)
+Canvas sources live in `frontend/`; after changing them run `node frontend/build.cjs` to produce `web/vendor/reactflow-a/app.js`, then refresh the hashes in `vendor-manifest.json`.
 
-Source is publicly visible; **all rights reserved**. See [LICENSE](../LICENSE) and [NOTICE](../NOTICE.md). Test results and historical interfaces are documented in version notes; they do not guarantee model output or compatibility with every system.
+[Release management](releasing.md) · [Contributing](../CONTRIBUTING.md) · [Security](../SECURITY.md)
+
+The source is public but **all rights reserved**; see [LICENSE](../LICENSE) for the actual terms, and [NOTICE](../NOTICE.md) for provenance and dependencies. Test records and historical screenshots document behaviour, not a guarantee of model output quality or compatibility with every machine.
 
 </details>

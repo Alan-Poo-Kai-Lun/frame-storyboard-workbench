@@ -6,7 +6,23 @@
 
 提示词就是描述“画面里有什么、怎么动、怎么拍”的文字。FRAME 本身不生成视频。视频在外部工具生成后，可以放回项目中播放、备注和保存。
 
-**Windows · 本地运行 · V3.37 Beta 4**　[English](docs/README.en.md)
+**Windows · 本地运行 · V3.38 · 画布 R10**　[English](docs/README.en.md)
+
+## 这一版更新了什么（R10）
+
+> 主版本号是 V3.38；“R10”是画布部分的第 10 个迭代，两者一起记就是“V3.38 · 画布 R10”。
+
+用一句话说：**打开更快、改错能撤回、画布能换主题。**
+
+- **打开快了很多。** 以前打开一个大工程要等八九秒，现在两三秒就能开始编辑；项目文件从几百 MB 降到几百 KB，因为素材改成按需读取，不再整个塞进项目里。
+- **改错了可以撤回。** 改文字、删节点、删片段、替换素材、粘贴，都能用 `Ctrl+Z` 退回，`Ctrl+Shift+Z` 重做。
+- **画布可以换主题。** 10 套动态主题，切换是淡入淡出不是硬切；粒子效果（星尘、雪、萤火、火花等）的密度、速度、浓度都能调，也能关掉。
+- **底片可以用自己的图或视频。** 新增全局底片库，所有项目都能选同一张底片，不用每个项目重新上传。
+- **出问题更好说清楚。** 顶部「工具 ▾ → 导出诊断包」会生成一个 JSON，里面有版本、数据目录、项目体积和最近的错误记录，反馈问题时附上它就行。
+
+> 性能数字来自此前同一测试工程的单机测量，R10 沿用媒体按需读取方案；不代表所有硬件和工程都能达到相同耗时。
+
+同时清掉了几个没用的东西：画布上的半透明项目大字、「启用极光呼吸」那组设置、以及从来没生效过的「根节点形状」。版本号从 V3.37 升到 V3.38。
 
 Beta 4 增加连线语义分色与悬停聚焦，修复详情抽屉单击切换，并将视频拆解改为纯视觉左右分栏报告。音频分析已移除，声音参考播放、绑定与导出保留。详见[本版说明](docs/release-v3.37-beta.4.md)。
 
@@ -16,27 +32,30 @@ V3.37 更新：素材名称提及与预览、可调尺寸的节点详情、常�
 
 **Windows 新手推荐下载 EXE，双击即可启动，不需要安装 Python。**
 
-[**下载 Windows EXE**](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.37-beta.4/FRAME-Workbench-Windows-x64-v3.37-beta.4.exe)
+[**下载 Windows EXE**](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.38-canvas-r10/FRAME-Workbench-Windows-x64-v3.38-canvas-r10.exe)
+
+当前 Windows EXE 沿用 D: 盘临时目录策略，需要可写的 D: 盘；没有 D: 盘的 Windows 环境尚未验证。
 
 下载后双击运行，保持小启动器窗口打开，浏览器会自动打开工作台。界面虽然显示在浏览器里，程序仍运行在你的电脑上。
 
-其他下载：[完整源码／BAT ZIP](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.37-beta.4/FRAME-Storyboard-Workbench-v3.37-beta.4.zip) · [版本下载页与校验文件](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/tag/v3.37-beta.4)
+其他下载：[源码／BAT运行包](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.38-canvas-r10/FRAME-Storyboard-Workbench-v3.38-canvas-r10.zip) · [版本下载页与校验文件](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/tag/v3.38-canvas-r10)
 
-ZIP 供源码用户启动或更新，需要 Python。第一次使用 EXE 的用户不用再下载它。[安装、更新与数据迁移](docs/install-and-data.md)
+这个 ZIP 是 Python 源码运行／更新包，需要 Python，不包含前端开发依赖与测试工具。需要修改 React 前端时下载[完整开发源码](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/archive/refs/tags/v3.38-canvas-r10.zip)。第一次使用 EXE 的用户不用再下载它。[安装、更新与数据迁移](docs/install-and-data.md)
 
 ## 2. 先试一遍，不用配置 AI
 
 1. 在首页点击带 **「官方示例」** 标签的「赛博修仙 v5」，按提示创建示例副本。
 2. 点击一个 **片段**，查看这段故事；再点击其中一个 **镜头**，查看动作、对白和提示词。
 3. 改一句镜头动作，离开输入框后留意保存状态。节点下方可展开详情，属性面板也可编辑。
-4. 点击 **「H3 最终提示词」** 节点，查看并复制该片段的提示词。
-5. 想保留一份独立备份，在顶部 **「项目包」→「保存项目备份 / 交接」** 中选择保存项目备份。
+4. 按一下 `Ctrl+Z`，看看刚才的修改被退回来了；再按 `Ctrl+Shift+Z` 恢复。
+5. 点击 **「H3 最终提示词」** 节点，查看并复制该片段的提示词。
+6. 想保留一份独立备份，在顶部 **「项目包」→「保存项目备份 / 交接」** 中选择保存项目备份。
 
-完成这几步，你就体验了“看故事 → 改镜头 → 查看提示词 → 保存备份”的基本流程。示例中的视频是已有文件，打开示例不会调用模型或生成新视频。
+完成这几步，你就体验了“看故事 → 改镜头 → 撤销 → 查看提示词 → 保存备份”的基本流程。示例中的视频是已有文件，打开示例不会调用模型或生成新视频。
 
-![工作台实际界面：中间整理镜头，属性面板编辑内容与外观](docs/assets/screenshots/canvas-effects-v3.32.png)
+![工作台实际界面：中间整理镜头，属性面板编辑内容与外观](docs/assets/screenshots/canvas-r10.png)
 
-截图为 V3.32 隔离示例工程，图中的人物与场景是教学示意素材。[截图来源](docs/assets/screenshots/README.md)
+截图为 V3.38 · 画布 R10 的官方示例工程，图中的人物与场景是教学示意素材。[截图来源](docs/assets/screenshots/README.md)
 
 ## 3. 用自己的故事和素材
 
@@ -53,7 +72,21 @@ ZIP 供源码用户启动或更新，需要 Python。第一次使用 EXE 的用�
 
 画布适合自由排列关系，**「卡片模式」** 适合按片段集中看内容；两种视图编辑的是同一份项目。
 
-## 4. 想让 AI 帮忙时，再连接模型
+## 4. 画布长什么样，可以自己调
+
+点右上角 **属性面板 → 设置**，最上面是「动态主题」：
+
+| 想做什么 | 怎么操作 |
+|---|---|
+| 换个整体风格 | 点 10 个预设中的一个（赛博底片、极光深空、暗房胶片…），切换会淡入淡出 |
+| 用自己的图或视频当底图 | 「底片与氛围微调」→ 底片素材下拉选已有底片，或点「从本地选择图片 / 视频」上传 |
+| 粒子太多或看不见 | 调「粒子密度 / 运动速度 / 粒子浓度」；不想看就选「无」 |
+| 觉得背景太亮压住内容 | 调「底片压暗」和「暗角」 |
+| 不想要任何动效 | 勾选「更多高级外观微调 → 减少动态」，全部动画会停下来 |
+
+底片上传后存在**全局底片库**里，所有项目都能选，单文件上限 60MB，不进导出包。主题参数跟着项目保存；上传的底片文件不随项目导出，换电脑时还需复制全局底片库或重新选择文件。
+
+## 5. 想让 AI 帮忙时，再连接模型
 
 手动写故事、添加镜头、整理素材和保存项目都不需要模型。AI 拆镜、图片分析和项目对话才需要连接模型服务。
 
@@ -68,7 +101,7 @@ ZIP 供源码用户启动或更新，需要 Python。第一次使用 EXE 的用�
 
 AI 任务可在 **「任务中心」** 查看。**任务完成后，还要查看结果并确认应用**，才会写入项目。使用云端接口时，请求与相关内容会发送到你配置的服务。[配置与常见问题](docs/faq.md#模型与拆镜)
 
-## 5. 保存项目，还是拿去生成视频？
+## 6. 保存项目，还是拿去生成视频？
 
 | 你的目的 | 使用哪个功能 |
 |---|---|
@@ -85,16 +118,18 @@ AI 任务可在 **「任务中心」** 查看。**任务完成后，还要查看
 
 - **项目管理**：首页搜索、网格／列表、重命名、复制与回收站；单击选中，双击打开。
 - **素材与引用**：输入 `@` 选素材名称，悬停预览；复制图片、粘贴入库和创建副本。
+- **撤销与重做**：`Ctrl+Z` / `Ctrl+Shift+Z`，覆盖编辑、删除、替换、粘贴，最多 30 步。
 - **AI 辅助**：整篇规划、片段拆镜、写作技能、项目／节点对话；修改先预览再应用。
 - **误删恢复**：保存的原规划可恢复缺失片段和镜头，具体操作见教程。
 - **外观**：日夜主题、12 套内置方案、自定义配色；微光、探照灯、焊盘和玻璃效果可关闭，支持减少动态。
 
-当前版本统一使用画布／卡片流编辑，已取消独立“详细编辑”页面。[本版更新说明](docs/release-v3.37-beta.1.md) · [完整更新日志](CHANGELOG.md)
+当前版本统一使用画布／卡片流编辑，已取消独立“详细编辑”页面。[完整更新日志](CHANGELOG.md)
 
 ## 遇到问题与备份数据
 
 - **打不开、端口占用或媒体黑屏**：[常见问题](docs/faq.md)；不要先删除数据目录。
-- **EXE 更新**：备份数据，退出旧启动器，再运行新版 EXE。默认数据目录为 `%LOCALAPPDATA%\FRAME\Workbench\data`。
+- **出问题了想反馈**：顶部「工具 ▾ → 导出诊断包」，把生成的 JSON 一起发出来，比截图更容易定位。
+- **EXE 更新**：备份数据，退出旧启动器，再运行新版 EXE。新版数据默认在 **EXE 同目录的 `FRAME-Canvas-R10-Data`**；空目录首次启动时会尝试复制相邻 R9 数据目录；其他旧版本请使用启动器「迁移旧数据」或导入项目备份。旧目录保留。
 - **源码更新与迁移**：[安装、更新与数据](docs/install-and-data.md)。源码版默认数据在程序目录的 `data/`。
 - **反馈问题**：[提交 Issue](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/issues/new/choose)，说明版本、操作步骤和现象；不要上传 API Key 或私人项目。
 
@@ -108,12 +143,14 @@ python -m pip install Pillow==12.3.0
 python server.py
 ```
 
-浏览器打开 `http://127.0.0.1:8787`。Windows 也可使用 `Start-Windows.bat`。
+直接运行 `python server.py` 后打开 `http://127.0.0.1:8845`；`Start-Windows.bat` 使用端口 **8828**；EXE 启动器使用 **8848** 并自动打开浏览器。端口可通过 `--port` 参数指定。
 
 ```bash
 python -m unittest discover -s tests -v
 python tools/check_release.py
 ```
+
+前端画布源码在 `frontend/`，改动后执行 `node frontend/build.cjs` 生成 `web/vendor/reactflow-a/app.js`，并刷新 `vendor-manifest.json` 里的哈希。
 
 [发布管理](docs/releasing.md) · [贡献说明](CONTRIBUTING.md) · [安全反馈](SECURITY.md)
 

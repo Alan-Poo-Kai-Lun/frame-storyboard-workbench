@@ -1,8 +1,21 @@
 /* Media roles are explicit: references, endpoint stills and source video are separate. */
 function assetMediaType(a){return a?.mediaType||(/\.(mp3|wav|flac|ogg|m4a|aac)$/i.test(a?.path||'')?'audio':/\.(mp4|webm|mov|mkv)$/i.test(a?.path||'')?'video':'image')}
 function allScopedAssets(s=seg()){return (P?.assets||[]).filter(a=>!a.deleted&&(a.scope!=='segment'||a.segmentId===s?.id)).sort((a,b)=>(a.scope==='segment')-(b.scope==='segment'))}
-function mediaSource(path){if(!P?.media?.[path])return '';const ext=path.split('.').at(-1).toLowerCase(),mime=({mp4:'video/mp4',webm:'video/webm',mov:'video/quicktime',mkv:'video/x-matroska',mp3:'audio/mpeg',wav:'audio/wav',flac:'audio/flac',ogg:'audio/ogg',m4a:'audio/mp4',aac:'audio/aac'})[ext];return mime?'data:'+mime+';base64,'+P.media[path]:image(path)}
-function assetMediaTag(a){const type=assetMediaType(a),src=mediaSource(a.path);return !src?'<span class="missingPicture">素材缺失</span>':type==='image'?imgTag(a.path):`<${type} controls playsinline preload="metadata" src="${src}" aria-label="${esc(a.name||'素材')}"></${type}>`}
+const projectMediaURLs=new Map();let mediaURLOwner='';
+function mediaSource(path){
+ if(mediaURLOwner!==P?.projectId){for(const row of projectMediaURLs.values())URL.revokeObjectURL(row.url);projectMediaURLs.clear();mediaURLOwner=P?.projectId||''}
+ const payload=P?.media?.[path];if(!payload)return '';
+ if(payload.length<=200)return mediaURL(path);
+ if(/\.(mp3|wav|flac|ogg|m4a|aac|mp4|webm|mov|mkv)$/i.test(path)){
+  const old=projectMediaURLs.get(path);if(old?.payload===payload){old.payload=payload;return old.url;}if(old)URL.revokeObjectURL(old.url);
+  const ext=path.split('.').at(-1).toLowerCase(),mime={mp4:'video/mp4',webm:'video/webm',mov:'video/quicktime',mkv:'video/x-matroska',mp3:'audio/mpeg',wav:'audio/wav',flac:'audio/flac',ogg:'audio/ogg',m4a:'audio/mp4',aac:'audio/aac'}[ext];
+  const raw=atob(payload),parts=[];for(let i=0;i<raw.length;i+=1048576){const text=raw.slice(i,i+1048576),bytes=new Uint8Array(text.length);for(let j=0;j<text.length;j++)bytes[j]=text.charCodeAt(j);parts.push(bytes)}
+  const url=URL.createObjectURL(new Blob(parts,{type:mime}));projectMediaURLs.set(path,{payload,url});
+  if(projectMediaURLs.size>64){const first=projectMediaURLs.keys().next().value;URL.revokeObjectURL(projectMediaURLs.get(first).url);projectMediaURLs.delete(first)}return url;
+ }
+ return image(path);
+}
+function assetMediaTag(a){const type=assetMediaType(a),src=mediaSource(a.path);return !src?'<span class="missingPicture">素材缺失</span>':type==='image'?imgTag(a.path):`<${type} controls playsinline preload="none" src="${src}" aria-label="${esc(a.name||'素材')}"></${type}>`}
 function mediaAssetLabel(a,s=seg()){const type=assetMediaType(a),i=allScopedAssets(s).filter(x=>assetMediaType(x)===type).indexOf(a);return ({image:'Picture',audio:'Audio',video:'Video'})[type]+' '+(i<0?'缺失':i+1)}
 async function readProjectReferenceMedia(file,project=P){
  const type=file.type.split('/')[0];if(type==='image')return readImage(file,project);

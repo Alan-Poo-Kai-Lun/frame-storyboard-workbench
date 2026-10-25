@@ -23,22 +23,16 @@ jobs:
         run: python tools/check_release.py
       - name: Structure and update tests
         run: python -m unittest discover -s tests -v
-      - name: Frontend interaction checks
+      - name: Install current browser regression dependencies
         run: |
-          npm install --prefix "$RUNNER_TEMP/frame-ui-check" jsdom@26.1.0 --ignore-scripts --no-audit --no-fund
-          NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_startup_ui.cjs
-          NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_dynamic_background.cjs
-          NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_canvas_clipboard.cjs
-          NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_canvas_effects.cjs
-          NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_canvas_lifecycle.cjs
-          NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_agent_input.cjs
-          NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_asset_mentions.cjs
-          NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_canvas_input.cjs
-          NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_appearance_panel.cjs
-          NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_plan_ui.cjs
-          NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_agent_media.cjs
-          NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_media_analysis.cjs
-          NODE_PATH="$RUNNER_TEMP/frame-ui-check/node_modules" node tests/test_semantic_drawer.cjs
+          npm install --prefix "$RUNNER_TEMP/frame-ui-check" playwright@1.56.1 --ignore-scripts --no-audit --no-fund
+          PLAYWRIGHT_BROWSERS_PATH="$RUNNER_TEMP/frame-browsers" node "$RUNNER_TEMP/frame-ui-check/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Current React Flow browser regression
+        env:
+          NODE_PATH: ${{ runner.temp }}/frame-ui-check/node_modules
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/frame-browsers
+          FRAME_BROWSER: chromium
+        run: python tools/test_browser.py
       - name: Build clean installer
         run: python tools/build_release.py
       - uses: actions/upload-artifact@v4
