@@ -182,7 +182,9 @@ def load_project():
         archive=plan_store.records(sys.modules[__name__],p)
         if archive:p['planArchive']=archive
         else:p.pop('planArchive',None)
-        return copy.deepcopy(p)
+        # Read the small layout sidecar without invalidating the media cache.
+        import project_layout
+        return project_layout.apply(copy.deepcopy(p),DATA)
 def backup_project():
     if STATE.exists():
         backup=DATA/'backups'; backup.mkdir(exist_ok=True)

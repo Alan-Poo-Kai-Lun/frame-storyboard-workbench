@@ -44,7 +44,6 @@ class ProjectMediaChecks(unittest.TestCase):
   self.assertEqual(server.STATE.stat().st_mtime_ns,before)
   self.assertEqual(project_layout.all(server.DATA)[project['projectId']],layout)
   # A layout-only write must be picked up without rewriting the project file.
-  os.utime(server.STATE,None)
   self.assertEqual(server.load_project()['overviewLayout'],layout)
 
  def test_loads_are_cached_but_isolated(self):

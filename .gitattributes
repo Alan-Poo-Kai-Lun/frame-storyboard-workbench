@@ -7,3 +7,6 @@
 *.md text eol=lf
 *.yml text eol=lf
 *.bat text eol=crlf
+
+# Vendored bytes are checksum-verified; never convert their line endings.
+web/vendor/** -text
