@@ -1,46 +1,18 @@
-# FRAME · Storyboard Workbench
+# FRAME Storyboard Workbench
 
-**Turn a story into a set of shots, then hand the prompts and reference images to a video generation tool.**
+**Windows · V3.38 · Canvas R11**　[中文](../README.md)
 
-Write the story, organise character and location images, plan what happens in each shot and what gets said — optionally with AI help. Basic editing works without any AI connection.
+## R11 changes
 
-A prompt is the text that describes what is in frame, how things move, and how the shot is framed. FRAME does not generate video itself. Once you generate video elsewhere, you can drop it back into the project to play, annotate and keep.
+Whole-story planning now includes typed image, audio and video references and preserves stable media bindings through preview and application. Audio/video context uses existing descriptions or analysis; a mention does not mean that a model watched or heard the file.
 
-**Windows · runs locally · V3.38 · Canvas R10**　[中文](../README.md)
+Both layouts have an Auto Align button. A segment and all its shots stay in one horizontal row. Collapsed groups shrink to a header, and group + / − resize their contents. Layout changes support undo.
 
-## What changed in R10
+## 1. Downloads and data
 
-> The product version is V3.38; "R10" is the tenth iteration of the canvas itself. Together: "V3.38 · Canvas R10".
+[Windows EXE](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.38-canvas-r11/FRAME-Workbench-Windows-x64-v3.38-canvas-r11.exe) · [Python runtime/update ZIP](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.38-canvas-r11/FRAME-Storyboard-Workbench-v3.38-canvas-r11.zip) · [Release and checksums](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/tag/v3.38-canvas-r11) · [Full development source](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/archive/refs/tags/v3.38-canvas-r11.zip)
 
-In one sentence: **projects open much faster, mistakes can be undone, and the canvas can wear a theme.**
-
-- **Opening is far quicker.** A large project used to take eight or nine seconds; it now takes two or three. The project file dropped from hundreds of megabytes to a few hundred kilobytes because media is loaded on demand instead of being embedded.
-- **Undo actually covers editing.** Text changes, deleted nodes, deleted segments, replaced media and pastes can all be undone with `Ctrl+Z` and redone with `Ctrl+Shift+Z`.
-- **The canvas takes themes.** Ten animated presets with a crossfade instead of a hard switch, plus particles (stardust, snow, fireflies, sparks and more) whose density, speed and strength you can tune — or turn off.
-- **Backdrops can be your own image or video.** A workbench-wide backdrop library means every project can reuse the same file without re-uploading.
-- **Problems are easier to report.** "Tools ▾ → Export diagnostics" writes a JSON with the version, data folder, project size and recent errors. Attach it when you file an issue.
-
-> Performance figures are single-machine measurements from an earlier test project. R10 retains that media architecture; timings are not guaranteed for every project or machine.
-
-We also removed things that did nothing: the faint project title painted on the canvas, the old "aurora breathing" background settings, and the "root node shape" option that never had any effect. The version number moves from V3.37 to V3.38.
-
-Beta 4 added semantic edge colours with hover focus, fixed single-click switching in the detail drawer, and turned video breakdown into a visual-only side-by-side report. Audio analysis was removed; audio reference playback, binding and export remain. See [the Beta 4 notes](release-v3.37-beta.4.md).
-
-V3.37 added asset name mentions with preview, resizable node details, a persistent fullscreen entry, and two background styles (static dot grid and soft aurora). Air gestures and the duplicate restore entry in the top bar were removed; existing presets and user media are kept. See [the V3.37 notes](release-v3.37-beta.1.md). New EXE, source/BAT ZIP and checksum files are linked below; an existing desktop copy is never overwritten automatically.
-
-## 1. First time here? Which file do I download?
-
-**On Windows, download the EXE. Double-click to start — no Python needed.**
-
-[**Download the Windows EXE**](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.38-canvas-r10/FRAME-Workbench-Windows-x64-v3.38-canvas-r10.exe)
-
-The current Windows EXE retains the D: drive temporary-folder policy and needs a writable D: drive. Windows machines without D: have not been validated.
-
-Run it and leave the small launcher window open; your browser opens the workbench. The interface lives in the browser, but the program and your data stay on your machine.
-
-Other downloads: [Python source / BAT runtime ZIP](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.38-canvas-r10/FRAME-Storyboard-Workbench-v3.38-canvas-r10.zip) · [release page and checksums](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/tag/v3.38-canvas-r10)
-
-The ZIP runs or updates the Python source and needs Python; it does not include frontend development dependencies or tests. For React frontend development, download the [complete development source](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/archive/refs/tags/v3.38-canvas-r10.zip). If you are starting with the EXE, you do not need it. [Install, update and data migration](install-and-data.md)
+Keep the launcher open. The EXE uses local port **8851** and stores data in `FRAME-Canvas-R11-Data` beside the EXE. An empty directory may copy adjacent R10/R9 data once, preserving the original. Project backup import is also available. Back up your projects and try this build in a separate folder. The current Windows build requires a writable D: drive for temporary runtime files.
 
 ## 2. Try it once without configuring AI
 
@@ -129,7 +101,7 @@ The workbench now uses one canvas / card-flow editor; the separate "detailed edi
 
 - **Won't open, port in use, or black media**: see [FAQ](faq.md). Do not delete the data folder first.
 - **Something went wrong?** Use **Tools ▾ → Export diagnostics** and attach the JSON — it is far easier to act on than a screenshot.
-- **Updating the EXE**: back up your data, quit the old launcher, run the new EXE. The new build keeps data in **`FRAME-Canvas-R10-Data` next to the EXE**; an empty data directory can copy adjacent R9 data on first launch. For other versions, use the launcher migration option or import a project backup. Old directories are preserved.
+- **Updating the EXE**: back up your data, quit the old launcher, run the new EXE. The new build keeps data in **`FRAME-Canvas-R11-Data` next to the EXE**; an empty data directory can copy adjacent R9 data on first launch. For other versions, use the launcher migration option or import a project backup. Old directories are preserved.
 - **Source updates and migration**: [Install, update and data](install-and-data.md). A source copy keeps its data in `data/` next to the program.
 - **Reporting**: [open an issue](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/issues/new/choose) with version, steps and what happened. Never attach API keys or private projects.
 
@@ -143,7 +115,7 @@ python -m pip install Pillow==12.3.0
 python server.py
 ```
 
-`python server.py` uses `http://127.0.0.1:8845`; `Start-Windows.bat` uses **8828**. The EXE launcher uses **8848** and opens the browser. The `--port` argument overrides the port.
+`python server.py` uses `http://127.0.0.1:8845`; `Start-Windows.bat` uses **8828**. The EXE launcher uses **8851** and opens the browser. The `--port` argument overrides the port.
 
 ```bash
 python -m unittest discover -s tests -v

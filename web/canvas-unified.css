@@ -139,3 +139,7 @@
 #frameFlowRoot .rfa-asset .rfa-media .flow-player-row,#frameFlowRoot .rfa-asset .rfa-media input{flex:none}
 #overviewDialog[data-flow-image-fit=cover] #frameFlowRoot .rfa-asset .rfa-media img,#overviewDialog[data-flow-image-fit=cover] #frameFlowRoot .rfa-asset .rfa-media video{object-fit:cover}
 .overviewWorkspace>.flow-quick-menu{z-index:140}
+
+/* R11 compact folded frames. */
+#frameFlowRoot .rfa-group.rfa-collapsed>header{flex-wrap:nowrap;height:60px;box-sizing:border-box}
+#frameFlowRoot .rfa-group.rfa-collapsed>header strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}

@@ -7,6 +7,7 @@ on:
       - 'server.py'
       - 'tools/test_browser.py'
       - 'tests/r10-browser.cjs'
+      - 'tests/r11-browser.cjs'
       - '.gitattributes'
       - 'windows_launcher.py'
       - 'runtime_paths.py'

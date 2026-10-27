@@ -93,10 +93,14 @@ def enqueue(s,body):
    asset,_=agent.add_attachment(s,plan_project,attachment)
    attachment['number']=asset['pictureNumber']
   refs=project_assets(s,plan_project)
+  media=[a for a in s.generation_backend.project_assets(plan_project) if s.generation_backend.media_type(a)!='image']
   chosen=body.get('assetIds')
   if chosen is not None:
-   if not isinstance(chosen,list) or any(not isinstance(v,str) for v in chosen) or set(chosen)-{a['id'] for a in refs}:raise ValueError('选择的素材已变化，请刷新')
+   if not isinstance(chosen,list) or any(not isinstance(v,str) for v in chosen) or set(chosen)-{a['id'] for a in refs+media}:raise ValueError('选择的素材已变化，请刷新')
    refs=[a for a in refs if a['id'] in chosen or (attachment and a.get('pictureNumber')==attachment['number'])]
+  if chosen is not None:media=[a for a in media if a['id'] in chosen]
+  media_labels={s.generation_backend.project_label(plan_project,a).lower() for a in media}
+  if {k.lower()+' '+str(int(n)) for k,n in re.findall(r'\b(Audio|Video)\s+(\d+)\b',story,re.I)}-media_labels:raise ValueError('剧情引用的音视频未选择或已不存在')
   roles=body.get('assetRoles',{})
   if not isinstance(roles,dict) or any(v not in ['general','person','product','scene','style'] for v in roles.values()):raise ValueError('素材参考用途无效')
   continuity=body.get('continuity',True);guide=body.get('guideFromPrev',False)
@@ -104,7 +108,9 @@ def enqueue(s,body):
   from prompt_review import references
   if references(story)-{a.get('pictureNumber',plan_project['assets'].index(a)+1) for a in refs}:raise ValueError('剧情引用了不存在的图片素材')
   rules=selected(s,p,ids=body.get('ruleIds',p.get('writingRuleIds',[])))
-  snap={'schemaVersion':2,'continuity':continuity,'guideFromPrev':guide,'directorGuide':s.guide_settings(p),'outputLanguage':output_language,'dialogueLanguage':dialogue_language,'goal':p.get('intent',{}).get('goal',''),'story':story,'count':count,'duration':duration,'signature':signature(p),'rules':rules,'refs':[{'id':a['id'],'role':roles.get(a['id'],'general'),'number':a.get('pictureNumber',plan_project['assets'].index(a)+1),'name':a['name'],'description':a.get('description',''),'scope':a.get('scope','public'),'segmentId':a.get('segmentId',''),'sourceHash':digest({k:a.get(k) for k in ['id','path','description','kind']}),'mediaHash':digest(plan_project.get('media',{}).get(a.get('path'),'')),'confirmed':bool(a.get('confirmation'))} for a in refs]}
+  snap={'schemaVersion':2,'continuity':continuity,'guideFromPrev':guide,'directorGuide':s.guide_settings(p),'outputLanguage':output_language,'dialogueLanguage':dialogue_language,'goal':(p.get('intent') or {}).get('goal',''),'story':story,'count':count,'duration':duration,'signature':signature(p),'rules':rules,'refs':[{'id':a['id'],'role':roles.get(a['id'],'general'),'number':a.get('pictureNumber',plan_project['assets'].index(a)+1),'name':a['name'],'description':a.get('description',''),'scope':a.get('scope','public'),'segmentId':a.get('segmentId',''),'sourceHash':digest({k:a.get(k) for k in ['id','path','description','kind']}),'mediaHash':digest(plan_project.get('media',{}).get(a.get('path'),'')),'confirmed':bool(a.get('confirmation'))} for a in refs]}
+  from agent_backend import media_context
+  snap['mediaRefs']=[{'id':a['id'],'name':a['name'],'mediaType':s.generation_backend.media_type(a),'referenceLabel':s.generation_backend.project_label(plan_project,a),'description':a.get('description',''),'available':bool(plan_project.get('media',{}).get(a['path'])),'sourceHash':digest({k:a.get(k) for k in ['id','path','description','kind']}),'mediaHash':digest(plan_project.get('media',{}).get(a['path'],'')),**media_context(plan_project,a)} for a in media]
   snap.update(options)
   if attachment:snap['plannedAttachment']=attachment
   row=task_backend.manager(s).add('story',{'projectId':p['projectId'],'title':'整篇剧情规划 · '+p['title']},cfg,snap)
@@ -115,6 +121,7 @@ def analyze(s,cfg,snapshot,payload):
  system+=' 每个镜头必须返回 references 数字数组，列出本镜头实际使用的素材编号；有可用素材时必须明确选择，不得仅在开头说已读取。action 中用 @Picture N 引用这些素材。无素材时 references=[]，不得编造编号。general 综合海报仅提供信息，不能自动当人物身份或独立产品图。startState 和 endState 必须非空；不确定写明待确认，不能伪造已确认空间。相邻镜头起点应接上镜终点；只有明确转场时才能改变场景。是否跨段承接由 continuity 控制。'
  system+=' 【画面画幅】'+snapshot.get('aspectRatio','16:9')+'。按真实画幅安排构图，画幅不决定景别或景深。视觉影调：'+snapshot.get('visualToneInstruction',TONES.get(snapshot.get('visualTone','custom'),TONES['custom']))+'。每段镜头数量目标：'+str(DENSITIES.get(snapshot.get('shotDensity','standard'),(2,3)))+'，不得为凑数删减原对白或因果。'
  system+=' 标题、剧情、summary 与镜头 action/camera/expression/sound/startState/endState 使用 '+{'zh':'简体中文','en':'English','ms':'Bahasa Melayu','zh-Hant':'繁體中文'}.get(snapshot.get('outputLanguage','zh'),'简体中文')+'。对白语言要求：'+snapshot.get('dialogueLanguage','Mandarin')+'；保留用户明确指定的原文台词，不把 UI 语言当作输出语言。'
+ system+=' 音视频来自 mediaRefs；每镜用 mediaAssetIds 数组填写实际采用的稳定素材 id，并在 sound 中用其 referenceLabel（Audio N / Video N）引用。references 数字数组仅用于图片，不得把音视频混作 Picture。不假装已听取音频或观看视频，仅读取提供的说明与已有分析。'
  raw=snapshot.get('modelResponse') or s.ai_call({**cfg,'_outputLimit':16384},[{'role':'system','content':system},{'role':'user','content':json.dumps({k:v for k,v in snapshot.items() if k not in ['plannedAttachment','modelResponse']},ensure_ascii=False)}],True)
  # Persist the complete response before validation, as for segment planning.
  snapshot['modelResponse']=raw
@@ -193,6 +200,12 @@ def append_plan(s,p,r,edits,plan_id,snapshot,copy_plan=False):
   if not image:raise ValueError('规划附图已丢失，请重新规划')
   asset,_=agent.add_attachment(s,p,image)
   if asset['pictureNumber']!=image['number']:raise ValueError('素材编号已变化，请重新规划')
+ live_media={a['id']:a for a in s.generation_backend.project_assets(p)}
+ used_media={ident for seg in r['segments'] for h in seg.get('shots',[]) for ident in h.get('mediaAssetIds',[])}
+ for ref in r.get('mediaReferences',[]):
+  if ref['id'] not in used_media:continue
+  a=live_media.get(ref['id'])
+  if not a or (ref.get('sourceHash') and digest({k:a.get(k) for k in ['id','path','description','kind']})!=ref['sourceHash']) or (ref.get('mediaHash') and digest(p.get('media',{}).get(a.get('path'),''))!=ref['mediaHash']):raise ValueError('规划引用的音视频已变化，请刷新预览；原项目未改动')
  additions=[];source_assets=project_assets(s,p);numbers={a.get('pictureNumber',p['assets'].index(a)+1):a for a in source_assets};next_number=max([a.get('pictureNumber',i+1) for i,a in enumerate(p.get('assets',[]))]+[0])+1
  resolved_roles=copy.deepcopy(r.get('referenceRoles',{}))
  used_bindings={n for seg in r['segments'] for h in seg.get('shots',[]) for n in h.get('referenceNumbers',[])}
@@ -325,6 +338,27 @@ def normalize_plan_structure(result,infer=False):
  result['segments']=kept;result.setdefault('warnings',[]).extend(notes);return result
 
 
+def attach_story_media(result,raw,snap):
+ """Keep picture numbers and typed media IDs separate; use the existing H3 binder."""
+ media=snap.get('mediaRefs',[])
+ if not media:return result
+ result['mediaReferences']=copy.deepcopy(media)
+ explicit={r['id'] for r in media if re.search(r'(?<!\w)@?'+re.escape(r['referenceLabel'])+r'(?!\d)',snap.get('story',''),re.I)}
+ by_id={r['id']:r for r in media}
+ rows=raw.get('segments',[]) if isinstance(raw,dict) else []
+ for row,original in zip(result.get('segments',[]),rows):
+  for shot,source in zip(row.get('shots',[]),original.get('shots',[])):
+   ids=source.get('mediaAssetIds',[]);ids=ids if isinstance(ids,list) else []
+   text=' '.join(source.get(k,'') for k in ['action','camera','sound'] if isinstance(source.get(k,''),str))
+   used=explicit|{r['id'] for r in media if re.search(r'(?<!\w)@?'+re.escape(r['referenceLabel'])+r'(?!\d)',text,re.I)}
+   shot['mediaAssetIds']=list(dict.fromkeys([v for v in ids if isinstance(v,str) and v in by_id]+[r['id'] for r in media if r['id'] in used]))
+   shot['assetIds']=list(dict.fromkeys(shot.get('assetIds',[])+shot['mediaAssetIds']))
+   for ident in shot['mediaAssetIds']:
+    r=by_id[ident]
+    if r['referenceLabel'].lower() not in shot.get('sound','').lower():shot['sound']=shot.get('sound','')+'\n参考 <'+r['referenceLabel']+'>（'+r['name']+'）'
+ return result
+
+
 def recover(s,raw,snap):
  """Always keep model output available; only strict validation grants apply permission."""
  try:obj=decode_plan(raw) if isinstance(raw,str) else copy.deepcopy(raw)
@@ -353,6 +387,7 @@ def recover(s,raw,snap):
    refs=h.get('referenceNumbers',[]);used=references(h.get('action','')) if isinstance(h.get('action'),str) else set()
    if not isinstance(refs,list) or used-set(n for n in refs if isinstance(n,int)):
     result['warnings'].append({'segment':i,'shot':j,'message':'引用需确认：画面描述与素材绑定不一致，未自动替换素材'})
+ attach_story_media(result,obj,snap)
  return normalize_plan_structure(result,infer=snap.get('inferAgentDuration',False))
 
 def refresh_plan_references(s,p,result):

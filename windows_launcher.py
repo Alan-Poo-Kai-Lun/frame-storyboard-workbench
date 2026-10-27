@@ -51,7 +51,7 @@ def self_test(report):
  finally:service.shutdown();service.server_close();thread.join(5)
  return 0
 
-def launch(port=8848,no_browser=False):
+def launch(port=8851,no_browser=False):
  import tkinter as tk
  from tkinter import ttk,messagebox,filedialog
  version=json.loads((runtime_paths.resource_dir()/'version.json').read_text('utf-8'))
@@ -62,7 +62,7 @@ def launch(port=8848,no_browser=False):
   if existing.get('appId')=='frame-storyboard-workbench' and existing.get('release')==version['release'] and existing.get('runtimeMode')=='exe' and existing.get('dataDirectory')==str(runtime_paths.data_dir()):
    webbrowser.open(base);return 0
  except Exception:pass
- root=tk.Tk();root.title('FRAME · 画布 R10');root.geometry('480x355');root.minsize(450,335)
+ root=tk.Tk();root.title('FRAME · 画布 R11');root.geometry('480x355');root.minsize(450,335)
  try:root.iconbitmap(str(runtime_paths.resource_dir()/'FRAME.ico'))
  except Exception:pass
  folder=runtime_paths.data_dir();folder.parent.mkdir(parents=True,exist_ok=True)
@@ -71,7 +71,7 @@ def launch(port=8848,no_browser=False):
  status=tk.StringVar(value='正在启动…');path_label=tk.StringVar(value=str(folder));service=None;closing=False
  area=ttk.Frame(root,padding=25);area.pack(fill='both',expand=True)
  ttk.Label(area,text='FRAME',font=('Segoe UI',24,'bold')).pack(anchor='w')
- ttk.Label(area,text='画布 R10 · '+version['version'],font=('Microsoft YaHei UI',11)).pack(anchor='w',pady=(0,14))
+ ttk.Label(area,text='画布 R11 · '+version['version'],font=('Microsoft YaHei UI',11)).pack(anchor='w',pady=(0,14))
  ttk.Label(area,textvariable=status,wraplength=415).pack(anchor='w',pady=(0,12))
  def open_workbench():webbrowser.open(base)
  def open_data():
@@ -126,7 +126,7 @@ def launch(port=8848,no_browser=False):
  root.mainloop();return 0
 
 def main():
- parser=argparse.ArgumentParser();parser.add_argument('--port',type=int,default=8848);parser.add_argument('--no-browser',action='store_true');parser.add_argument('--self-test',action='store_true');args=parser.parse_args()
+ parser=argparse.ArgumentParser();parser.add_argument('--port',type=int,default=8851);parser.add_argument('--no-browser',action='store_true');parser.add_argument('--self-test',action='store_true');args=parser.parse_args()
  if args.self_test:
   report=os.environ.get('FRAME_SELF_TEST_REPORT')
   try:return self_test(report)

@@ -11,7 +11,7 @@ class UpdateChecks(unittest.TestCase):
   with tempfile.TemporaryDirectory() as folder:
    with patch.object(sys,'frozen',True,create=True),patch.object(sys,'_MEIPASS',folder+'/resources',create=True),patch.object(sys,'platform','win32'),patch.dict(os.environ,{'LOCALAPPDATA':folder},clear=True):
     self.assertEqual(runtime_paths.resource_dir(),Path(folder+'/resources'))
-    self.assertEqual(runtime_paths.data_dir(),runtime_paths.program_dir()/'FRAME-Canvas-R10-Data')
+    self.assertEqual(runtime_paths.data_dir(),runtime_paths.program_dir()/runtime_paths.DATA_FOLDER)
     self.assertNotEqual(runtime_paths.data_dir(),runtime_paths.resource_dir())
  def test_legacy_migration_is_copy_only_and_never_overwrites(self):
   with tempfile.TemporaryDirectory() as folder:

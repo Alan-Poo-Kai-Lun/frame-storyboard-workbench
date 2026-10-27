@@ -1,46 +1,27 @@
 # FRAME · 分镜工作台
 
-**把一个故事整理成一组镜头，再把提示词和素材交给视频生成工具。**
+**Windows · 本地运行 · V3.38 · 画布 R11**　[English](docs/README.en.md)
 
-你可以在这里写故事、整理人物和场景图片、安排每个镜头的动作与对白，也可以让 AI 帮你规划。基础编辑不需要连接 AI。
+将故事、参考素材与分镜整理到同一张 React Flow 画布。视频生成由外部工具完成，成片可以导入项目。
 
-提示词就是描述“画面里有什么、怎么动、怎么拍”的文字。FRAME 本身不生成视频。视频在外部工具生成后，可以放回项目中播放、备注和保存。
+## R11 修复
 
-**Windows · 本地运行 · V3.38 · 画布 R10**　[English](docs/README.en.md)
+- 整篇剧情规划支持图片、声音和视频的 @ 引用；预览与应用保留稳定素材绑定。音视频以已有说明或分析作为上下文，引用不代表模型已经观看或听取文件。
+- 卡片模式与画布模式增加“自动对齐”，每段的片段卡和全部镜头从左到右排列，不再每两个镜头换行。整理后可用 Ctrl+Z 撤销。
+- 素材区折叠后收成标题栏；+ / − 同时缩放素材卡与容器，支持撤销，并保存折叠状态。
+- 修复未填写创作意图的项目提交整篇规划失败。
 
-## 这一版更新了什么（R10）
+## 1. 启动与旧项目
 
-> 主版本号是 V3.38；“R10”是画布部分的第 10 个迭代，两者一起记就是“V3.38 · 画布 R10”。
+**推荐下载 Windows EXE**，双击即可启动，无需安装 Python：
 
-用一句话说：**打开更快、改错能撤回、画布能换主题。**
+[下载 R11 Windows EXE](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.38-canvas-r11/FRAME-Workbench-Windows-x64-v3.38-canvas-r11.exe) · [源码运行／更新 ZIP](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.38-canvas-r11/FRAME-Storyboard-Workbench-v3.38-canvas-r11.zip) · [发布页与校验文件](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/tag/v3.38-canvas-r11)
 
-- **打开快了很多。** 以前打开一个大工程要等八九秒，现在两三秒就能开始编辑；项目文件从几百 MB 降到几百 KB，因为素材改成按需读取，不再整个塞进项目里。
-- **改错了可以撤回。** 改文字、删节点、删片段、替换素材、粘贴，都能用 `Ctrl+Z` 退回，`Ctrl+Shift+Z` 重做。
-- **画布可以换主题。** 10 套动态主题，切换是淡入淡出不是硬切；粒子效果（星尘、雪、萤火、火花等）的密度、速度、浓度都能调，也能关掉。
-- **底片可以用自己的图或视频。** 新增全局底片库，所有项目都能选同一张底片，不用每个项目重新上传。
-- **出问题更好说清楚。** 顶部「工具 ▾ → 导出诊断包」会生成一个 JSON，里面有版本、数据目录、项目体积和最近的错误记录，反馈问题时附上它就行。
+运行 ZIP 包含 Python 运行源码与已编译前端，需要 Python；修改 React 前端请下载[完整开发源码](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/archive/refs/tags/v3.38-canvas-r11.zip)。
 
-> 性能数字来自此前同一测试工程的单机测量，R10 沿用媒体按需读取方案；不代表所有硬件和工程都能达到相同耗时。
+保持小启动器窗口打开，浏览器自动进入工作台。EXE 默认端口为 **8851**。程序使用 EXE 旁独立的 `FRAME-Canvas-R11-Data`；首次运行会将可找到的相邻 R10/R9 数据复制到空的新目录，原目录保留。也可导入项目备份。请先备份项目，在独立文件夹试用新版。当前 Windows 构建需要可写的 D: 盘保存运行时临时文件。
 
-同时清掉了几个没用的东西：画布上的半透明项目大字、「启用极光呼吸」那组设置、以及从来没生效过的「根节点形状」。版本号从 V3.37 升到 V3.38。
-
-Beta 4 增加连线语义分色与悬停聚焦，修复详情抽屉单击切换，并将视频拆解改为纯视觉左右分栏报告。音频分析已移除，声音参考播放、绑定与导出保留。详见[本版说明](docs/release-v3.37-beta.4.md)。
-
-V3.37 更新：素材名称提及与预览、可调尺寸的节点详情、常驻全屏入口，以及静态点阵/柔焦极光两种背景。已移除隔空手势与顶栏重复恢复入口，旧方案和用户素材保留。[本版说明](docs/release-v3.37-beta.1.md)。下方提供新版 EXE、完整源码／BAT ZIP 与校验文件；已有桌面程序不会自动覆盖。
-
-## 1. 第一次使用，下载哪个？
-
-**Windows 新手推荐下载 EXE，双击即可启动，不需要安装 Python。**
-
-[**下载 Windows EXE**](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.38-canvas-r10/FRAME-Workbench-Windows-x64-v3.38-canvas-r10.exe)
-
-当前 Windows EXE 沿用 D: 盘临时目录策略，需要可写的 D: 盘；没有 D: 盘的 Windows 环境尚未验证。
-
-下载后双击运行，保持小启动器窗口打开，浏览器会自动打开工作台。界面虽然显示在浏览器里，程序仍运行在你的电脑上。
-
-其他下载：[源码／BAT运行包](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.38-canvas-r10/FRAME-Storyboard-Workbench-v3.38-canvas-r10.zip) · [版本下载页与校验文件](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/tag/v3.38-canvas-r10)
-
-这个 ZIP 是 Python 源码运行／更新包，需要 Python，不包含前端开发依赖与测试工具。需要修改 React 前端时下载[完整开发源码](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/archive/refs/tags/v3.38-canvas-r10.zip)。第一次使用 EXE 的用户不用再下载它。[安装、更新与数据迁移](docs/install-and-data.md)
+源码运行可执行 `Start-Windows.bat`，需 Python 和项目要求的依赖。重新编译前端使用 `npm ci` 和 `node frontend/build.cjs`，请将 npm 缓存放到 D: 盘。
 
 ## 2. 先试一遍，不用配置 AI
 
@@ -129,7 +110,7 @@ AI 任务可在 **「任务中心」** 查看。**任务完成后，还要查看
 
 - **打不开、端口占用或媒体黑屏**：[常见问题](docs/faq.md)；不要先删除数据目录。
 - **出问题了想反馈**：顶部「工具 ▾ → 导出诊断包」，把生成的 JSON 一起发出来，比截图更容易定位。
-- **EXE 更新**：备份数据，退出旧启动器，再运行新版 EXE。新版数据默认在 **EXE 同目录的 `FRAME-Canvas-R10-Data`**；空目录首次启动时会尝试复制相邻 R9 数据目录；其他旧版本请使用启动器「迁移旧数据」或导入项目备份。旧目录保留。
+- **EXE 更新**：备份数据，退出旧启动器，再运行新版 EXE。新版数据默认在 **EXE 同目录的 `FRAME-Canvas-R11-Data`**；空目录首次启动时会尝试复制相邻 R10/R9 数据目录；其他旧版本请使用启动器「迁移旧数据」或导入项目备份。旧目录保留。
 - **源码更新与迁移**：[安装、更新与数据](docs/install-and-data.md)。源码版默认数据在程序目录的 `data/`。
 - **反馈问题**：[提交 Issue](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/issues/new/choose)，说明版本、操作步骤和现象；不要上传 API Key 或私人项目。
 
@@ -143,7 +124,7 @@ python -m pip install Pillow==12.3.0
 python server.py
 ```
 
-直接运行 `python server.py` 后打开 `http://127.0.0.1:8845`；`Start-Windows.bat` 使用端口 **8828**；EXE 启动器使用 **8848** 并自动打开浏览器。端口可通过 `--port` 参数指定。
+直接运行 `python server.py` 后打开 `http://127.0.0.1:8845`；`Start-Windows.bat` 使用端口 **8828**；EXE 启动器使用 **8851** 并自动打开浏览器。端口可通过 `--port` 参数指定。
 
 ```bash
 python -m unittest discover -s tests -v
