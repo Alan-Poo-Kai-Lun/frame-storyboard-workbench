@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "node build.cjs",
+    "typecheck": "tsc --allowJs --checkJs --noEmit --strict --target ES2022 --module ESNext asset-groups.js node-geometry.js"
   },
   "keywords": [],
   "author": "",
@@ -15,5 +16,8 @@
     "esbuild": "0.25.11",
     "react": "19.1.1",
     "react-dom": "19.1.1"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
   }
 }

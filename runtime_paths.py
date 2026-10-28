@@ -2,15 +2,15 @@
 import json,os,shutil,sys,tempfile,time
 from pathlib import Path
 
-DATA_FOLDER='FRAME-Canvas-R11-Data'
-LEGACY_FOLDERS=('FRAME-Canvas-R10-Data','FRAME-Canvas-R9-Data')
-LEGACY_HOMES=('FRAME-Canvas-R10','FRAME-Canvas-R9')
+DATA_FOLDER='FRAME-Canvas-R12-Data'
+LEGACY_FOLDERS=('FRAME-Canvas-R11-Data','FRAME-Canvas-R10-Data','FRAME-Canvas-R9-Data')
+LEGACY_HOMES=('FRAME-Canvas-R11','FRAME-Canvas-R10','FRAME-Canvas-R9')
 _resolved=None
 
 def configure_temp():
  """Keep application-owned temporary files on the requested D drive."""
  if sys.platform!='win32':return
- folder=Path(r'D:\Codex\FRAME\FRAME-Canvas-R11\temp')
+ folder=Path(r'D:\Codex\FRAME\FRAME-Canvas-R12\temp')
  folder.mkdir(parents=True,exist_ok=True)
  os.environ['TEMP']=os.environ['TMP']=str(folder)
  tempfile.tempdir=str(folder)

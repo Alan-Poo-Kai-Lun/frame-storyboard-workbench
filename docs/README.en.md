@@ -1,18 +1,12 @@
-# FRAME Storyboard Workbench
+# FRAME Storyboard Workbench · Canvas R12
 
-**Windows · V3.38 · Canvas R11**　[中文](../README.md)
+[中文](../README.md)
 
-## R11 changes
+Real project assets are grouped by character, scene, and props/audio. Category frames move their children and collapse without removing references. Material-to-shot Bezier connections synchronize stable asset IDs, typed media bindings and the compiled prompt, with undo/redo.
 
-Whole-story planning now includes typed image, audio and video references and preserves stable media bindings through preview and application. Audio/video context uses existing descriptions or analysis; a mention does not mean that a model watched or heard the file.
+This repository now contains the R12 source, including final-prompt and node-size fixes. Published Windows binaries remain identified by their release tags. Run the independent R12 EXE on port 8852. Data uses FRAME-Canvas-R12-Data beside the EXE; old data can be copied into an empty R12 directory without replacing the source. Back up projects before testing.
 
-Both layouts have an Auto Align button. A segment and all its shots stay in one horizontal row. Collapsed groups shrink to a header, and group + / − resize their contents. Layout changes support undo.
-
-## 1. Downloads and data
-
-[Windows EXE](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.38-canvas-r11/FRAME-Workbench-Windows-x64-v3.38-canvas-r11.exe) · [Python runtime/update ZIP](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/download/v3.38-canvas-r11/FRAME-Storyboard-Workbench-v3.38-canvas-r11.zip) · [Release and checksums](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases/tag/v3.38-canvas-r11) · [Full development source](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/archive/refs/tags/v3.38-canvas-r11.zip)
-
-Keep the launcher open. The EXE uses local port **8851** and stores data in `FRAME-Canvas-R11-Data` beside the EXE. An empty directory may copy adjacent R10/R9 data once, preserving the original. Project backup import is also available. Back up your projects and try this build in a separate folder. The current Windows build requires a writable D: drive for temporary runtime files.
+The source ZIP includes tests and compiled frontend assets, without personal data or node_modules. npm run typecheck strictly checks the new JS/JSDoc grouping module; the legacy dynamic JSX interface is covered by production compilation and browser regressions, not a full TypeScript type check.
 
 ## 2. Try it once without configuring AI
 
@@ -101,7 +95,7 @@ The workbench now uses one canvas / card-flow editor; the separate "detailed edi
 
 - **Won't open, port in use, or black media**: see [FAQ](faq.md). Do not delete the data folder first.
 - **Something went wrong?** Use **Tools ▾ → Export diagnostics** and attach the JSON — it is far easier to act on than a screenshot.
-- **Updating the EXE**: back up your data, quit the old launcher, run the new EXE. The new build keeps data in **`FRAME-Canvas-R11-Data` next to the EXE**; an empty data directory can copy adjacent R9 data on first launch. For other versions, use the launcher migration option or import a project backup. Old directories are preserved.
+- **Updating the EXE**: back up your data, quit the old launcher, run the new EXE. The new build keeps data in **`FRAME-Canvas-R12-Data` next to the EXE**; an empty data directory can copy adjacent R9 data on first launch. For other versions, use the launcher migration option or import a project backup. Old directories are preserved.
 - **Source updates and migration**: [Install, update and data](install-and-data.md). A source copy keeps its data in `data/` next to the program.
 - **Reporting**: [open an issue](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/issues/new/choose) with version, steps and what happened. Never attach API keys or private projects.
 
@@ -115,7 +109,7 @@ python -m pip install Pillow==12.3.0
 python server.py
 ```
 
-`python server.py` uses `http://127.0.0.1:8845`; `Start-Windows.bat` uses **8828**. The EXE launcher uses **8851** and opens the browser. The `--port` argument overrides the port.
+`python server.py` uses `http://127.0.0.1:8845`; `Start-Windows.bat` uses **8828**. The EXE launcher uses **8852** and opens the browser. The `--port` argument overrides the port.
 
 ```bash
 python -m unittest discover -s tests -v

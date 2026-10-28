@@ -143,3 +143,28 @@
 /* R11 compact folded frames. */
 #frameFlowRoot .rfa-group.rfa-collapsed>header{flex-wrap:nowrap;height:60px;box-sizing:border-box}
 #frameFlowRoot .rfa-group.rfa-collapsed>header strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+
+/* Asset groups are a view over existing IDs; category colour stays subordinate to the theme. */
+#frameFlowRoot .rfa-group[data-asset-category]{--rfa-category:#2dd4bf;border-color:color-mix(in srgb,var(--rfa-category) 45%,var(--rfa-line));background:color-mix(in srgb,var(--rfa-category) 5%,var(--rfa-group-bg,var(--rfa-node)))}
+#frameFlowRoot .rfa-group[data-asset-category="character"]{--rfa-category:#c084fc}
+#frameFlowRoot .rfa-group[data-asset-category="scene"]{--rfa-category:#fbbf24}
+#frameFlowRoot .rfa-group[data-asset-category]>header{background:color-mix(in srgb,var(--rfa-category) 9%,var(--rfa-group-head,var(--rfa-node)))}
+#frameFlowRoot .rfa-group[data-asset-category]>header strong:before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:7px;background:var(--rfa-category)}
+#frameFlowRoot .rfa-collapsed[data-asset-category]>header button:not(:first-of-type){display:none}
+
+#frameFlowRoot .rfa-prompt .rfa-inline-fields textarea{min-height:560px;max-height:760px;resize:vertical;font-family:ui-monospace,monospace;font-size:var(--rfa-body-size)}
+#frameFlowRoot .rfa-prompt>header{border-left:3px solid var(--rfa-accent)}
+
+/* Explicit geometry keeps handles on the outside and scrolls content on the inside. */
+#frameFlowRoot .rfa-sized-node>.rfa-card{height:100%;box-sizing:border-box;display:flex;flex-direction:column}
+#frameFlowRoot .rfa-sized-node>.rfa-card>header,#frameFlowRoot .rfa-sized-node>.rfa-card>footer,#frameFlowRoot .rfa-sized-node>.rfa-card>.rfa-actions,#frameFlowRoot .rfa-sized-node>.rfa-card>p{flex-shrink:0}
+#frameFlowRoot .rfa-sized-node>.rfa-shot>.rfa-shot-preview{flex:none;height:150px}
+#frameFlowRoot .rfa-sized-node>.rfa-shot>.rfa-shot-fields,#frameFlowRoot .rfa-sized-node>.rfa-segment>.rfa-inline-fields:not(.rfa-generation),#frameFlowRoot .rfa-sized-node>.rfa-prompt>.rfa-inline-fields,#frameFlowRoot .rfa-sized-node>.rfa-result>.flow-result-versions{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain}
+#frameFlowRoot .rfa-sized-node>.rfa-segment>.rfa-generation{flex:0 1 auto;min-height:45px;max-height:40%;overflow:auto}
+#frameFlowRoot .rfa-sized-node>.rfa-prompt .rfa-edit-label{display:flex;flex:1;min-height:0;flex-direction:column}
+#frameFlowRoot .rfa-sized-node>.rfa-prompt .rfa-inline-fields textarea{flex:1;min-height:140px;height:100%;max-height:none}
+#frameFlowRoot .rfa-sized-node>.flow-note>textarea{flex:1;min-height:0}
+.flow-node-geometry{padding:12px;margin-bottom:18px;border:1px solid var(--line);border-radius:9px}
+.flow-node-geometry h3{margin:0 0 8px}.flow-node-geometry p{margin:0 0 12px;overflow-wrap:anywhere}
+.flow-node-geometry label{display:grid;grid-template-columns:1fr 92px;gap:7px;margin-top:12px;align-items:center}
+.flow-node-geometry output{text-align:right}.flow-node-geometry input[type=range]{width:100%;min-width:0}.flow-node-geometry input[type=number]{width:92px;min-width:0;padding:6px;box-sizing:border-box}

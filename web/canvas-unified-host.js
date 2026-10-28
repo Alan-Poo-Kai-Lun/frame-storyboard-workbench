@@ -28,6 +28,9 @@
   project:()=>P,layout:()=>B().flowLayout(),saveLayout:v=>B().saveFlowLayout(v),appearance:()=>B().appearance(),setAppearance:v=>B().setAppearance(v),
   text:(v,s)=>frameOverviewEditor.scopedText(String(v||''),s),media:a=>mediaSource(typeof a==='string'?a:a?.path)||'',mediaType:a=>assetMediaType(a),number:a=>assetNumber(a),scoped:s=>allScopedAssets(s),imageScoped:s=>availableAssets(s),
   fieldValue:(id,key)=>frameOverviewEditor.fieldValue(B().descriptor(id),key),mode:s=>segmentMode(s),modes:()=>GENERATION_MODES.slice(0,4),imageInputs:s=>[...new Map([...allScopedAssets(s).filter(a=>assetMediaType(a)==='image').map(a=>[a.path,a.name]),...s.shots.flatMap(h=>['image','firstFrame','lastFrame'].filter(k=>h[k]).map(k=>[h[k],'镜头图片 · '+k]))])],descriptor:id=>B().descriptor(id),currentSegment:()=>B().currentSegment(),select:id=>B().select(id,true),edit:(id,fields,expected)=>B().editFields(id,fields,expected),
+  compiledPrompt:async segmentId=>{await B().flush();return (await api('compiled-prompt',{projectId:P.projectId,segmentId})).prompt||''},
+  copyPrompt:async(segmentId,text)=>{try{const value=text??await window.frameFlowHost.compiledPrompt(segmentId);await navigator.clipboard.writeText(value);toast('已复制最终提示词')}catch(error){toast(error.message);throw error}},
+  bindAsset:async(assetId,segmentId,shotId)=>prepared(async()=>{await frameFlowOperations.bindAsset(assetId,segmentId,shotId);await B().resync('h:'+segmentId+':'+shotId)}),
   command:async(id,cmd)=>{await B().command(id,cmd);emit()},upload:async(files,target)=>{await B().uploadFiles(files,target);emit()},
   uploadResults:async(files,target)=>{await B().uploadResults(files,target);emit()},
   agent:async id=>prepared(()=>frameAgent.open(B().descriptor(id||'project'))),aiSplit,
@@ -42,6 +45,21 @@
   undoTime:()=>frameFlowOperations.undoTime,undoLabel:()=>frameFlowOperations.undoLabel,remove:async ids=>prepared(async()=>{await frameFlowOperations.remove(ids);await B().resync()}),undo:async()=>prepared(async()=>{const label=await frameFlowOperations.undo();await B().resync();toast(label?'已撤销：'+label:'已撤销')}),redo:async()=>prepared(async()=>{const label=await frameFlowOperations.redo();await B().resync();toast(label?'已重做：'+label:'已重做')}),
   saveProject:()=>B().flush(),close:mode=>app?.setMode(mode||'canvas'),
  };
+ // Size controls target the live React Flow node; legacy canvas dimensions are not touched.
+ let geometryFrame=0;
+ function syncGeometryPanel(){
+  geometryFrame=0;if(!active||!app)return;const settings=dialog?.querySelector('.canvasSettings');if(!settings)return;
+  for(const old of settings.querySelectorAll('[data-asset-size]')){old.closest('label').hidden=true;const previous=old.closest('label').previousElementSibling;if(previous?.tagName==='P'&&/素材节点|当前素材/.test(previous.textContent))previous.hidden=true}
+  let panel=settings.querySelector('[data-flow-geometry]');
+  if(!panel){panel=document.createElement('section');panel.dataset.flowGeometry='';panel.className='flow-node-geometry';panel.innerHTML='<h3>当前节点尺寸</h3><p data-geometry-title></p>'+['width','height'].map((key,i)=>'<label>'+ (i?'高度':'宽度') +' <output data-geometry-output="'+key+'"></output><input type="range" aria-label="节点'+(i?'高度':'宽度')+'滑块" data-flow-size="'+key+'"><input type="number" aria-label="节点'+(i?'高度':'宽度')+'" data-flow-size="'+key+'" step="1"></label>').join('');settings.prepend(panel);
+   for(const input of panel.querySelectorAll('[data-flow-size]')){input.onfocus=()=>{const n=app.nodeSize();if(n&&!n.disabled)app.startResize(n.id)};input.onpointerdown=input.onfocus;input.oninput=()=>{const n=app.nodeSize(),value=input.valueAsNumber;if(n&&!n.disabled&&Number.isFinite(value)&&value>=n[input.dataset.flowSize==='width'?'minWidth':'minHeight'])app.setNodeSize(n.id,{[input.dataset.flowSize]:value})};input.onchange=()=>app.endResize();input.onblur=()=>app.endResize();input.onpointerup=()=>app.endResize()}
+  }
+  const n=app.nodeSize(),title=n?('当前：'+n.title+(n.disabled?'（展开容器后调整）':'')):'请先点击要调整的卡片或容器';const caption=panel.querySelector('[data-geometry-title]');if(caption.textContent!==title)caption.textContent=title;
+  for(const input of panel.querySelectorAll('[data-flow-size]')){const key=input.dataset.flowSize,value=n?.[key]||0,min=n?.[key==='width'?'minWidth':'minHeight']||100;input.disabled=!n||n.disabled;input.min=String(min);input.max=String(Math.max(4000,min+100,value));if(document.activeElement!==input&&input.value!==String(value))input.value=String(value);const out=panel.querySelector('[data-geometry-output="'+key+'"]'),label=n?value+' px':'—';if(out.textContent!==label)out.textContent=label}
+ }
+ function queueGeometryPanel(){if(!geometryFrame)geometryFrame=requestAnimationFrame(syncGeometryPanel)}
+ window.addEventListener('frame:node-geometry',queueGeometryPanel);
+ const geometryObserver=new MutationObserver(queueGeometryPanel);geometryObserver.observe(document.getElementById('overviewDialog')||document.body,{childList:true,subtree:true});
  const editing=e=>!!e.target?.closest('input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=file]):not([type=range]):not([type=color]),textarea,select,[contenteditable=true],.mentionMirror');
  document.addEventListener('click',e=>{const mode=e.target.closest('[data-flow-mode]');if(mode){e.preventDefault();e.stopImmediatePropagation();mode.closest('details').open=false;safe(()=>open(mode.dataset.flowMode));return}const target=e.target.closest('[data-canvas-home],[data-creator-library],[data-visual-library]');if(active&&target&&!target._flowProceed){e.preventDefault();e.stopImmediatePropagation();safe(async()=>{if(!await app.commitAll())return;await app.save();await B().flush();app.suspend();target._flowProceed=true;try{target.click()}finally{target._flowProceed=false}});return}if(e.target.closest('#cardFlowEntry,[data-cardflow-open]')){e.preventDefault();e.stopImmediatePropagation();safe(()=>open('canvas'))}},true);
  document.addEventListener('keydown',e=>{if(!active||editing(e)||e.isComposing||document.querySelector('#modal[open],#imageViewer[open]'))return;const mod=e.ctrlKey||e.metaKey;if(mod&&e.key.toLowerCase()==='c'&&window.getSelection()?.toString())return;

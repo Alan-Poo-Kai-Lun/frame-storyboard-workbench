@@ -38,7 +38,7 @@ def main():
       if process.poll() is not None:raise RuntimeError((work/'server.log').read_text('utf-8'))
       time.sleep(.1)
     else:raise RuntimeError('Isolated HTTP server did not become ready')
-    subprocess.run(['node',str(ROOT/'tests/r11-browser.cjs')],cwd=ROOT,env=env,check=True,timeout=180)
+    subprocess.run(['node',str(ROOT/'tests/r12-browser.cjs')],cwd=ROOT,env=env,check=True,timeout=180)
    finally:
     if os.name=='nt' and os.environ.get('FRAME_QA_EXE'):subprocess.run(['taskkill','/PID',str(process.pid),'/T','/F'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
     else:process.terminate()

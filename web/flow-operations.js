@@ -55,6 +55,18 @@ window.frameFlowOperations=(()=>{
   for(const s of next.segments){s.videos=(s.videos||[]).filter(v=>!targets.has('v:'+s.id+':'+v.id));const remain=s.shots.filter(h=>!targets.has('h:'+s.id+':'+h.id));if(remain.length!==s.shots.length){s.shotHistory=[...(s.shotHistory||[]),{id:uid(),createdAt:new Date().toISOString(),reason:'画布删除镜头前',shots:clone(s.shots),duration:s.duration,prompt:s.prompt||''}].slice(-50);s.shots=remain;s.prompt=(await api('rebuild',{...s,assetReferences:next.assets.filter(a=>!a.deleted&&assetMediaType(a)==='image'&&(a.scope!=='segment'||a.segmentId===s.id)).map(a=>({index:a.pictureNumber,name:a.name,kind:a.kind,description:a.description||''}))})).prompt}}
   const flow=next.overviewLayout?.unifiedFlow;if(flow?.notes)flow.notes=flow.notes.filter(n=>!targets.has('t:'+n.id));if(P!==original)throw Error('项目已改变，删除取消');P=next;changed();window.frameCardFlow?.refresh();try{await flush()}catch(e){P=original;changed();window.frameCardFlow?.refresh();throw e}frameUndo.commit();render();
  }
+ async function bindAsset(assetId,segmentId,shotId){
+  const original=P,next=clone(P),asset=next.assets.find(a=>a.id===assetId&&!a.deleted),segment=next.segments.find(s=>s.id===segmentId),shot=segment?.shots.find(h=>h.id===shotId);
+  if(!asset||!shot)throw Error('素材或镜头已删除');if(asset.scope==='segment'&&asset.segmentId!==segment.id)throw Error('素材属于其他片段，不能绑定');
+  const type=assetMediaType(asset),image=type==='image',field=image?'action':'sound',number=image?assetNumber(asset):next.assets.filter(a=>!a.deleted&&assetMediaType(a)===type).findIndex(a=>a.id===asset.id)+1,label=(image?'Picture':type==='audio'?'Audio':'Video')+' '+number;
+  shot.assetIds=[...new Set([...(shot.assetIds||[]),asset.id])];
+  if(image)shot.referenceNumbers=[...new Set([...(shot.referenceNumbers||[]),number])];else shot.mediaAssetIds=[...new Set([...(shot.mediaAssetIds||[]),asset.id])];
+  const token=image?'@'+label:'参考 <'+label+'>（'+asset.name+'）';if(!String(shot[field]||'').includes(label))shot[field]=(shot[field]?shot[field]+'\n':'')+token;
+  segment.prompt=(await api('rebuild',{...segment,defaultDialogueLanguage:segment.dialogueLanguage??next.dialogueLanguage??'',assetReferences:next.assets.filter(a=>!a.deleted&&assetMediaType(a)==='image'&&(a.scope!=='segment'||a.segmentId===segment.id)).map(a=>({index:assetNumber(a),name:a.name,kind:a.kind,description:a.description||''}))})).prompt;
+  if(P!==original)throw Error('项目已切换，绑定取消');frameUndo.push('绑定素材');P=next;changed();
+  try{await flush();frameUndo.commit()}catch(error){P=original;changed();frameUndo.drop();throw error}
+  render();window.frameCardFlow?.refresh();return true;
+ }
  async function replace(id,fn){
   const original=P,before=clone(P);if(!P.assets.some(a=>a.id===id&&!a.deleted))throw Error('目标素材已删除');frameUndo.push('替换素材',before);
   try{await fn();if(P!==original)throw Error('项目已切换，替换未记录到其他项目');await flush();frameUndo.commit()}
@@ -70,7 +82,7 @@ window.frameFlowOperations=(()=>{
   try{await flush()}catch(e){P=now;changed();throw e}
   render();window.frameCardFlow?.refresh();return result.label
  }
- return {capture,encode,decode,write,read,paste,remove,replace,undo,redo,get undoTime(){return frameUndo.time||0},get undoLabel(){return frameUndo.label||''},async note(text){const d={format:FORMAT,version:1,projectId:P.projectId,explicit:[],assets:[],segments:[],shots:[],notes:[{text}],media:{}};return paste(d)}};
+ return {capture,encode,decode,write,read,paste,remove,replace,bindAsset,undo,redo,get undoTime(){return frameUndo.time||0},get undoLabel(){return frameUndo.label||''},async note(text){const d={format:FORMAT,version:1,projectId:P.projectId,explicit:[],assets:[],segments:[],shots:[],notes:[{text}],media:{}};return paste(d)}};
 })();
 
 const frameBaseReplaceAssetImage=replaceAssetImage;replaceAssetImage=(id,file)=>frameFlowOperations.replace(id,()=>frameBaseReplaceAssetImage(id,file));

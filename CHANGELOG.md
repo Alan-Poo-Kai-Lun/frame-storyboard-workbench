@@ -1,3 +1,11 @@
+## V3.38 · Canvas R12
+
+- Group real assets by character, scene, and props/audio, with grouped dragging and collapse.
+- Synchronize material-to-shot connections with stable asset bindings.
+- Restore the final H3 prompt node after each segment's last shot.
+- Resize business cards through Settings sliders, numeric inputs or corner handles; preserve layout and undo.
+- Rewrite the README around user-provided actual workbench screenshots.
+
 ## V3.38 · Canvas R11 — 2026-10-27
 
 - 整篇剧情规划支持 @ 音频、视频，预览和应用保留稳定素材绑定。
