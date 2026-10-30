@@ -83,6 +83,7 @@ await cat.locator(':scope > header').getByRole('button',{name:'折叠',exact:tru
 // Bind an image not previously in shot 1 by dragging its real Handle.
 const link=await p.evaluate(async()=>{const s=P.segments[0],h=s.shots[0],a=P.assets.find(a=>!a.deleted&&assetMediaType(a)==='image');h.action='站在门口';h.camera='固定中景';h.assetIds=[];h.referenceNumbers=[];changed();await flush();render();return {aid:a.id,sid:s.id,hid:h.id}});
 await p.evaluate(()=>frameCardFlow.app.setMode('canvas'));await p.getByRole('button',{name:'展开全部镜头',exact:true}).click();await p.getByRole('button',{name:'自动对齐',exact:true}).click();await p.waitForTimeout(200);
+await p.evaluate(()=>frameCardFlow.app.commitAll());await p.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
 const targetId='h:'+link.sid+':'+link.hid;
 await p.evaluate(({aid,targetId})=>{const s=frameCardFlow.app.getState(),a=s.nodes.find(n=>n.id==='a:'+aid),h=s.nodes.find(n=>n.id===targetId);const w=n=>{let x=n.position.x,y=n.position.y;while(n.parentId){n=s.nodes.find(v=>v.id===n.parentId);x+=n.position.x;y+=n.position.y}return{x,y}};const x=w(a),y=w(h);s.instance.setCenter((x.x+y.x+350)/2,(x.y+y.y+600)/2,{zoom:.55})},{aid:link.aid,targetId});await p.waitForTimeout(200);
 const sourceHandle=p.locator('[data-rfa-id="a:'+link.aid+'"] .react-flow__handle-right'),targetHandle=p.locator('[data-rfa-id="'+targetId+'"] .react-flow__handle-left');let sb=await sourceHandle.boundingBox(),tb=await targetHandle.boundingBox();assert(sb&&tb);
