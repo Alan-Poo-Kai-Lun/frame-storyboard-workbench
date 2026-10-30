@@ -6,6 +6,7 @@
 
 Local delivery on October 30; GitHub synchronization on October 31, 2026.
 
+- GitHub verification fixes preserve hovered connections across refreshes and finish pending project saves before saving the latest canvas dimensions.
 - Add direct asset context-menu access to description analysis and reverse prompting.
 - Open analysis drafts/history from task results and preserve readable reverse results independently of deleted sources.
 - Fix duplicate global-note scrollbars; independently resize the Agent input.
