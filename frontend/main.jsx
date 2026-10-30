@@ -176,7 +176,7 @@ function App({H,nav,expose}){
   m.coordinateVersion=3;
 
   const live=new Set(list.map(n=>n.id));m.checked=new Set([...m.checked].filter(id=>live.has(id)));
-  m.nodes=list;m.edges=links;setNodes(list);setEdges(links);
+  m.nodes=list;m.edges=links;setNodes(list);hover(list.some(n=>n.id===m.hover)?m.hover:'');
   const markup=[...markers.values()].map(mk=>'<marker id="'+mk.id+'" '+MARKER_BOX+'>'+arrowShape(mk.type,mk.color)+'</marker>').join('');
   m.markerMarkup=markup;setMarkerMarkup(markup);
   update();applyAppearance();notifyGeometry();
