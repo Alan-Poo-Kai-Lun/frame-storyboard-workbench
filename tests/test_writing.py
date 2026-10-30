@@ -16,7 +16,9 @@ class WritingChecks(unittest.TestCase):
   server.save_settings({'ai':{'provider':'openai','endpoint':'http://127.0.0.1:1/v1','model':'mock','key':''}})
   body={'projectId':self.p['projectId'],'story':'第一段：两人在赌场对峙。\n第二段：动手。','count':2,'duration':15,
         'outputLanguage':'zh','dialogueLanguage':'Mandarin','continuity':True,'guideFromPrev':False,'assetRoles':{}}
-  row=writing.enqueue(server,body)
+  # Input-history coverage must not launch a model worker during fixture cleanup.
+  with patch('task_backend.threading.Thread.start'):
+   row=writing.enqueue(server,body)
   got=writing.task_input(server,row['id'])
   self.assertEqual(got['story'],body['story']);self.assertEqual(got['count'],2);self.assertTrue(got['createdAt'])
   self.assertEqual(writing.task_input(server)['taskId'],row['id'])
