@@ -2,6 +2,16 @@ import copy,io,json,unittest,zipfile
 import server,agent_backend as agent,writing_backend as writing
 import test_generation as gen
 
+def setUpModule():
+ import sys
+ from pathlib import Path
+ sys.path.insert(0,str(Path(__file__).parent))
+ import _tempdata;_tempdata.start()
+
+def tearDownModule():
+ import _tempdata;_tempdata.stop()
+
+
 class MediaReferenceChecks(unittest.TestCase):
  def project(self):return gen.GenerationChecks().project()
  def test_agent_inventory_reports_existing_media_without_claiming_analysis(self):

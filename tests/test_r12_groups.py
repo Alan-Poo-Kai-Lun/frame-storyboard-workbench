@@ -2,6 +2,16 @@ import copy,io,json,unittest,zipfile
 import test_generation as gen
 import server
 
+def setUpModule():
+ import sys
+ from pathlib import Path
+ sys.path.insert(0,str(Path(__file__).parent))
+ import _tempdata;_tempdata.start()
+
+def tearDownModule():
+ import _tempdata;_tempdata.stop()
+
+
 class GroupCompatibilityChecks(unittest.TestCase):
  def project(self):return gen.GenerationChecks().project()
  def test_group_view_does_not_change_director_pack_or_timeline(self):

@@ -3,6 +3,16 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
 import server
 
+def setUpModule():
+ import sys
+ from pathlib import Path
+ sys.path.insert(0,str(Path(__file__).parent))
+ import _tempdata;_tempdata.start()
+
+def tearDownModule():
+ import _tempdata;_tempdata.stop()
+
+
 class DialogueLanguageChecks(unittest.TestCase):
  def project(self):
   return {'version':1,'projectId':'lang-project','title':'语言校验','dialogueLanguage':'中文','segments':[{'id':'seg1','title':'片段 01','duration':15,'prompt':'','shots':[

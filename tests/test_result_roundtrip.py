@@ -1,6 +1,16 @@
-import base64,copy,unittest
+import base64,copy,unittest,io,json,zipfile
 import server
 import test_generation as gen
+
+def setUpModule():
+ import sys
+ from pathlib import Path
+ sys.path.insert(0,str(Path(__file__).parent))
+ import _tempdata;_tempdata.start()
+
+def tearDownModule():
+ import _tempdata;_tempdata.stop()
+
 
 class ResultRoundtripChecks(unittest.TestCase):
  def test_clip_versions_shot_links_and_fields_survive_director_pack(self):
@@ -9,7 +19,13 @@ class ResultRoundtripChecks(unittest.TestCase):
   rows=[{'id':'result-'+str(i),'path':'extra/segment_videos/result-'+str(i)+'.mp4','mime':'video/mp4','shotId':h['id'],'title':'版本'+str(i),'name':'result.mp4','note':'保留备注'} for i in range(2)]
   s['videos']=copy.deepcopy(rows)
   for v in rows:p['media'][v['path']]=base64.b64encode(b'\0\0\0\x18ftypmp42'+b'\0'*32).decode()
-  restored=server.readzip(server.export_pack(p,force=True));out=restored['segments'][0]
+  blob=server.export_pack(p,force=True)
+  with zipfile.ZipFile(io.BytesIO(blob)) as z:
+   inventory=json.loads(z.read('extra/finished_inventory.json'))
+   self.assertEqual(len(inventory['segments'][0]['videos']),2)
+   for row in inventory['segments'][0]['videos']:self.assertIn(row['path'],z.namelist())
+   self.assertNotIn(rows[0]['id'],z.read('extra/reference_inventory.json').decode())
+  restored=server.readzip(blob);out=restored['segments'][0]
   # Director packs deliberately rewrite media paths. Links, version metadata
   # and the bytes at those rewritten paths must survive.
   self.assertEqual([{k:v for k,v in row.items() if k!='path'} for row in out['videos']], [{k:v for k,v in row.items() if k!='path'} for row in rows])

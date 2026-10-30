@@ -92,7 +92,11 @@ def update_asset(data,body):
     store=_store(data)
     if body.get('revision')!=store['revision']:raise ValueError('素材库已在其他窗口修改，请刷新后重试')
     key=body.get('id');old=next((r for r in store['items'] if r['id']==key),None);action=body.get('action','save')
-    if action=='category':
+    if action=='reorder':
+        ids=body.get('ids',[])
+        if not isinstance(ids,list) or len(ids)!=len(store['items']) or set(ids)!={r['id'] for r in store['items']}:raise ValueError('排序条目已变化，请刷新')
+        rows={r['id']:r for r in store['items']};store['items']=[rows[i] for i in ids]
+    elif action=='category':
         name=_text(body.get('name'),'分类名称',60);replacement=_text(body.get('newName',name),'分类名称',60)
         if body.get('remove'):replacement='未分类'
         store['categories']=[r for r in store['categories'] if r!=name]
@@ -107,13 +111,14 @@ def update_asset(data,body):
     elif action=='save':
         if key and not old:raise ValueError('素材已不存在')
         row={**(old or {}),'id':key or uuid.uuid4().hex,'title':_text(body.get('title'),'素材名称',100),'note':_text(body.get('note',''),'素材说明',10000,False),'category':_text(body.get('category','未分类'),'分类',60),'kind':body.get('kind','人物'),'updatedAt':time.strftime('%Y-%m-%d %H:%M:%S')}
+        row.setdefault('createdAt',time.strftime('%Y-%m-%d %H:%M:%S') if not old else '')
         row['kind']=_text(row['kind'],'素材分类',60)
         if body.get('media'):row.update(_media(data,body['media']))
         if body.get('removeMedia'):
             for field in ['mediaFile','mime','mediaType']:row.pop(field,None)
         if not row.get('mediaFile') and not row['note']:raise ValueError('请添加素材文件或填写内容说明')
         if row['category'] not in store['categories']:store['categories'].append(row['category'])
-        store['items']=[r for r in store['items'] if r['id']!=row['id']]+[row]
+        store['items']=[row if r['id']==row['id'] else r for r in store['items']] if old else store['items']+[row]
     else:raise ValueError('未知素材操作')
     store['revision']=uuid.uuid4().hex;_write(data,'asset-library.json',store);return library(data)
 

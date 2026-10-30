@@ -2,6 +2,16 @@ import base64
 import unittest
 import theme_backdrops
 
+def setUpModule():
+ import sys
+ from pathlib import Path
+ sys.path.insert(0,str(Path(__file__).parent))
+ import _tempdata;_tempdata.start()
+
+def tearDownModule():
+ import _tempdata;_tempdata.stop()
+
+
 PNG = base64.b64encode(bytes.fromhex(
     '89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000d4944415478da63f8cfc0f01f00050001ff'
     '5f1d5b6b0000000049454e44ae426082')).decode()

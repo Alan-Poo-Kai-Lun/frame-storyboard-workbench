@@ -40,7 +40,12 @@ def before_save(data,state,p):
     if previous and previous!=p['projectId'] and state.exists():
         folder=data/'projects';folder.mkdir(exist_ok=True);path=folder/(_key(previous)+'.json');temp=path.with_suffix('.tmp');temp.write_bytes(state.read_bytes());temp.replace(path)
 def after_save(data,state,p):
-    value=index(data,state);rows={r['id']:r for r in value['projects']};from project_hub import metadata
+    value=index(data,state)
+    # A save that was already in flight when the user deleted this project must not
+    # resurrect it: delete_projects moves the row to trash and clears current, so a
+    # late after_save would otherwise push the row straight back into projects.
+    if any(row['id']==p['projectId'] for row in value.get('trash',[])):return
+    rows={r['id']:r for r in value['projects']};from project_hub import metadata
     rows[p['projectId']]={**_meta(p),**metadata(data,p)};value.update(current=p['projectId'],projects=list(rows.values()));_write(data/'projects-index.json',value)
 def listing(data,state):
     value=index(data,state);rows=[];dirty=False

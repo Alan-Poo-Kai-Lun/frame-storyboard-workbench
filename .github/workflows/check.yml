@@ -19,6 +19,12 @@ jobs:
         run: python -m pip install Pillow==12.3.0
       - name: Install video decoding dependency
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Build and type-check frontend
+        run: |
+          node --version
+          npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+          npm run build --prefix frontend
+          npm run typecheck --prefix frontend
       - name: Validate package inputs
         run: python tools/check_release.py
       - name: Structure and update tests
@@ -32,6 +38,14 @@ jobs:
           NODE_PATH: ${{ runner.temp }}/frame-ui-check/node_modules
           PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/frame-browsers
           FRAME_BROWSER: chromium
+        run: python tools/test_browser.py
+      - name: R15 feature browser checks (mock AI only)
+        env:
+          NODE_PATH: ${{ runner.temp }}/frame-ui-check/node_modules
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/frame-browsers
+          FRAME_BROWSER: chromium
+          FRAME_QA_TEST: r15-browser.cjs
+          FRAME_QA_OUTPUT: dist/r15-browser-checks.json
         run: python tools/test_browser.py
       - name: Build clean installer
         run: python tools/build_release.py

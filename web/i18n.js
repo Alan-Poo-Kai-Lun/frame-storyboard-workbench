@@ -1,6 +1,10 @@
 /* UI localization only. Never translates project values, prompts or editable content. */
 (()=>{
  const pairs=`
+导演包已保存到|Director pack saved to
+导出到指定目录失败，改用浏览器下载|Could not save to the export folder; using browser download
+已强制导出；未解决问题已附在包内。|Force-exported; unresolved issues are included in the pack.
+导演包已导出。请在 H3 导演台验证导入。|Director pack exported. Verify the import in the H3 director console.
 动效强度 / 亮度|Animation intensity / brightness
 动态主题类型|Animated theme
 深渊脉冲星环|Abyssal Pulse
@@ -1118,6 +1122,11 @@ AI 生成中文与英文副本|Generate Chinese and English copies with AI
 独立于片段|Independent of segments
 原规划片段全部存在；需要副本时请明确选择另建副本|All original segments exist; explicitly choose a copy if needed
 来源已修改：规则检查按当前内容运行；旧 AI 提醒仅供参考，可手动核对或选择深度审查。|Sources changed: checks use current content. Old AI notes are reference only; review manually or run a deep review.
+存储与清理|Storage and cleanup
+清理未引用媒体|Clean unreferenced media
+已移入回收站|Moved to trash
+没有未被引用的文件。|No unreferenced files.
+只清理所有项目（包括回收站里的项目）都不再引用的文件。如果有项目文件读不出来，会停止清理，不会猜测。|Only files no project references are cleaned, including projects in the trash. If a project file cannot be read, cleanup stops instead of guessing.
 `;
  const dict=Object.fromEntries((pairs+extra+chrome+messages+upgrade).trim().split('\n').map(line=>{const i=line.indexOf('|');return [line.slice(0,i),line.slice(i+1)]}));
  let language='zh';try{language=localStorage.getItem('frame-ui-language')==='en'?'en':'zh'}catch{}

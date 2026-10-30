@@ -5,6 +5,9 @@ ROOT=Path(__file__).resolve().parents[1]
 SECRET=re.compile(r'(?:\bsk-[A-Za-z0-9_-]{20,}|\bgh[pousr]_[A-Za-z0-9_]{20,}|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----)')
 STARTER='presets/starter-project.mmxpack.zip'
 STARTER_SHA256='2976b88232c9cd469ca0f2411c51d3d6e83d47e7d49e533a0b2ac99b6006d67a'
+SCREENSHOT=re.compile(r'docs/assets/screenshots/([A-Za-z0-9._-]+\.(?:png|jpg|jpeg))')
+# Values the program no longer uses. Release notes are history and stay as written.
+STALE=((re.compile(r'\b8787\b'),'8787'),(re.compile(r'LOCALAPPDATA%?\\FRAME\\Workbench'),'%LOCALAPPDATA%\\FRAME\\Workbench'))
 def inputs(root=ROOT):
  names=json.loads((root/'release-manifest.json').read_text('utf-8'))
  vendor=json.loads((root/'vendor-manifest.json').read_text('utf-8')).get('files',{}) if (root/'vendor-manifest.json').exists() else {}
@@ -39,7 +42,31 @@ def inputs(root=ROOT):
   if name.endswith('.json'):json.loads(raw)
  for required in ['server.py','web/index.html','version.json','LICENSE','README.md']:
   if required not in names:raise ValueError('Required file omitted: '+required)
+ # A README that points at a screenshot the package omits ships as a broken image,
+ # and the ZIP still passes every other check. Tie the two together.
+ missing=linked_screenshots(root,names)
+ if missing:raise ValueError('Markdown links an unlisted screenshot: '+'; '.join(missing))
+ stale=stale_docs(root,names)
+ if stale:raise ValueError('Current documentation repeats an outdated value: '+'; '.join(stale))
  return names
+
+def stale_docs(root,names):
+ """Docs that still describe ports or data paths the code moved away from."""
+ stale=[]
+ for name in names:
+  if not name.endswith('.md') or name.startswith('docs/release-'):continue
+  raw=(root/name).read_text('utf-8')
+  stale.extend(name+' -> '+label for pattern,label in STALE if pattern.search(raw))
+ return stale
+
+def linked_screenshots(root,names):
+ """Markdown references to documentation screenshots that the package would omit."""
+ missing=[]
+ for name in names:
+  if not name.endswith('.md'):continue
+  for ref in SCREENSHOT.findall((root/name).read_text('utf-8')):
+   if 'docs/assets/screenshots/'+ref not in names:missing.append(name+' -> '+ref)
+ return missing
 if __name__=='__main__':
  names=inputs()
  print('PASS: '+str(len(names))+' explicit runtime inputs; checksum-verified starter only; no user data or obvious credentials')

@@ -1,6 +1,7 @@
 """Install a local FRAME ZIP in place; keep data and centralize program backups."""
-import argparse,datetime,json,re,socket,sys,zipfile
+import argparse,datetime,json,re,sys,zipfile
 from pathlib import Path,PurePosixPath
+from urllib.request import urlopen
 OBSOLETE_FILES=['video_backend.py', 'enhance_backend.py', 'web/video.js', 'web/prompt-enhance.js', 'presets/Qwen21-i2i-API.json', 'presets/Qwen21-t2i-API.json', 'presets/Qwen21-workbench-profile.json', 'presets/character-prompt-defaults.json', 'presets/system_prompt_edit.txt', 'presets/system_prompt_t2i.txt', 'demo/example.mmxpack.zip']
 
 def archive_files(path):
@@ -78,13 +79,24 @@ def retire_old_modules(target):
  for name in existing:(target/name).unlink()
  return str(archive)
 
+def running_workbench():
+ """Port of a workbench server that is still serving, or 0.
+
+ The update used to probe a fixed old port, so the guard never fired and a running
+ server could be overwritten file by file.
+ """
+ for port in (8845,8828,8852):
+  try:
+   with urlopen('http://127.0.0.1:'+str(port)+'/api/bootstrap',timeout=.5) as response:
+    if json.load(response).get('appId')=='frame-storyboard-workbench':return port
+  except Exception:pass
+ return 0
+
 def main():
  parser=argparse.ArgumentParser(description='Update FRAME from a downloaded ZIP; preserve data and archive the old program.')
  parser.add_argument('package',type=Path);parser.add_argument('--target',type=Path,default=Path(__file__).resolve().parent);args=parser.parse_args()
  try:
-  with socket.socket() as probe:
-   probe.settimeout(.5)
-   if probe.connect_ex(('127.0.0.1',8787))==0:raise ValueError('请先关闭工作台服务器，再更新程序')
+  if running_workbench():raise ValueError('请先关闭工作台服务器，再更新程序')
   result=install(args.package,args.target);print('Updated to '+result['version']+'\nPrevious program: '+result['backup']+'\nProject data preserved. Restart and press Ctrl+F5.')
  except Exception as e:print('Update failed: '+str(e),file=sys.stderr);return 1
  return 0

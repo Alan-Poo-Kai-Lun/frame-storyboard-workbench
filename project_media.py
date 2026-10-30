@@ -9,9 +9,13 @@ module has to change.
 import hashlib
 import json
 import re
+import shutil
+import time
 from pathlib import Path
 
 FOLDER = 'media'
+TRASH = '.trash'
+TRASH_KEEP_DAYS = 7
 SAMPLE = 64
 _REFERENCE = re.compile(r'[0-9a-f]{64}')
 _sigs = {}
@@ -107,11 +111,100 @@ def forget(path=None):
         _sigs.pop(path, None)
 
 
-def orphans(data, project):
-    """Media files that no longer belong to the current project (reported, not deleted)."""
-    index = project.get('mediaIndex') if isinstance(project, dict) else None
-    keep = {str(v) + '.b64' for v in (index or {}).values()}
-    target_dir = Path(data) / FOLDER
-    if not target_dir.is_dir():
+def referenced(data, state):
+    """Media digests that at least one stored project still points at.
+
+    Every project file counts, including ones sitting in the trash: a restored
+    project has to find its media again. The old helper only looked at the open
+    project, which would have deleted another project's material.
+    """
+    keep = set()
+    paths = []
+    state = Path(state) if state else None
+    if state and state.is_file():
+        paths.append(state)
+    folder = Path(data) / 'projects'
+    if folder.is_dir():
+        paths.extend(sorted(folder.glob('*.json')))
+    for path in paths:
+        try:
+            payload = json.loads(path.read_text('utf-8'))
+        except (OSError, ValueError):
+            # Guessing here would delete somebody's material, so stop instead.
+            raise ValueError('项目文件无法读取，已停止清理：' + path.name)
+        if not isinstance(payload, dict):
+            continue
+        index = payload.get('mediaIndex') if isinstance(payload.get('mediaIndex'), dict) else {}
+        keep.update(value for value in index.values() if isinstance(value, str) and _REFERENCE.fullmatch(value))
+        original = payload.get('originalZipHash')
+        if isinstance(original, str) and _REFERENCE.fullmatch(original):
+            keep.add('original-' + original)
+        # A project saved before media was split out still carries the bytes inline.
+        inline = payload.get('media') if isinstance(payload.get('media'), dict) else {}
+        for value in inline.values():
+            if isinstance(value, str) and not _REFERENCE.fullmatch(value):
+                keep.add(hashlib.sha256(value.encode('utf-8')).hexdigest())
+    return keep
+
+
+def storage_report(data, state):
+    """How much of the media folder nothing points at any more."""
+    folder = Path(data) / FOLDER
+    files = [item for item in folder.iterdir() if item.is_file()] if folder.is_dir() else []
+    keep = referenced(data, state)
+    orphans = [item for item in files if item.stem not in keep and not item.name.startswith('.')]
+    trash = folder / TRASH
+    trashed = [item for item in trash.rglob('*.b64') if item.is_file()] if trash.is_dir() else []
+    return {'files': len(files), 'bytes': sum(_size(item) for item in files),
+            'orphans': len(orphans), 'orphanBytes': sum(_size(item) for item in orphans),
+            'orphanNames': [item.name for item in orphans],
+            'trash': len(trashed), 'trashBytes': sum(_size(item) for item in trashed),
+            'trashKeepDays': TRASH_KEEP_DAYS}
+
+
+def purge_orphans(data, state, now=None):
+    """Move unreferenced media into a dated trash folder; never delete outright."""
+    report = storage_report(data, state)
+    folder = Path(data) / FOLDER
+    target = folder / TRASH / time.strftime('%Y%m%d-%H%M%S')
+    moved = []
+    freed = 0
+    for name in report['orphanNames']:
+        source = folder / name
+        try:
+            size = _size(source)
+            target.mkdir(parents=True, exist_ok=True)
+            source.replace(target / name)
+        except OSError:
+            continue
+        moved.append(name)
+        freed += size
+    if moved:
+        (target / 'manifest.json').write_text(json.dumps(
+            {'movedAt': time.strftime('%Y-%m-%d %H:%M:%S'), 'files': moved}, ensure_ascii=False), 'utf-8')
+    prune_trash(data, now)
+    return {'moved': len(moved), 'bytes': freed, 'report': storage_report(data, state)}
+
+
+def prune_trash(data, now=None):
+    """Drop trash folders older than the keep window."""
+    folder = Path(data) / FOLDER / TRASH
+    if not folder.is_dir():
         return 0
-    return sum(1 for item in target_dir.iterdir() if item.is_file() and item.name not in keep)
+    limit = (now if now is not None else time.time()) - TRASH_KEEP_DAYS * 86400
+    removed = 0
+    for entry in folder.iterdir():
+        try:
+            if entry.is_dir() and entry.stat().st_mtime < limit:
+                shutil.rmtree(entry)
+                removed += 1
+        except OSError:
+            pass
+    return removed
+
+
+def _size(path):
+    try:
+        return path.stat().st_size
+    except OSError:
+        return 0

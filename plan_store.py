@@ -100,6 +100,12 @@ def endpoint(s,body):
    if action=='get':
     try:plan['warnings']=writing.validate_edits(s,plan,record.get('draft') or plan['segments'])['warnings']+[w for w in plan.get('warnings',[]) if isinstance(w,dict) and '说明移出' in w.get('message','')]
     except ValueError as error:plan['warnings']=[{'message':str(error)}]
+  if action=='continuity-review':
+   if not plan:raise ValueError('方案尚未解析')
+   rows=body.get('segments',[])
+   if not isinstance(rows,list) or len(json.dumps(rows))>2_000_000:raise ValueError('预览草稿无效')
+   import continuity_review
+   return continuity_review.review(rows,plan.get('references',[]),p.get('assets',[]))
   if action=='validate':
    if not plan or not plan.get('segments'):raise ValueError('结果尚未解析，请先重新解析已有输出')
    checked=writing.validate_edits(s,plan,body.get('segments',[]));return {'plan':checked,'warnings':checked.get('warnings',[])}

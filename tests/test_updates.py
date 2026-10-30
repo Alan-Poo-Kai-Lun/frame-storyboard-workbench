@@ -53,4 +53,52 @@ class UpdateChecks(unittest.TestCase):
   self.assertFalse(update_check.release_info([row],tag)['available'])
   self.assertEqual(len(update_check.release_info([row],tag)['assets']),1)
 
+ def test_temp_folder_falls_back_instead_of_failing_the_launch(self):
+  # A requested folder that cannot be created must not raise: the frozen build used to
+  # die during import on machines without the developer's drive.
+  with tempfile.TemporaryDirectory() as folder:
+   base=Path(folder);program=base/'program';program.mkdir();blocker=base/'blocker';blocker.write_text('x',encoding='utf-8')
+   saved=tempfile.tempdir
+   try:
+    with patch.object(sys,'platform','win32'),patch.object(runtime_paths,'program_dir',return_value=program),patch.dict(os.environ,{'FRAME_TEMP_DIR':str(blocker/'temp')}):
+     runtime_paths.configure_temp()
+     self.assertEqual(Path(os.environ['TEMP']),program/'temp')
+     self.assertTrue((program/'temp').is_dir())
+   finally:tempfile.tempdir=saved
+
+ def test_legacy_folder_beside_the_exe_is_adopted_without_copying(self):
+  with tempfile.TemporaryDirectory() as folder:
+   program=Path(folder)/'program';program.mkdir()
+   legacy=program/runtime_paths.LEGACY_FOLDERS[0];legacy.mkdir();(legacy/'project.json').write_text('{"title":"原项目"}',encoding='utf-8')
+   with patch.object(sys,'frozen',True,create=True),patch.object(sys,'executable',str(program/'FRAME.exe')),patch.dict(os.environ,{},clear=True):
+    runtime_paths._resolved=None
+    try:
+     self.assertEqual(runtime_paths.data_dir(),legacy)
+     self.assertFalse((program/runtime_paths.DATA_FOLDER).exists())
+    finally:runtime_paths._resolved=None
+
+ def test_legacy_folder_inside_another_installation_is_copied_once(self):
+  with tempfile.TemporaryDirectory() as folder:
+   root=Path(folder);program=root/'new'/'program';program.mkdir(parents=True)
+   sibling=root/'new'/'FRAME-Canvas-R12'/runtime_paths.LEGACY_FOLDERS[0];sibling.mkdir(parents=True)
+   (sibling/'project.json').write_text('{"title":"旧项目"}',encoding='utf-8')
+   with patch.object(sys,'frozen',True,create=True),patch.object(sys,'executable',str(program/'FRAME.exe')),patch.dict(os.environ,{},clear=True):
+    runtime_paths._resolved=None
+    try:
+     target=runtime_paths.data_dir()
+     self.assertEqual(target,program/runtime_paths.DATA_FOLDER)
+     self.assertEqual((target/'project.json').read_text(encoding='utf-8'),'{"title":"旧项目"}')
+     self.assertTrue((sibling/'project.json').is_file())
+    finally:runtime_paths._resolved=None
+
+ def test_schema_marker_is_written_once(self):
+  with tempfile.TemporaryDirectory() as folder:
+   data=Path(folder)/'data';data.mkdir()
+   self.assertEqual(runtime_paths.schema_version(data),0)
+   self.assertEqual(runtime_paths.ensure_schema(data),runtime_paths.SCHEMA_VERSION)
+   self.assertEqual(runtime_paths.schema_version(data),runtime_paths.SCHEMA_VERSION)
+   marker=json.loads((data/runtime_paths.SCHEMA_FILE).read_text(encoding='utf-8'))
+   self.assertEqual(marker['schemaVersion'],runtime_paths.SCHEMA_VERSION)
+   self.assertEqual(runtime_paths.ensure_schema(data),runtime_paths.SCHEMA_VERSION)
+
 if __name__=='__main__':unittest.main()

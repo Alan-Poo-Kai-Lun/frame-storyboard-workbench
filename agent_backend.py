@@ -255,6 +255,12 @@ def analyze(s,cfg,snap,payload):
  system+=' 素材清单包含图片、音频和视频。available=true 表示已有文件，严禁再要求用户上传同一现有文件。音视频 analysisStatus=metadata_only 时只提供文件信息与用户说明，不得声称听过或看过。saved_actual_analysis 包含已保存的实际音轨或抽样帧分析，可引用该结果但必须标明范围与不确定项；不包含音轨或声音识别。可以把已提供的音视频作为后续H3参考条件。storyPlan 镜头可加 mediaAssetIds 数组，值只能是素材清单中音频/视频的真实id；不要把音视频写入图片 references 数字数组。'
  system+=' 必须按用户指定的段数、每段时长和对白语言生成；duration 是每段秒数，绝不是整篇总秒数。收尾说明写入上一段 summary，不得单独生成无镜头片段。reply 中的统计必须与 storyPlan 完全一致。项目对话中，若用户请求完整新分镜方案，必须返回 storyPlan={"duration":15,"continuity":true,"guideFromPrev":false,"segments":[{"title":"标题","story":"剧情","summary":"摘要","language":"Mandarin","shots":[{"start":0,"end":15,"action":"画面动作","camera":"运镜","dialogue":"原台词","sound":"音效","startState":"起始空间状态","endState":"结束空间状态","references":[]}]}]}。每段共用 duration，必须连续覆盖 0–duration；references 使用真实 Picture 稳定编号，无素材时为空。只绑定实际涉及的素材。有素材但镜头不使用它时不得编造。storyPlan 仅为待确认创建的新片段，不放进 changes，不自动应用；用户仅聊天或信息不足时可省略。reply 用可读文字概述，不得混入 JSON、tool_calls 或 raw_json。'
  system+=' 用户要求规划片段或分镜方案时，必须同时返回上述 storyPlan，不能只把镜头写在 reply。先给方案供核对、先预览表示暂不应用，不表示省略 storyPlan；预览入口需要此结构。每镜头提供 startState/endState，未明确的空间状态注明待确认。纯聊天、讨论原则或信息不足时不要创建分镜方案。'
+ # Writing skills were already loaded into the snapshot but never stated in the
+ # system prompt, so the model only saw them as inert data in the user payload.
+ rules=snap.get('rules') or []
+ if rules:
+  text='；'.join((str(item.get('name',''))+'：'+str(item.get('rules',''))[:1200]) for item in rules)[:6000]
+  system+=' 【写作技能】本次对话启用了以下项目写作技能：'+text+'。它们只决定文字风格、结构与镜头表达方式，不得覆盖工具调用、素材编号与说明、段数与时长要求、输出 JSON 结构。'
  messages=[{'role':'system','content':system},{'role':'user','content':json.dumps({'request':snap['message'],'target':snap['target'],'rules':snap['rules'],'preserveDialogue':snap['preserveDialogue'],'history':snap['history'],'assetInventory':context['assets'],'mediaAnalysis':{'rule':'只可引用 assetInventory 中已保存的实际分析；未分析素材仅有文件信息。视频仅做视觉抽样分析。视频为带时间点抽样。'},'projectSummary':{'title':context['title'],'segments':[{'id':v['id'],'title':v['title'],'duration':v['duration']} for v in context['segments']]}},ensure_ascii=False)}]
  if snap.get('image'):
   image=snap['image'];user=messages[-1]

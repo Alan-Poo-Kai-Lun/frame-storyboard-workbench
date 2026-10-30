@@ -1,125 +1,92 @@
-# FRAME Storyboard Workbench · Canvas R12
+# FRAME · AI Storyboard Workbench
 
-[中文](../README.md)
+**Keep assets, story segments, shots, notes and final prompts on one editable canvas.**
 
-Real project assets are grouped by character, scene, and props/audio. Category frames move their children and collapse without removing references. Material-to-shot Bezier connections synchronize stable asset IDs, typed media bindings and the compiled prompt, with undo/redo.
+FRAME supports planning and handoff for AI short films, ads and storyboards: organize references, plan segments, edit action/camera/dialogue/spatial states, then send prompts and director packages to external generation tools.
 
-This repository now contains the R12 source, including final-prompt and node-size fixes. Published Windows binaries remain identified by their release tags. Run the independent R12 EXE on port 8852. Data uses FRAME-Canvas-R12-Data beside the EXE; old data can be copied into an empty R12 directory without replacing the source. Back up projects before testing.
+**Windows · Local workbench · V3.41 / R15** · [中文](../README.md) · [Downloads](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases) · [Quick start](quick-start.en.md) · [Changelog](CHANGELOG.en.md)
 
-The source ZIP includes tests and compiled frontend assets, without personal data or node_modules. npm run typecheck strictly checks the new JS/JSDoc grouping module; the legacy dynamic JSX interface is covered by production compilation and browser regressions, not a full TypeScript type check.
+> Repository source and published EXEs are separate: check the exact Release tag. Updating GitHub does not replace your installed program. FRAME does not generate images or videos. AI features use your configured service; cloud requests may incur charges.
 
-## 2. Try it once without configuring AI
+## Workflow
 
-1. On the home screen, click the **"Official example"** project ("赛博修仙 v5") and create a copy when prompted.
-2. Click a **segment** to read that part of the story, then click a **shot** to see its action, dialogue and prompt.
-3. Edit one line of shot action and click away; watch the save status. Nodes can be expanded for details, and the inspector panel edits the same fields.
-4. Press `Ctrl+Z` to undo that edit, then `Ctrl+Shift+Z` to bring it back.
-5. Click the **"H3 final prompt"** node to read and copy the prompt for that segment.
-6. To keep a standalone backup, use **Project pack → Save project backup / handoff**.
+![Actual workbench: navigation and Agent, assets and shots, and inspector](assets/screenshots/workbench-overview.png)
 
-That covers the whole loop: read the story → edit a shot → undo → read the prompt → save a backup. The videos in the example are existing files; opening the example never calls a model or renders anything.
+Card and canvas modes share one React Flow engine and the same project data. Browse segments and shots on the left, organize the workflow in the middle, and edit the selected node on the right.
 
-![The workbench: shots in the middle, inspector on the right](assets/screenshots/canvas-r10.png)
+The overview is a user-supplied screenshot from October 26, 2026, not the complete R15 interface. Some controls have moved. The R15 screenshot below comes from an isolated test project. [Screenshot provenance](assets/screenshots/README.md)
 
-Screenshot from the isolated V3.38 Canvas R10 official example project; the people and locations are teaching assets. [Screenshot notes](assets/screenshots/README.md)
+### 1. Organize references and confirm descriptions
 
-## 3. Bring your own story and media
+Public and segment-specific references remain separate. Character, scene, and props/audio frames move and collapse their children together. Edit asset names and descriptions, view or replace files, and play/pause/seek audio and video within cards.
 
-Three words to know: a **segment** is a short piece of story (say 15 seconds), a **shot** is one frame inside it, and an **asset** is a reference file — a character, a location, a product.
+Right-click an asset → **AI and conversation → Analyze description / Reverse prompt**. Analysis task results open the description draft and history for confirmation. Saved reverse-prompt results remain readable after the source asset is deleted, as long as the task record has not been cleared.
 
-1. Go back to the home screen, choose **Create project**, and name it.
-2. Drag reference images onto empty canvas space to add assets. Click an asset, give it a name, describe what is actually visible, check it, then confirm.
-3. Use **+ Add segment** on the canvas to start a piece of story. Select it and write in **Story / script**; type `@` to reference an asset by name.
-4. Use **+ Add shot** next to a segment or inside its card to fill in action, dialogue and timing. If AI is configured, you can let it plan the shots first and apply after previewing.
+The reusable library supports media viewing, dropped files, pasted images, drag ordering and creation dates. Unknown dates on old entries are labelled. Agent can `@` library text without adding it to the canvas; this **does not automatically send library media to a vision model**. Generation references still need to be added and bound to the project.
 
-For example: add three assets — customer, barista, café — then write with `@`: "The customer walks into the café, the barista nods, the customer stops at the counter." Then split it into three shots: entering, greeting, replying.
+Images use a PNG clipboard item; Windows audio/video uses a file-drop clipboard format. External paste support depends on the receiving application.
 
-**Mentioning an `@` asset does not mean the AI has looked at the image.** Image analysis runs separately and needs confirmation. When you write the description yourself, the AI plans from your words. [Full tutorial for your first project](quick-start.md)
+### 2. Plan the story and review each shot
 
-The canvas is for arranging relationships freely; **Card mode** is for reading one segment at a time. Both edit the same project.
+![R15 planner: settings left, story right, fixed actions below](assets/screenshots/planner-r15.png)
 
-## 4. Making the canvas yours
+The desktop planner has adjustable settings/story columns and fixed actions. Narrow windows stack the sections. Agent input height is independently adjustable.
 
-Open the **inspector → Settings**. The first block is **Dynamic theme**:
+Set each segment's story, duration and generation mode, then edit each shot's action, camera, dialogue, language, timing and spatial start/end states. Auto-alignment, saved sizing and layout undo remain available.
 
-| I want to | Do this |
-|---|---|
-| Change the overall mood | Pick one of the ten presets (Cyber Reel, Aurora Deep, Darkroom Film…); switching crossfades |
-| Use my own image or video as a backdrop | *Backdrop & atmosphere* → choose from the backdrop list, or **Choose image / video from disk** |
-| Fewer particles, or none at all | Adjust particle density, speed and strength; pick "None" to remove them |
-| Stop the background fighting my content | Adjust **backdrop dim** and **vignette** |
-| No animation whatsoever | Tick **Advanced appearance → Reduce motion** |
+**AI continuity review** calls the configured text model and displays character identities, scene landmarks, shot states, issues and proposed changes. Selected changes update the draft first; explicit application updates the canvas. Input is story text and asset dossiers, **not inspection or acceptance testing of a rendered video**. Local rule checks and AI review are different features.
 
-Uploaded backdrops live in the **workbench-wide backdrop library**, so every project can reuse them; each file is capped at 60 MB and is not bundled into exports. Theme parameters are saved with the project. Uploaded backdrop files are not exported; copy the workbench backdrop library or select the files again when moving to another machine.
+### 3. Leave creative notes on the canvas
 
-## 5. Connecting a model (only when you want AI help)
+Right-click empty canvas → **More editing → New Markdown note**. Create multiple notes, rename, edit/preview, move and resize them. Dropping a note into a group assigns real parent membership so it moves and collapses with that group; detach it when needed. Copying, duplication, deletion, undo and redo are supported. The global project note remains, with one visible scrolling editor.
 
-Writing the story, adding shots, organising assets and saving a project never need a model. AI shot splitting, image analysis and project chat do.
+Markdown is parsed by locally bundled Marked and sanitized by DOMPurify. Common formatting and tables are supported; remote embedded media are not loaded.
 
-Open **gear → AI connection** on the home screen and choose one:
+### 4. Check final prompts and finished videos
 
-| Option | What you need |
-|---|---|
-| Local Ollama | Ollama running, the model installed, and the exact model name selected |
-| OpenAI-compatible API | The provider's endpoint, model name and API key; billing follows the provider |
+Each segment ends with an **H3 final prompt** node after its last shot. **View / Edit** opens a separate dialog with field highlighting, plain-text copying, reading and editing. Saving uses the existing timeline parser; cancelling leaves the project unchanged.
 
-Text planning needs a text model; analysing images needs a vision-capable model. Test the connection before using the features.
+Generate videos externally, then import them into the relevant shot or segment output area for playback, notes and comparison. Outputs remain separate from references.
 
-AI jobs appear in the **Task centre**. **A finished job still needs to be reviewed and applied** before it touches your project. With cloud endpoints, requests and related content are sent to the provider you configured. [Configuration and troubleshooting](faq.md#模型与拆镜)
+### 5. Save and hand off
 
-## 6. Saving the project, or handing it to a video tool
+Director-package export can include:
 
-| Your goal | Use this |
-|---|---|
-| Keep editing later, or back up | Project pack → Save project backup / handoff, which writes a `.frame.json`; import it from the home screen later |
-| Copy text into an external video tool | Copy the prompt from a shot or the final-prompt node, and prepare assets for that tool |
-| Hand it to the ComfyUI H3 director | **Export director pack** at the top, review, then download `.mmxpack.zip` |
-| Keep generated video | Drag the video into the segment's **finished video** node, play it, add notes |
+- Global/canvas notes, including group membership and layout;
+- Agent conversations and saved plan application status;
+- Story-planning inputs, parameters, drafts and saved review reports.
 
-**A director pack is not a video, and not a generic ComfyUI workflow.** The receiving side is currently [AIMixer's MiniMax H3 Director](https://github.com/AIMixer/ComfyUI_MiniMaxH3_Director): install its plugin, workflow and models separately, then use **Import director pack** inside the director. [Compatibility notes](h3-director-compatibility.md)
+`handoff/README.md` provides readable records; `handoff/records.json` contains structured data restored on import. API keys, connection settings and temporary Agent image attachments are excluded from these records. Preserving the process helps reproduce the workflow, but does not guarantee identical regenerated model output.
 
-If you have not set up the H3 director yet, just save a project backup. Exporting and importing the pack is manual today; there is no one-click ComfyUI render from inside the workbench.
+Task Center shows status, stage timing and results. Pausing only prevents new tasks being claimed; stopping tracking does not guarantee immediate cancellation of remote requests. Deliberately cleared task results may be unrecoverable unless separately archived.
 
-## More, when you need it
+## Install or update
 
-- **Project management**: search, grid/list, rename, duplicate and trash on the home screen; single click selects, double click opens.
-- **Assets and references**: type `@` to pick an asset by name, hover to preview, copy images, paste into the library, duplicate.
-- **Undo and redo**: `Ctrl+Z` / `Ctrl+Shift+Z` covering edits, deletes, replacements and pastes, up to 30 steps.
-- **AI assistance**: whole-story planning, per-segment shot splitting, writing skills, project and node chat — always preview before applying.
-- **Recovering deletions**: saved plans can restore missing segments and shots.
-- **Appearance**: day/night themes, 12 built-in presets, custom colours; glow, spotlight, junction pads and glass can be switched off, with reduced-motion support.
+1. Download the matching Windows EXE or ZIP from [Releases](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases).
+2. Back up your data and **exit the old launcher**; closing the browser does not stop the service.
+3. Place the new EXE beside existing data, or select the existing directory in the launcher. The default is `FRAME-Data`; older directories follow the existing migration mechanism.
+4. Keep the launcher open. Start with manual editing, then configure AI when needed.
 
-The workbench now uses one canvas / card-flow editor; the separate "detailed edit" page is gone. [Full changelog](../CHANGELOG.md)
+Switching interface language does not translate project content. Never commit `FRAME-Data`, private assets or credentials. [Step-by-step guide](quick-start.en.md)
 
-## Problems, backups and data
-
-- **Won't open, port in use, or black media**: see [FAQ](faq.md). Do not delete the data folder first.
-- **Something went wrong?** Use **Tools ▾ → Export diagnostics** and attach the JSON — it is far easier to act on than a screenshot.
-- **Updating the EXE**: back up your data, quit the old launcher, run the new EXE. The new build keeps data in **`FRAME-Canvas-R12-Data` next to the EXE**; an empty data directory can copy adjacent R9 data on first launch. For other versions, use the launcher migration option or import a project backup. Old directories are preserved.
-- **Source updates and migration**: [Install, update and data](install-and-data.md). A source copy keeps its data in `data/` next to the program.
-- **Reporting**: [open an issue](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/issues/new/choose) with version, steps and what happened. Never attach API keys or private projects.
-
-<details>
-<summary>Developers: running from source, tests, licensing</summary>
-
-Running from source needs Python 3.10+:
+## Develop and verify
 
 ```bash
-python -m pip install Pillow==12.3.0
+python -m pip install -r requirements.txt
 python server.py
-```
+# http://127.0.0.1:8845
 
-`python server.py` uses `http://127.0.0.1:8845`; `Start-Windows.bat` uses **8828**. The EXE launcher uses **8852** and opens the browser. The `--port` argument overrides the port.
-
-```bash
-python -m unittest discover -s tests -v
+npm ci --prefix frontend
+npm run build --prefix frontend
+npm run typecheck --prefix frontend
 python tools/check_release.py
+python -m unittest discover -s tests -v
 ```
 
-Canvas sources live in `frontend/`; after changing them run `node frontend/build.cjs` to produce `web/vendor/reactflow-a/app.js`, then refresh the hashes in `vendor-manifest.json`.
+Frontend builds refresh the local bundle, dependency notices and checksums. `typecheck` strictly checks grouping and geometry JS/JSDoc modules; the dynamic JSX interface is covered by production compilation and browser regressions, not a full TypeScript check.
 
-[Release management](releasing.md) · [Contributing](../CONTRIBUTING.md) · [Security](../SECURITY.md)
+R15 local delivery passed 205 backend tests, 59 regression checks, 30 feature checks and EXE self-tests. AI used a local mock and image clipboard construction used a stub. These checks do not establish real-model quality, rendered-video continuity or compatibility with every paste target. Check GitHub Actions and the exact Release separately for public build status.
 
-The source is public but **all rights reserved**; see [LICENSE](../LICENSE) for the actual terms, and [NOTICE](../NOTICE.md) for provenance and dependencies. Test records and historical screenshots document behaviour, not a guarantee of model output quality or compatibility with every machine.
+[Bilingual R15 release notes](release-v3.41-canvas-r15.md) · [Release process](releasing.md) · [中文更新日志](../CHANGELOG.md)
 
-</details>
+Public source does not imply an open-source license. See [LICENSE](../LICENSE) for usage and redistribution terms and [NOTICE](../NOTICE.md) for dependency provenance.

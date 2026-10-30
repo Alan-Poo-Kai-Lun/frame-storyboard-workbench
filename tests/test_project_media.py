@@ -1,6 +1,14 @@
-import copy,json,os,unittest
+import copy,hashlib,json,os,tempfile,time,unittest
 from pathlib import Path
 import server
+
+def setUpModule():
+ import sys
+ sys.path.insert(0,str(Path(__file__).parent))
+ import _tempdata;_tempdata.start()
+
+def tearDownModule():
+ import _tempdata;_tempdata.stop()
 
 PNG='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/lV4AAAAASUVORK5CYII='
 
@@ -123,3 +131,64 @@ class MediaEndpointChecks(unittest.TestCase):
    with self.assertRaises(urllib.error.HTTPError):urllib.request.urlopen(request,timeout=20)
   finally:
    service.shutdown();service.server_close();thread.join(timeout=3)
+
+
+class StorageChecks(unittest.TestCase):
+ """R13: unreferenced media is reported and moved to a trash folder, never deleted."""
+
+ def setUp(self):
+  self.tmp=tempfile.TemporaryDirectory();self.old=(server.DATA,server.STATE,server.CONFIG)
+  server.DATA=Path(self.tmp.name);server.STATE=server.DATA/'project.json';server.CONFIG=server.DATA/'settings.json'
+  import project_media
+  self.media=project_media
+
+ def tearDown(self):
+  server.DATA,server.STATE,server.CONFIG=self.old;self.tmp.cleanup()
+
+ def save(self,title,media):
+  p=server.blank_project();p['title']=title;p['media']=dict(media)
+  p['segments'][0]['shots']=[{'id':'sh1','start':0,'end':5,'action':'画面','camera':'','dialogue':'','sound':'','expression':'','image':'','locks':{}}]
+  server.save(p);return p
+
+ def test_unreferenced_media_is_reported_and_moved_to_trash(self):
+  self.save('A',{'assets/a.png':PNG})
+  folder=server.DATA/'media';stray=folder/('f'*64+'.b64');stray.write_text('AAAA','utf-8')
+  report=self.media.storage_report(server.DATA,server.STATE)
+  self.assertEqual(report['orphans'],1);self.assertEqual(report['orphanNames'],[stray.name]);self.assertGreater(report['orphanBytes'],0)
+  result=self.media.purge_orphans(server.DATA,server.STATE)
+  self.assertEqual(result['moved'],1);self.assertFalse(stray.exists())
+  self.assertTrue(list((folder/'.trash').rglob(stray.name)))
+  self.assertEqual(self.media.storage_report(server.DATA,server.STATE)['orphans'],0)
+
+ def test_cleanup_keeps_media_another_project_still_uses(self):
+  other='a'*64;(server.DATA/'media').mkdir(parents=True,exist_ok=True)
+  (server.DATA/'media'/(other+'.b64')).write_text('BBBB','utf-8')
+  archive=server.DATA/'projects';archive.mkdir(parents=True,exist_ok=True)
+  key=hashlib.sha256(b'other-project').hexdigest()
+  (archive/(key+'.json')).write_text(json.dumps({'version':1,'projectId':'other-project','title':'另一个项目','segments':[],'assets':[],'mediaIndex':{'assets/b.png':other}}),'utf-8')
+  self.save('A',{'assets/a.png':PNG})
+  self.assertEqual(self.media.storage_report(server.DATA,server.STATE)['orphans'],0)
+  self.assertEqual(self.media.purge_orphans(server.DATA,server.STATE)['moved'],0)
+
+ def test_unreadable_project_stops_cleanup(self):
+  self.save('A',{'assets/a.png':PNG})
+  (server.DATA/'projects').mkdir(parents=True,exist_ok=True)
+  (server.DATA/'projects'/'broken.json').write_text('{not json','utf-8')
+  with self.assertRaises(ValueError):self.media.storage_report(server.DATA,server.STATE)
+
+ def test_trash_is_pruned_after_the_keep_window(self):
+  folder=server.DATA/'media'/'.trash';stale=folder/'20200101-000000';stale.mkdir(parents=True)
+  (stale/'x.b64').write_text('x','utf-8')
+  aged=time.time()-8*86400;os.utime(stale,(aged,aged))
+  self.assertEqual(self.media.prune_trash(server.DATA,now=time.time()),1)
+  self.assertFalse(stale.exists())
+
+ def test_layout_keeps_the_most_recently_used_projects(self):
+  import project_layout
+  for i in range(project_layout.LIMIT):project_layout.write(server.DATA,'p%03d'%i,{'x':i})
+  project_layout.write(server.DATA,'p000',{'x':99})
+  project_layout.write(server.DATA,'one-more',{'x':1})
+  stored=project_layout.all(server.DATA)
+  self.assertEqual(len(stored),project_layout.LIMIT)
+  self.assertIn('p000',stored);self.assertEqual(stored['p000'],{'x':99})
+  self.assertNotIn('p001',stored)

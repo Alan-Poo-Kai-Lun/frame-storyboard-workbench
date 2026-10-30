@@ -175,7 +175,7 @@
 
 ## 启动与升级
 
-首次使用：解压到固定目录，如 `D:\FRAME-Workbench`，运行 `Start-Windows.bat`，打开 `http://127.0.0.1:8787`。
+首次使用：解压到固定目录，如 `D:\FRAME-Workbench`，运行 `Start-Windows.bat`，打开 `http://127.0.0.1:8828`。
 
 已有版本：关闭原工作台，将新 ZIP 拖到原目录的 `Update-Windows.bat`。更新保留 `data`，旧程序 ZIP 归档到 `versions`。重启后浏览器按 Ctrl+F5，顶部应显示 V3.7。不要每次解压到新目录，否则会读取新目录的空设置。
 

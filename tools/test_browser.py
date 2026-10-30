@@ -19,6 +19,11 @@ def main():
    def do_POST(self):
     request=json.loads(self.rfile.read(int(self.headers['Content-Length'])))
     plan={'duration':15,'segments':[{'title':f'方案 {i+1}','story':'@Picture 1 站在门口','language':'Mandarin','shots':[{'start':0,'end':15,'action':'@Picture 1 站在门口','camera':'固定中景','dialogue':'原文对白','sound':'环境声','startState':'人物在门口','endState':'人物仍在门口','references':[1]}]} for i in range(2)]}
+    system=request.get('messages',[{}])[0].get('content','')
+    if '你是影视连续性监督' in system:
+     snap=json.loads(request['messages'][1]['content']);rows=snap['segments'];states=[{'segment':i,'shot':j,'characters':'Picture 1','position':'门口','facing':'室内','posture':'站立','heldItems':'无','mainAction':h.get('action',''),'result':'停下','camera':h.get('camera',''),'uncertainties':'场景背面未知'} for i,r in enumerate(rows) for j,h in enumerate(r['shots'])]
+     plan={'summary':'本地模拟 AI 审查：核对起始站位。','characters':[{'reference':'Picture 1','name':'人物','identity':'黑衣人物','wardrobe':'黑衣','equipment':'无','uncertainties':'未发图片'}],'scenes':[{'reference':'Picture 2','name':'大厅','landmarks':'门口','axis':'同侧','uncertainties':'背面未知'}],'states':states,'issues':[{'segment':0,'shot':0,'severity':'warning','category':'空间承接','evidence':rows[0]['shots'][0].get('startState',''),'reason':'缺少朝向','suggestion':'明确面向室内'}],'changes':[{'segment':0,'shot':0,'field':'startState','before':rows[0]['shots'][0].get('startState',''),'after':'@Picture 1 站在门口，面向室内','reason':'补全朝向'}]}
+     raw=json.dumps({'choices':[{'message':{'content':json.dumps(plan,ensure_ascii=False)}}]}).encode();self.send_response(200);self.send_header('Content-Type','application/json');self.send_header('Content-Length',str(len(raw)));self.end_headers();self.wfile.write(raw);return
     whole='剧情分段导演' in request.get('messages',[{}])[0].get('content','')
     raw=json.dumps({'choices':[{'message':{'content':json.dumps(plan if whole else {'reply':'本地测试方案，请预览确认。','changes':[],'storyPlan':plan},ensure_ascii=False)}}]}).encode()
     self.send_response(200);self.send_header('Content-Type','application/json');self.send_header('Content-Length',str(len(raw)));self.end_headers();self.wfile.write(raw)
@@ -38,7 +43,7 @@ def main():
       if process.poll() is not None:raise RuntimeError((work/'server.log').read_text('utf-8'))
       time.sleep(.1)
     else:raise RuntimeError('Isolated HTTP server did not become ready')
-    subprocess.run(['node',str(ROOT/'tests/r12-browser.cjs')],cwd=ROOT,env=env,check=True,timeout=180)
+    subprocess.run(['node',str(ROOT/'tests'/os.environ.get('FRAME_QA_TEST','r12-browser.cjs'))],cwd=ROOT,env=env,check=True,timeout=180)
    finally:
     if os.name=='nt' and os.environ.get('FRAME_QA_EXE'):subprocess.run(['taskkill','/PID',str(process.pid),'/T','/F'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
     else:process.terminate()

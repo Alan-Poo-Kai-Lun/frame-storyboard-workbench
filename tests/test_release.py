@@ -2,7 +2,7 @@ import base64,copy,io,json,sys,tempfile,unittest,zipfile
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT));sys.path.insert(0,str(ROOT/'tools'))
 import server
-from check_release import inputs
+from check_release import inputs,linked_screenshots,stale_docs,stale_docs
 from build_release import build
 from update_workbench import archive_files,install
 class ReleaseChecks(unittest.TestCase):
@@ -35,4 +35,25 @@ class ReleaseChecks(unittest.TestCase):
   with self.assertRaises(ValueError):archive_files(path)
  def test_clean_initial_state(self):
   self.assertIsNone(server.load_project());self.assertEqual(server.settings()['ai']['key'],'');self.assertEqual(server.blank_project()['assets'],[])
+ def test_current_docs_cannot_repeat_a_retired_value(self):
+  root=self.path/'pkg';root.mkdir();(root/'docs').mkdir()
+  (root/'README.md').write_text('打开 http://127.0.0.1:8787','utf-8')
+  self.assertEqual(stale_docs(root,['README.md']),['README.md -> 8787'])
+  (root/'README.md').write_text('数据在 EXE 同目录的 FRAME-Data','utf-8')
+  self.assertEqual(stale_docs(root,['README.md']),[])
+  (root/'docs/release-v1.md').write_text('历史记录：8787','utf-8')
+  self.assertEqual(stale_docs(root,['docs/release-v1.md']),[])
+ def test_current_docs_cannot_repeat_a_retired_value(self):
+  root=self.path/'pkg';root.mkdir();(root/'docs').mkdir()
+  (root/'README.md').write_text('打开 http://127.0.0.1:8787','utf-8')
+  self.assertEqual(stale_docs(root,['README.md']),['README.md -> 8787'])
+  (root/'README.md').write_text('数据在 EXE 同目录的 FRAME-Data','utf-8')
+  self.assertEqual(stale_docs(root,['README.md']),[])
+  (root/'docs/release-v1.md').write_text('历史记录：8787','utf-8')
+  self.assertEqual(stale_docs(root,['docs/release-v1.md']),[])
+ def test_markdown_cannot_link_an_unlisted_screenshot(self):
+  root=self.path/'pkg';root.mkdir()
+  (root/'README.md').write_text('![a](docs/assets/screenshots/kept.png)\n![b](docs/assets/screenshots/missing.png)\n',encoding='utf-8')
+  self.assertEqual(linked_screenshots(root,['README.md','docs/assets/screenshots/kept.png']),['README.md -> missing.png'])
+  self.assertEqual(linked_screenshots(root,['README.md','docs/assets/screenshots/kept.png','docs/assets/screenshots/missing.png']),[])
 if __name__=='__main__':unittest.main()

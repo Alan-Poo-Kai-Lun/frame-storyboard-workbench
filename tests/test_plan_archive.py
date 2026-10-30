@@ -19,6 +19,11 @@ class PlanArchiveChecks(unittest.TestCase):
   row=self.m.add(kind,{'projectId':self.p['projectId']},{},snap);self.m.patch(row['id'],status='done',result=result)
   plan_store.put(server,self.m.get(row['id']),snap)
   return self.m.get(row['id']),snap
+ def test_continuity_review_endpoint_never_calls_model_or_applies(self):
+  row,_=self.archived();before=server.load_project();record=plan_store.get(server,row['id']);segments=copy.deepcopy(record['result']['segments']);segments[0]['shots'][0]['startState']=''
+  with patch.object(server,'ai_call',side_effect=AssertionError('no model')):
+   report=plan_store.endpoint(server,{'action':'continuity-review','projectId':self.p['projectId'],'id':row['id'],'segments':segments})
+  self.assertEqual(report['engine'],'local-rules');self.assertTrue(report['issues']);self.assertEqual(server.load_project(),before);self.assertEqual(plan_store.get(server,row['id'])['result'],record['result'])
  def test_clear_task_preserves_message_plan_and_apply_without_model(self):
   row,snap=self.archived('agent');target={'kind':'project'};thread=agent.conversation(server,self.p,target)
   agent.store_chat(server,self.p['projectId'],thread['id'],{'role':'assistant','content':'分镜方案','taskId':row['id']})
@@ -89,7 +94,7 @@ class PlanArchiveChecks(unittest.TestCase):
   data=server.export_pack(server.load_project(),force=True)
   with zipfile.ZipFile(io.BytesIO(data)) as archive:
    side=json.loads(archive.read('storyboard.json'))
-   self.assertNotIn('planArchive',side);self.assertNotIn('private.png',archive.namelist())
+   self.assertIn('planArchive',side);self.assertIn('handoff/records.json',archive.namelist());self.assertNotIn('private.png',archive.namelist())
  def test_local_archive_overrides_stale_imported_applied_flag(self):
   row,_=self.archived();self.m.action({'action':'clear_done'});p=server.load_project();record=plan_store.get(server,row['id']);record['appliedAt']=123;plan_store.write(server,record)
   server.save(p);self.assertEqual(server.load_project()['planArchive'][row['id']]['appliedAt'],123)

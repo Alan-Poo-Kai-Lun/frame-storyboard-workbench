@@ -12,6 +12,16 @@ class WritingChecks(unittest.TestCase):
   return {'count':2,'duration':5,'signature':writing.signature(server.load_project()),'refs':[],'rules':[],'story':'两段故事'}
  def output(self):
   return {'segments':[{'title':'第一段','story':'人物走到门口','summary':'走近门口','language':'中文','shots':[{'start':0,'end':5,'action':'人物走到门口','camera':'固定','startState':'人物在路边','endState':'人物在门口','dialogue':'你好'}]},{'title':'第二段','story':'人物回头','language':'粤语','shots':[{'start':0,'end':5,'action':'人物回头','startState':'人物在门口','endState':'人物回头看路边'}]}]}
+ def test_task_input_returns_the_story_the_plan_started_from(self):
+  server.save_settings({'ai':{'provider':'openai','endpoint':'http://127.0.0.1:1/v1','model':'mock','key':''}})
+  body={'projectId':self.p['projectId'],'story':'第一段：两人在赌场对峙。\n第二段：动手。','count':2,'duration':15,
+        'outputLanguage':'zh','dialogueLanguage':'Mandarin','continuity':True,'guideFromPrev':False,'assetRoles':{}}
+  row=writing.enqueue(server,body)
+  got=writing.task_input(server,row['id'])
+  self.assertEqual(got['story'],body['story']);self.assertEqual(got['count'],2);self.assertTrue(got['createdAt'])
+  self.assertEqual(writing.task_input(server)['taskId'],row['id'])
+  with self.assertRaises(ValueError):writing.task_input(server,'missing-task')
+
  def test_rule_revision_and_selection(self):
   lib=writing.library(server);self.assertEqual(len(lib['items']),7)
   r=writing.library(server,{'action':'save','revision':lib['revision'],'name':'自定义','rules':'保持故事因果','category':'测试'});self.assertEqual(len(r['items']),8)

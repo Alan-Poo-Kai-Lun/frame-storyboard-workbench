@@ -6,15 +6,15 @@
 
 **不想安装 Python？** 从 Releases 下载 Windows x64 EXE，双击启动。保持小启动器运行；通过「退出」关闭服务。
 
-**EXE 的数据在哪里？** `%LOCALAPPDATA%\FRAME\Workbench\data`。不同 EXE 版本共用；源码版仍在原安装目录 `data/`。
+**EXE 的数据在哪里？** EXE 同目录的 `FRAME-Data`。各版本共用这一个目录；旧版留下的 `FRAME-Canvas-Rn-Data` 会原地沿用，不复制。源码版仍在程序目录的 `data/`。
 
 **EXE 怎么更新？** 工作台「检查更新」→ 下载新版 → 退出旧启动器 → 运行新版。源码用户仍用专用更新 ZIP 和 Update-Windows.bat。详见 [EXE 与迁移说明](release-v3.9-beta.1.md)。
 
 **双击启动后窗口关闭，或者提示找不到 Python？** 在解压目录打开终端，运行 `py -3 --version`（Windows）和 `py -3 server.py` 查看错误。没有 Python 时先安装 Python 3.10+ 并启用 PATH。不要在 ZIP 内运行。
 
-**浏览器提示无法连接？** 保持运行服务器的终端打开，先看终端显示的网址。工作台与 Ollama 是两个服务：工作台默认端口 8787，Ollama 默认 11434。
+**浏览器提示无法连接？** 保持运行服务器的终端打开，先看终端显示的网址。工作台与 Ollama 是两个服务：工作台默认端口 8845（`Start-Windows.bat` 用 8828，EXE 用 8852），Ollama 默认 11434。
 
-**8787 被占用？** 在程序目录运行 `py -3 server.py --port 8788`，再访问 `http://127.0.0.1:8788`。其他系统使用 `python3`。
+**端口被占用？** 在程序目录运行 `py -3 server.py --port 8846`，再访问 `http://127.0.0.1:8846`。其他系统使用 `python3`。
 
 **更新后还是旧版本？** 关闭旧后台，确认启动的是新安装目录中的脚本，查看 `version.json`，浏览器按 Ctrl+F5。桌面快捷方式可能仍指向旧文件夹。`v1.zip` 是固定文件名，不是界面版本。
 

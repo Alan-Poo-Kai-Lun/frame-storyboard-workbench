@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "node build.cjs",
-    "typecheck": "tsc --allowJs --checkJs --noEmit --strict --target ES2022 --module ESNext asset-groups.js node-geometry.js"
+    "typecheck": "tsc --allowJs --checkJs --noEmit --strict --target ES2022 --module ESNext asset-groups.js node-geometry.js --moduleResolution bundler"
   },
   "keywords": [],
   "author": "",
@@ -13,7 +13,9 @@
   "type": "commonjs",
   "dependencies": {
     "@xyflow/react": "12.8.5",
+    "dompurify": "3.4.17",
     "esbuild": "0.25.11",
+    "marked": "18.1.2",
     "react": "19.1.1",
     "react-dom": "19.1.1"
   },

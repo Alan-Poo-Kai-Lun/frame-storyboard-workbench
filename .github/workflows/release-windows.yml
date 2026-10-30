@@ -47,6 +47,12 @@ jobs:
           }
           ffmpeg -version
           ffprobe -version
+      - name: Build and type-check frontend
+        run: |
+          node --version
+          npm ci --prefix frontend --ignore-scripts --no-audit --no-fund
+          npm run build --prefix frontend
+          npm run typecheck --prefix frontend
       - name: Validate public package and backend tests
         run: |
           python tools/check_release.py
@@ -61,6 +67,14 @@ jobs:
           NODE_PATH: ${{ runner.temp }}/frame-ui-check/node_modules
           PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/frame-browsers
           FRAME_BROWSER: chromium
+        run: python tools/test_browser.py
+      - name: R15 feature browser checks (mock AI only)
+        env:
+          NODE_PATH: ${{ runner.temp }}/frame-ui-check/node_modules
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/frame-browsers
+          FRAME_BROWSER: chromium
+          FRAME_QA_TEST: r15-browser.cjs
+          FRAME_QA_OUTPUT: dist/r15-browser-checks.json
         run: python tools/test_browser.py
       - name: Build source updater ZIP
         run: python tools/build_release.py

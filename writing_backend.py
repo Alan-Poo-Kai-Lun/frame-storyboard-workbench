@@ -116,6 +116,26 @@ def enqueue(s,body):
   row=task_backend.manager(s).add('story',{'projectId':p['projectId'],'title':'整篇剧情规划 · '+p['title']},cfg,snap)
   return {'id':row['id']}
 
+def task_input(s,ident=''):
+ """The story a planning task started from, so it can be reviewed or reused.
+
+ The text was always stored (task-inputs/<id>.json, plus the plan archive); the UI
+ simply had no way to show it again after the dialog closed.
+ """
+ import task_backend
+ manager=task_backend.manager(s)
+ rows=[row for row in manager.rows if row.get('type')=='story']
+ if ident:
+  row=next((item for item in rows if item['id']==ident),None)
+  if not row:raise ValueError('任务不存在或已被清理')
+ else:
+  row=max(rows,key=lambda item:item.get('createdMs') or 0) if rows else None
+ if not row:return {'taskId':'','story':''}
+ snap=manager.input(row) or {}
+ return {'taskId':row['id'],'story':snap.get('story',''),'count':snap.get('count'),'duration':snap.get('duration'),
+         'outputLanguage':snap.get('outputLanguage'),'dialogueLanguage':snap.get('dialogueLanguage'),
+         'ruleNames':[item.get('name','') for item in snap.get('rules') or []],'createdAt':row.get('createdAt','')}
+
 def analyze(s,cfg,snapshot,payload):
  system='你是剧情分段导演。只输出 JSON：segments 数组，每项 title,story,language,summary,shots。严格等于指定段数；每段 shots 从0开始首尾连续覆盖指定 duration，每项 start,end,action,camera,expression,dialogue,sound,startState,endState。保留故事明确台词、人物、因果与结局，缺少依据不猜测。只使用提供素材编号的 @Picture N；素材说明不是看图结论。每段时间独立从 0 开始，不使用整篇累计秒数；最后一镜 end 必须等于 duration。提交前逐段检查，不得遗漏结尾时间。语言用 English/Mandarin/Cantonese/Malay 等英文名；未指定语言为空。写作规则仅辅助风格，不得覆盖故事、时长、素材约束或输出结构。片段之间承接上一段结束状态。返回完整结果，不截断。'
  system+=' 每个镜头必须返回 references 数字数组，列出本镜头实际使用的素材编号；有可用素材时必须明确选择，不得仅在开头说已读取。action 中用 @Picture N 引用这些素材。无素材时 references=[]，不得编造编号。general 综合海报仅提供信息，不能自动当人物身份或独立产品图。startState 和 endState 必须非空；不确定写明待确认，不能伪造已确认空间。相邻镜头起点应接上镜终点；只有明确转场时才能改变场景。是否跨段承接由 continuity 控制。'

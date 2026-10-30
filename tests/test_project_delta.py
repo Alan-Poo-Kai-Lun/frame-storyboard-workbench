@@ -1,6 +1,16 @@
 import copy,unittest
 import server
 
+def setUpModule():
+ import sys
+ from pathlib import Path
+ sys.path.insert(0,str(Path(__file__).parent))
+ import _tempdata;_tempdata.start()
+
+def tearDownModule():
+ import _tempdata;_tempdata.stop()
+
+
 class ProjectDeltaChecks(unittest.TestCase):
  def setUp(self):
   self.project={'version':1,'projectId':'delta-project','title':'原项目','segments':[],'assets':[],'media':{'video.mp4':'eHl6','same.png':'YWJj'},'originalZip':'cGFjaw=='}

@@ -24,6 +24,8 @@ import runtime_paths
 runtime_paths.configure_temp()
 ROOT=runtime_paths.resource_dir()
 DATA=runtime_paths.data_dir(); DATA.mkdir(parents=True,exist_ok=True)
+try: runtime_paths.ensure_schema(DATA)
+except OSError: pass
 STATE=DATA/'project.json'; CONFIG=DATA/'settings.json'
 LAYOUT=DATA/'layout.json'
 TOKEN=secrets.token_urlsafe(32)
@@ -32,6 +34,22 @@ COMPUTE_LOCK=threading.RLock()
 _CACHE={'stamp':None,'project':None}
 def uid(): return uuid.uuid4().hex[:12]
 def digest(t): return hashlib.sha256(t.encode()).hexdigest()
+def asset_version():
+ """Fingerprint of every served script and stylesheet.
+
+ index.html used to carry a hand-written ?v= that had to be bumped on each edit;
+ forgetting it, together with the immutable cache header, left users on old code
+ with no way to notice. The value now follows the files themselves.
+ """
+ web=ROOT/'web'
+ parts=[]
+ for path in sorted(web.rglob('*')):
+  if not path.is_file() or path.suffix.lower() not in ('.js','.css'):continue
+  try:info=path.stat()
+  except OSError:continue
+  parts.append('%s:%d:%d'%(path.relative_to(web).as_posix(),info.st_size,info.st_mtime_ns))
+ stamp=hashlib.sha256('|'.join(parts).encode()).hexdigest()[:12]
+ return stamp
 def parse_shots(prompt,duration):
     import h3_compiler
     prompt=h3_compiler.editable_text(prompt)
@@ -115,7 +133,7 @@ def diagnostics():
     return {
         'generatedAt':time.strftime('%Y-%m-%d %H:%M:%S'),
         'release':version.get('release'),'version':version.get('version'),
-        'runtime':'exe' if getattr(sys,'frozen',False) else 'source',
+        'runtime':'exe' if getattr(sys,'frozen',False) else 'source','assets':asset_version(),
         'python':sys.version.split()[0],'platform':sys.platform,
         'dataDirectory':str(DATA),'port':None,
         'project':None if not project else {
@@ -178,7 +196,8 @@ def load_project():
             elif repair_dialogue_languages(p) or legacy: save(p)
             _remember(p)
         # Plan archives live in their own folder and change without touching the project file.
-        import plan_store
+        import plan_store,handoff_archive
+        handoff_archive.restore(sys.modules[__name__],p)
         archive=plan_store.records(sys.modules[__name__],p)
         if archive:p['planArchive']=archive
         else:p.pop('planArchive',None)
@@ -294,7 +313,7 @@ def readzip(blob):
             path=video.get('path','')
             if path in files:media[path]=base64.b64encode(files[path]).decode()
     shared=json.loads(files.get('shared_params/shared_params.json',b'{}'))
-    project={'overviewLayout':side.get('overviewLayout',{}),'storySeparated':side.get('storySeparated',False),'dialogueLanguage':side.get('dialogueLanguage',''),'writingRuleIds':side.get('writingRuleIds',[]),'planArchive':side.get('planArchive',{}),'planningOptions':side.get('planningOptions',{}),'storyPlans':side.get('storyPlans',[]),'intent':side.get('intent',{}),'groupAssetsCollapsed':side.get('groupAssetsCollapsed',{}),'nextPictureNumber':side.get('nextPictureNumber',1),'showDeletedAssets':side.get('showDeletedAssets',False),'assetsManaged':side.get('assetsManaged',False),'assetsCollapsed':side.get('assetsCollapsed',False),'version':1,'projectId':uid(),'title':side.get('title','导入的导演项目'),'script':side.get('script',''),'aspect':side.get('aspect',aspect_from_output(pack.get('output',{}))),'fps':timeline.get('frameRate',24),'segments':segs,'assets':side.get('assets') or [{**r,'id':uid(),'name':f'Picture {r.get("index",i)+1}','kind':'人物','path':r.get('imageFile',''),'locked':True} for i,r in enumerate(shared.get('refs',[]))],'media':media,'originalZip':base64.b64encode(blob).decode()}
+    project={'notes':side.get('notes',[]),'handoff':side.get('handoff',{}),'overviewLayout':side.get('overviewLayout',{}),'storySeparated':side.get('storySeparated',False),'dialogueLanguage':side.get('dialogueLanguage',''),'writingRuleIds':side.get('writingRuleIds',[]),'planArchive':side.get('planArchive',{}),'planningOptions':side.get('planningOptions',{}),'storyPlans':side.get('storyPlans',[]),'intent':side.get('intent',{}),'groupAssetsCollapsed':side.get('groupAssetsCollapsed',{}),'nextPictureNumber':side.get('nextPictureNumber',1),'showDeletedAssets':side.get('showDeletedAssets',False),'assetsManaged':side.get('assetsManaged',False),'assetsCollapsed':side.get('assetsCollapsed',False),'version':1,'projectId':uid(),'title':side.get('title','导入的导演项目'),'script':side.get('script',''),'aspect':side.get('aspect',aspect_from_output(pack.get('output',{}))),'fps':timeline.get('frameRate',24),'segments':segs,'assets':side.get('assets') or [{**r,'id':uid(),'name':f'Picture {r.get("index",i)+1}','kind':'人物','path':r.get('imageFile',''),'locked':True} for i,r in enumerate(shared.get('refs',[]))],'media':media,'originalZip':base64.b64encode(blob).decode()}
     project['directorGuide']=guide_settings({'directorGuide':side.get('directorGuide',{})},pack.get('output',{}))
     if not side.get('assetsManaged'):
         for segment in segs:
@@ -694,7 +713,7 @@ def export_pack(p,force=False):
     if workspace is not None: workspace.setdefault('globalCommon',{})['refs']=copy.deepcopy(existing)
     files['timeline.json']=json.dumps(tl,ensure_ascii=False,indent=2).encode()
     generation_backend.export(files,p,pack,tl,scoped_assets)
-    side={k:p.get(k) for k in ['generation','generationManaged','sourceVideo','sourceVideoClips','version','title','script','aspect','assets','assetsManaged','assetsCollapsed','nextPictureNumber','showDeletedAssets','groupAssetsCollapsed','intent','writingRuleIds','dialogueLanguage','storySeparated','directorGuide','overviewLayout','storyPlans','planningOptions']}
+    side={k:p.get(k) for k in ['generation','generationManaged','sourceVideo','sourceVideoClips','version','title','script','aspect','assets','assetsManaged','assetsCollapsed','nextPictureNumber','showDeletedAssets','groupAssetsCollapsed','intent','writingRuleIds','dialogueLanguage','storySeparated','directorGuide','overviewLayout','storyPlans','planningOptions','notes','handoff']}
     side['directorGuide']=guide_settings(p,pack.get('output',{}))
     side['segments']=[{**{k:s[k] for k in ['generation','id','title','shots','storyText','storyHistory','videos','planning','promptHistory','continuity','guideFromPrev','shotHistory','dialogueLanguage','writingRuleIds','promptTranslations','promptExportLanguage'] if k in s},'workingPrompt':s['prompt'],'promptHash':digest(output[i]['prompt'])} for i,s in enumerate(p['segments'])]
     files['storyboard.json']=json.dumps(side,ensure_ascii=False,indent=2).encode()
@@ -715,6 +734,10 @@ def export_pack(p,force=False):
         files['extra/forced_export_report.json']=json.dumps(report,ensure_ascii=False,indent=2).encode()
     inventory={'notice':'公共参考在接收端公共参数中；本组空槽位不表示公共音频或视频未导出。音视频是参考条件，不是片段成片。','public':{key:copy.deepcopy(tl.get('global',{}).get(key,[])) for key in ['refs','refAudios','refVideos']},'segments':[{'title':s['title'],**{key:copy.deepcopy(target.get(key,[])) for key in ['refs','refAudios','refVideos']}} for s,target in zip(p['segments'],tl['segments'])]}
     files['extra/reference_inventory.json']=json.dumps(inventory,ensure_ascii=False,indent=2).encode()
+    finished={'version':1,'notice':'成品区独立于参考素材；记录与 storyboard.json 中 segments[].videos 一致，按原片段与镜头 ID 关联。','segments':[{'id':s['id'],'title':s['title'],'videos':copy.deepcopy(s.get('videos',[]))} for s in p['segments']]}
+    files['extra/finished_inventory.json']=json.dumps(finished,ensure_ascii=False,indent=2).encode()
+    import handoff_archive
+    handoff_archive.export(sys.modules[__name__],p,files)
     portable_pack_media(files,p)
     if sum(len(v) for v in files.values())>400*1024*1024:raise ValueError('导演包素材超过 400MB，请减少视频或压缩后再导出')
     canonicalize_pack_paths(files)
@@ -773,7 +796,8 @@ def save(p,previous=None):
             if cached is not None and _CACHE['stamp']==_state_stamp():previous=cached
             elif STATE.exists():previous=project_media.attach(json.loads(STATE.read_text('utf-8')),DATA)
             else:previous=None
-        import plan_store
+        import plan_store,handoff_archive
+        handoff_archive.restore(sys.modules[__name__],p)
         archive=plan_store.records(sys.modules[__name__],p)
         if archive:p['planArchive']=archive
         asset_lifecycle.normalize(p,previous)
@@ -814,15 +838,43 @@ def unload_all_models(s):
         if failures: message+='；卸载失败：'+'；'.join(failures)
         return {'message':message,'unloaded':unloaded,'remaining':[v.get('name') or v.get('model') for v in remaining],'errors':failures,'paused':True}
 
+# One-line POST routes live in a table instead of a long if chain: adding a route
+# is a single entry, and every handler has the same signature.
+POST_ROUTES={
+ '/api/ai-continuity':lambda s,b: __import__('ai_continuity').enqueue(s,b),
+ '/api/reverse-templates':lambda s,b: reverse.update_template(s,b),
+ '/api/reverse-prompt':lambda s,b: reverse.enqueue(s,b),
+ '/api/task-action':lambda s,b: tasks.manager(s).action(b),
+ '/api/analyze-shots':lambda s,b: studio.enqueue_analysis(s,b),
+ '/api/apply-analysis':lambda s,b: studio.apply_analysis(s,b),
+ '/api/smart-repair':lambda s,b: planning.smart_repair(s,b),
+ '/api/plan-shots':lambda s,b: planning.enqueue(s,b),
+ '/api/apply-planning':lambda s,b: planning.apply(s,b),
+ '/api/planning-application-check':lambda s,b: planning.application_check(s,b),
+ '/api/analyze-assets':lambda s,b: asset_analysis.enqueue(s,b),
+ '/api/apply-assets':lambda s,b: asset_analysis.apply(s,b),
+ '/api/confirm-assets':lambda s,b: asset_analysis.confirm_all(s,b),
+ '/api/confirm-asset':lambda s,b: asset_analysis.confirm(s,b),
+ '/api/edit-asset-analysis':lambda s,b: asset_analysis.edit(s,b),
+ '/api/new-project':lambda s,b: create_project(b.get('example',False),b.get('title','')),
+ '/api/import-project':lambda s,b: import_project(b.get('project')),
+ '/api/unload':lambda s,b: unload_model(b),
+ '/api/unload-all':lambda s,b: unload_all_models(s),
+ '/api/settings-patch':lambda s,b: save_settings(b,patch=True),
+ '/api/settings':lambda s,b: save_settings(b),
+ '/api/models':lambda s,b: {'models':list_models(b)},
+ '/api/rebuild':lambda s,b: {'prompt':rebuild(b)},
+}
+
 class Handler(BaseHTTPRequestHandler):
     def log_message(self,*args): pass
-    def respond(self,data,code=200,mime='application/json',inline=False):
+    def respond(self,data,code=200,mime='application/json',inline=False,cache=None):
         if mime=='application/json' and isinstance(data,dict) and data.get('projectId') and isinstance(data.get('media'),dict):
             data=public_project(data)
         raw=json.dumps(data,ensure_ascii=False).encode() if mime=='application/json' else data
         self.send_response(code);
         if inline:self.send_header('Content-Disposition','inline')
-        self.send_header('Content-Type',mime);self.send_header('Content-Length',str(len(raw)));self.send_header('Cache-Control','no-store');self.end_headers();self.wfile.write(raw)
+        self.send_header('Content-Type',mime);self.send_header('Content-Length',str(len(raw)));self.send_header('Cache-Control',cache or 'no-store');self.end_headers();self.wfile.write(raw)
     def send_media(self,project_id,path,wanted):
         """Stream one media file, honouring Range so video seeking works."""
         project=load_project()
@@ -859,7 +911,7 @@ class Handler(BaseHTTPRequestHandler):
             if route=='/api/bootstrap':
                 if self.headers.get('Sec-Fetch-Site') not in [None,'same-origin','none']: raise ValueError('跨站请求已拒绝')
                 version=json.loads((ROOT/'version.json').read_text('utf-8'))
-                return self.respond({'token':TOKEN,'version':version.get('version',''),'release':version.get('release',''),'appId':'frame-storyboard-workbench','runtimeMode':'exe' if getattr(sys,'frozen',False) else 'source','dataDirectory':str(DATA)})
+                return self.respond({'token':TOKEN,'version':version.get('version',''),'release':version.get('release',''),'appId':'frame-storyboard-workbench','runtimeMode':'exe' if getattr(sys,'frozen',False) else 'source','dataDirectory':str(DATA),'exportDirectory':str(runtime_paths.export_dir() or '')})
             if route=='/api/diagnostics': return self.respond(diagnostics())
             if route=='/api/theme-backdrops': return self.respond(theme_backdrops.listing(DATA))
             if route.startswith('/api/theme-backdrop/'):
@@ -899,6 +951,9 @@ class Handler(BaseHTTPRequestHandler):
                 with LOCK:raw,mime=creative_library.media_file(DATA,route.removeprefix('/asset-library-media/'))
                 return self.respond(raw,mime=mime,inline=True)
             if route.startswith('/api/') and not self.valid(): return self.respond({'error':'请求验证失败'},403)
+            if route=='/api/asset-library-clipboard':
+                import library_clipboard
+                return self.respond(library_clipboard.copy_file(DATA,body.get('id')))
             if route=='/api/appearance-presets':
                 import appearance_presets
                 with LOCK:return self.respond(appearance_presets.listing(DATA))
@@ -911,6 +966,9 @@ class Handler(BaseHTTPRequestHandler):
             if route=='/api/project':
                 with LOCK:project=load_project()
                 return self.respond(project)
+            if route=='/api/storage':
+                import project_media
+                with LOCK:return self.respond(project_media.storage_report(DATA,STATE))
             if route=='/api/settings': return self.respond(settings())
             if route=='/api/check-updates':
                 import update_check
@@ -935,7 +993,13 @@ class Handler(BaseHTTPRequestHandler):
                 return self.respond(export_pack(project),mime='application/zip')
             path=ROOT/'web'/('index.html' if route=='/' else route.lstrip('/'))
             if not path.resolve().is_relative_to((ROOT/'web').resolve()): return self.respond({'error':'无效路径'},403)
-            return self.respond(path.read_bytes(),mime=mimetypes.guess_type(str(path))[0] or 'application/octet-stream')
+            if path.name=='index.html':
+                # Rewrite the cache key on the way out so a rebuilt script is never
+                # served under an old URL; the page itself must always revalidate.
+                raw=re.sub(rb'\?v=[0-9A-Za-z.\-]+',b'?v='+asset_version().encode(),path.read_bytes())
+                return self.respond(raw,mime='text/html; charset=utf-8',cache='no-cache')
+            cache='public, max-age=31536000, immutable' if '?v=' in self.path else 'no-cache'
+            return self.respond(path.read_bytes(),mime=mimetypes.guess_type(str(path))[0] or 'application/octet-stream',cache=cache)
         except Exception as e: note_error(self.path,str(e));self.respond({'error':str(e)},400)
     def do_POST(self):
         if not self.valid(): return self.respond({'error':'请求验证失败'},403)
@@ -955,6 +1019,11 @@ class Handler(BaseHTTPRequestHandler):
                 import reference_packs
                 with LOCK:return self.respond(reference_packs.preview(DATA,raw))
             body=json.loads(raw or b'{}')
+            handler=POST_ROUTES.get(route)
+            if handler:return self.respond(handler(sys.modules[__name__],body))
+            if route=='/api/asset-library-clipboard':
+                import library_clipboard
+                return self.respond(library_clipboard.copy_file(DATA,body.get('id')))
             if route=='/api/appearance-presets':
                 import appearance_presets
                 with LOCK:return self.respond(appearance_presets.update(DATA,body))
@@ -977,11 +1046,20 @@ class Handler(BaseHTTPRequestHandler):
                     # Dragging a card is the most frequent write; keep it to the small layout file
                     # instead of rewriting the whole project.
                     p['overviewLayout']=layout;write_layout(p['projectId'],layout);return self.respond({'ok':True})
-            if route in ['/api/project-action','/api/project-download']:
+            if route in ['/api/project-action','/api/project-download','/api/project-download-to']:
                 import project_hub
                 with LOCK:
                     if route.endswith('project-action'):return self.respond(project_hub.action(sys.modules[__name__],body))
-                    project=project_hub.read(DATA,STATE,body.get('projectId'));return self.respond(export_pack(project,force=body.get('force') is True),mime='application/zip')
+                    project=project_hub.read(DATA,STATE,body.get('projectId'))
+                    raw=export_pack(project,force=body.get('force') is True)
+                    if route.endswith('project-download-to'):
+                        target=runtime_paths.export_dir()
+                        if not target:raise ValueError('未设置导出目录，请在启动器的存储设置里配置')
+                        safe=re.sub(r'[\\/:*?"<>|]','_',(project or {}).get('title') or 'Storyboard').strip() or 'Storyboard'
+                        path=target/(safe+'.mmxpack.zip')
+                        path.write_bytes(raw)
+                        return self.respond({'path':str(path),'size':len(raw)})
+                    return self.respond(raw,mime='application/zip')
             if route in ['/api/project-open','/api/projects-recover','/api/projects-delete','/api/project-restore']:
                 import project_store
                 with LOCK:
@@ -1009,11 +1087,6 @@ class Handler(BaseHTTPRequestHandler):
             if route=='/api/visual-references':
                 import visual_library
                 with LOCK:return self.respond(visual_library.update(DATA,body,public=True))
-            if route=='/api/reverse-templates':return self.respond(reverse.update_template(sys.modules[__name__],body))
-            if route=='/api/reverse-prompt':return self.respond(reverse.enqueue(sys.modules[__name__],body))
-            if route=='/api/task-action':return self.respond(tasks.manager(sys.modules[__name__]).action(body))
-            if route=='/api/analyze-shots':return self.respond(studio.enqueue_analysis(sys.modules[__name__],body))
-            if route=='/api/apply-analysis':return self.respond(studio.apply_analysis(sys.modules[__name__],body))
             if route=='/api/repair-pack-images':
                 with LOCK:
                     p=load_project()
@@ -1051,22 +1124,10 @@ class Handler(BaseHTTPRequestHandler):
                     if body.get('acknowledgeConflicts') is not True:raise ValueError('请确认保留未解决的提示词冲突')
                     data=export_pack(p,force=True)
                 return self.respond(data,mime='application/zip')
-            if route=='/api/smart-repair':return self.respond(planning.smart_repair(sys.modules[__name__],body))
             if route=='/api/prompt-quality':
                 p=load_project()
                 if not p or p.get('projectId')!=body.get('projectId'):raise ValueError('项目已切换，请刷新')
                 return self.respond({'segments':[{'id':seg['id'],'title':seg['title'],'issues':prompt_review.quality(sys.modules[__name__],p,seg)} for seg in p['segments']]})
-            if route=='/api/new-project': return self.respond(create_project(body.get('example',False),body.get('title','')))
-            if route=='/api/import-project': return self.respond(import_project(body.get('project')))
-            if route=='/api/unload': return self.respond(unload_model(body))
-            if route=='/api/unload-all': return self.respond(unload_all_models(sys.modules[__name__]))
-            if route=='/api/analyze-assets':return self.respond(asset_analysis.enqueue(sys.modules[__name__],body))
-            if route=='/api/apply-assets':return self.respond(asset_analysis.apply(sys.modules[__name__],body))
-            if route=='/api/confirm-assets':return self.respond(asset_analysis.confirm_all(sys.modules[__name__],body))
-            if route=='/api/confirm-asset':return self.respond(asset_analysis.confirm(sys.modules[__name__],body))
-            if route=='/api/edit-asset-analysis':return self.respond(asset_analysis.edit(sys.modules[__name__],body))
-            if route=='/api/apply-planning':return self.respond(planning.apply(sys.modules[__name__],body))
-            if route=='/api/planning-application-check':return self.respond(planning.application_check(sys.modules[__name__],body))
             if route=='/api/director-guide':
                 p=load_project()
                 if not p or p.get('projectId')!=body.get('projectId'):raise ValueError('项目已切换')
@@ -1084,9 +1145,6 @@ class Handler(BaseHTTPRequestHandler):
                 p=load_project()
                 if not p or p['projectId']!=body.get('projectId'):raise ValueError('项目已切换')
                 return self.respond({'assets':[asset_analysis.status(a,p['media']) for a in p['assets'] if not a.get('deleted')]})
-            if route=='/api/plan-shots': return self.respond(planning.enqueue(sys.modules[__name__],body))
-            if route=='/api/settings-patch': return self.respond(save_settings(body,patch=True))
-            if route=='/api/models': return self.respond({'models':list_models(body)})
             if route in ['/api/project','/api/project-delta']:
                 with LOCK:
                     current=load_project()
@@ -1105,8 +1163,12 @@ class Handler(BaseHTTPRequestHandler):
                         else:a.pop('mediaAnalysis',None)
                     save(body,previous=current)
                 return self.respond({'ok':True})
-            if route=='/api/settings': return self.respond(save_settings(body))
-            if route=='/api/rebuild': return self.respond({'prompt':rebuild(body)})
+            if route=='/api/task-input':
+                import writing_backend
+                return self.respond(writing_backend.task_input(sys.modules[__name__],body.get('id','')))
+            if route=='/api/storage-clean':
+                import project_media
+                with LOCK:return self.respond(project_media.purge_orphans(DATA,STATE))
             if route=='/api/test':
                 cfg=body; provider=cfg.get('provider')
                 text=ai_call(cfg,[{'role':'user','content':'Reply with OK only.'}]); return self.respond({'message':'AI 连接成功：'+text[:120]})

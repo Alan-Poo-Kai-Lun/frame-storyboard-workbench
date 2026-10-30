@@ -7,7 +7,7 @@ RELEASES_URL='https://github.com/'+REPOSITORY+'/releases'
 API_URL='https://api.github.com/repos/'+REPOSITORY+'/releases?per_page=20'
 
 def version_key(tag):
- m=re.fullmatch(r'[vV]?(\d+)\.(\d+)(?:\.(\d+))?(?:-beta\.(\d+))?(?:-canvas-r(\d+))?',str(tag))
+ m=re.fullmatch(r'[vV]?(\d+)\.(\d+)(?:\.(\d+))?(?:-beta\.(\d+))?(?:-(?:canvas-)?r(\d+))?',str(tag))
  if not m:raise ValueError('版本编号无效')
  return (int(m[1]),int(m[2]),int(m[3] or 0),m[4] is None,int(m[4] or 0),int(m[5] or 0))
 def approved_url(value,asset=False):

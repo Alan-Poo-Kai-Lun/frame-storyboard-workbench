@@ -9,7 +9,9 @@ import json
 from pathlib import Path
 
 NAME = 'layout.json'
-LIMIT = 60
+# Every entry is a few kilobytes, so the cap only exists to keep the file from
+# growing forever. It used to be 60, which real workbenches reach.
+LIMIT = 200
 
 
 def _path(data):
@@ -27,10 +29,15 @@ def all(data):
 
 def write(data, project_id, layout):
     projects = all(data)
-    projects[str(project_id)] = layout if isinstance(layout, dict) else {}
+    key = str(project_id)
+    # Re-insert instead of overwriting in place: a dict keeps its original position
+    # on assignment, so the old code evicted whichever project was created first
+    # rather than the one nobody had touched, and silently dropped its card layout.
+    projects.pop(key, None)
+    projects[key] = layout if isinstance(layout, dict) else {}
     if len(projects) > LIMIT:
-        for key in list(projects)[:len(projects) - LIMIT]:
-            projects.pop(key, None)
+        for stale in list(projects)[:len(projects) - LIMIT]:
+            projects.pop(stale, None)
     path = _path(data)
     temp = path.with_suffix('.tmp')
     temp.write_text(json.dumps({'version': 1, 'projects': projects}, ensure_ascii=False), 'utf-8')

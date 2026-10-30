@@ -1,0 +1,4 @@
+# Runtime dependencies for the source build.
+# The Windows EXE already bundles them; installing this file is only needed when
+# running `python server.py` from source.
+Pillow==12.3.0

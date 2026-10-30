@@ -4,6 +4,16 @@ from unittest.mock import patch
 import server,writing_backend as writing
 import test_generation as gen
 
+def setUpModule():
+ import sys
+ from pathlib import Path
+ sys.path.insert(0,str(Path(__file__).parent))
+ import _tempdata;_tempdata.start()
+
+def tearDownModule():
+ import _tempdata;_tempdata.stop()
+
+
 class R11PlanningChecks(unittest.TestCase):
  def project(self):return gen.GenerationChecks().project()
  def enqueue(self,p,chosen,story='使用 @Picture 1 @Audio 1 @Video 1'):
