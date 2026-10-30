@@ -4,6 +4,9 @@ on:
     branches: [main]
     paths:
       - 'version.json'
+      - 'frontend/**'
+      - 'web/**'
+      - 'tests/**'
       - 'server.py'
       - 'tools/test_browser.py'
       - 'tests/r10-browser.cjs'
