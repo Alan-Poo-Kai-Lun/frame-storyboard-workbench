@@ -2,7 +2,7 @@ import copy,json,tempfile,threading,time,unittest
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from unittest.mock import patch
-import server,agent_backend as agent,writing_backend as writing,plan_store,task_backend
+import server;from backend.services import agent_backend as agent;from backend.services import writing_backend as writing;from backend.project import plan_store;from backend.services import task_backend
 
 class ScopedAgentChecks(unittest.TestCase):
  def setUp(self):

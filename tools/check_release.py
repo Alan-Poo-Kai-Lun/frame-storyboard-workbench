@@ -17,7 +17,8 @@ def inputs(root=ROOT):
   if not isinstance(name,str):raise ValueError('Invalid manifest entry')
   p=PurePosixPath(name)
   if p.is_absolute() or '..' in p.parts or '\\' in name or ':' in name:raise ValueError('Unsafe release path: '+name)
-  if p.parts[0] in {'data','.git','.github','dist','tests','tools'} or (name!=STARTER and p.suffix.lower() in {'.zip','.mp4','.mov','.webm','.mmxpack','.key','.pem'}):raise ValueError('Private/non-runtime release entry: '+name)
+  if p.parts[0] in {'data','.git','.github','dist','tests'} or (name!=STARTER and p.suffix.lower() in {'.zip','.mp4','.mov','.webm','.mmxpack','.key','.pem'}):raise ValueError('Private/non-runtime release entry: '+name)
+  if p.parts[0]=='tools' and name!='tools/windows_launcher.py':raise ValueError('Non-runtime tool in release: '+name)
   if p.parts[0]=='versions' and name!='versions/README.txt':raise ValueError('Archived program in release')
   file=root/name
   if not file.is_file() or file.is_symlink() or any(parent.is_symlink() for parent in file.parents if parent!=root.parent):raise ValueError('Missing or linked input: '+name)
@@ -54,7 +55,7 @@ def stale_docs(root,names):
  """Docs that still describe ports or data paths the code moved away from."""
  stale=[]
  for name in names:
-  if not name.endswith('.md') or name.startswith('docs/release-'):continue
+  if not name.endswith('.md') or name.startswith(('docs/release-','docs/releases/')):continue
   raw=(root/name).read_text('utf-8')
   stale.extend(name+' -> '+label for pattern,label in STALE if pattern.search(raw))
  return stale

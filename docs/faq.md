@@ -8,7 +8,7 @@
 
 **EXE 的数据在哪里？** EXE 同目录的 `FRAME-Data`。各版本共用这一个目录；旧版留下的 `FRAME-Canvas-Rn-Data` 会原地沿用，不复制。源码版仍在程序目录的 `data/`。
 
-**EXE 怎么更新？** 工作台「检查更新」→ 下载新版 → 退出旧启动器 → 运行新版。源码用户仍用专用更新 ZIP 和 Update-Windows.bat。详见 [EXE 与迁移说明](release-v3.9-beta.1.md)。
+**EXE 怎么更新？** 工作台「检查更新」→ 下载新版 → 退出旧启动器 → 运行新版。源码用户仍用专用更新 ZIP 和 Update-Windows.bat。详见 [EXE 与迁移说明](releases/release-v3.9-beta.1.md)。
 
 **双击启动后窗口关闭，或者提示找不到 Python？** 在解压目录打开终端，运行 `py -3 --version`（Windows）和 `py -3 server.py` 查看错误。没有 Python 时先安装 Python 3.10+ 并启用 PATH。不要在 ZIP 内运行。
 

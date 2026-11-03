@@ -6,8 +6,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 import server
-import writing_backend as writing
-import h3_compiler
+from backend.services import writing_backend as writing
+from backend.ai import h3_compiler
 
 
 class PlanningRepairChecks(unittest.TestCase):
@@ -28,7 +28,7 @@ class PlanningRepairChecks(unittest.TestCase):
     def apply(self):
         result=writing.validate(server,self.output(),self.snap())
         row=dict(id='plan',type='story',status='done',projectId=self.p['projectId'],result=result)
-        with patch('task_backend.manager',return_value=SimpleNamespace(get=lambda _:row,patch=lambda *a,**k:None)):
+        with patch('backend.services.task_backend.manager',return_value=SimpleNamespace(get=lambda _:row,patch=lambda *a,**k:None)):
             return writing.apply(server,dict(id='plan',segments=[dict(title='故事',storyText=result['segments'][0]['storyText'])]))['project']
     def test_strict_state_and_binding_validation(self):
         result=writing.validate(server,self.output(),self.snap())
@@ -57,7 +57,7 @@ class PlanningRepairChecks(unittest.TestCase):
         result=writing.validate(server,self.output(),snap);row=dict(id='plan',type='story',status='done',projectId=self.p['projectId'],result=result)
         p=server.load_project();p['title']='改名';server.save(p)
         body=dict(id='plan',segments=[dict(title='故事',storyText=result['segments'][0]['storyText'])])
-        with patch('task_backend.manager',return_value=SimpleNamespace(get=lambda _:row,patch=lambda *a,**k:None)):
+        with patch('backend.services.task_backend.manager',return_value=SimpleNamespace(get=lambda _:row,patch=lambda *a,**k:None)):
             with self.assertRaises(ValueError):writing.apply(server,body)
             p['assets'][0]['description']='换图说明';server.save(p)
             with self.assertRaisesRegex(ValueError,'素材已删除、替换或修改'):writing.apply(server,{**body,'acceptSourceChanges':True})

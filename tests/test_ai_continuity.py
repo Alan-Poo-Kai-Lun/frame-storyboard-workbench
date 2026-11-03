@@ -1,6 +1,6 @@
 import copy,json,unittest
 from unittest.mock import patch
-import server,plan_store,ai_continuity
+import server;from backend.project import plan_store;from backend.ai import ai_continuity
 import test_plan_archive as archive
 
 class AIReviewChecks(unittest.TestCase):

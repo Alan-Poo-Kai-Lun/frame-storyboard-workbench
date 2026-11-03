@@ -3,7 +3,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 from PIL import Image
-import server,writing_backend as writing,project_hub,project_store,creative_library
+import server;from backend.services import writing_backend as writing;from backend.project import project_hub;from backend.project import project_store;from backend.project import creative_library
 
 class UpgradeChecks(unittest.TestCase):
  def setUp(self):
@@ -22,7 +22,7 @@ class UpgradeChecks(unittest.TestCase):
   project_hub.rename_category(server,'动物','宠物');out=server.load_project();self.assertEqual(out['assets'][0]['kind'],'宠物');self.assertEqual(out['assets'][0]['pictureNumber'],7);self.assertEqual(out['media'],p['media'])
  def create_plan(self):
   snap={'count':2,'duration':5,'signature':writing.signature(server.load_project()),'refs':[],'rules':[],'story':'两段故事'};result=writing.validate(server,{'segments':[{'title':str(i),'story':'人物站立','shots':[{'start':0,'end':5,'action':'站立','startState':'人物在门口','endState':'人物仍在门口'}]} for i in range(2)]},snap);row={'id':'plan','type':'story','status':'done','projectId':self.p['projectId'],'result':result};manager=SimpleNamespace(get=lambda ident:row,patch=lambda *args,**kwargs:None)
-  with patch('task_backend.manager',return_value=manager):return writing.apply(server,{'id':'plan','segments':[{'title':s['title'],'storyText':s['storyText']} for s in result['segments']]})['project']
+  with patch('backend.services.task_backend.manager',return_value=manager):return writing.apply(server,{'id':'plan','segments':[{'title':s['title'],'storyText':s['storyText']} for s in result['segments']]})['project']
  def test_restore_missing_preserves_existing_edits_no_model_and_pack_roundtrip(self):
   p=self.create_plan();missing=p['segments'][-1]['id'];kept=p['segments'][-2]['id'];p['segments'][-2]['title']='用户已修改';p['segments'].pop();server.save(p)
   with patch.object(server,'ai_call',side_effect=AssertionError('Restoring must not call AI')):out=writing.restore(server,{'projectId':p['projectId'],'planId':'plan','mode':'missing'})['project']
@@ -32,7 +32,7 @@ class UpgradeChecks(unittest.TestCase):
   result=writing.restore(server,{'projectId':p['projectId'],'planId':'plan','mode':'copy'});self.assertEqual(result['created'],2);self.assertEqual(len({s['id'] for s in result['project']['segments']}),len(result['project']['segments']))
  def test_planner_sends_requested_output_language_separately(self):
   snapshots=[];manager=SimpleNamespace(add=lambda kind,payload,cfg,snap:(snapshots.append(snap) or {'id':'plan'}))
-  with patch('task_backend.manager',return_value=manager),patch.object(server,'settings',return_value={'ai':{'model':'test','endpoint':'http://local'}}):writing.enqueue(server,{'projectId':self.p['projectId'],'story':'故事','count':1,'duration':5,'outputLanguage':'ms','dialogueLanguage':'Cantonese'})
+  with patch('backend.services.task_backend.manager',return_value=manager),patch.object(server,'settings',return_value={'ai':{'model':'test','endpoint':'http://local'}}):writing.enqueue(server,{'projectId':self.p['projectId'],'story':'故事','count':1,'duration':5,'outputLanguage':'ms','dialogueLanguage':'Cantonese'})
   snap=snapshots[0];output={'segments':[{'title':'故事','story':'人物站立','shots':[{'start':0,'end':5,'action':'站立','startState':'门口','endState':'门口','references':[]}]}]}
   with patch.object(server,'ai_call',return_value=json.dumps(output)) as call:result=writing.analyze(server,{},snap,{})
   self.assertIn('Bahasa Melayu',call.call_args.args[1][0]['content']);self.assertEqual(result['segments'][0]['dialogueLanguage'],'Cantonese')
@@ -40,7 +40,7 @@ class UpgradeChecks(unittest.TestCase):
  def test_portrait_cover_is_cropped_without_letterbox_and_video_status_is_real(self):
   import io,base64
   from PIL import Image
-  import project_hub
+  from backend.project import project_hub
   image=Image.new('RGB',(100,300),(240,40,30));raw=io.BytesIO();image.save(raw,format='PNG')
   p={'assets':[{'path':'portrait.png'}],'segments':[{'duration':5,'shots':[],'videos':[{'path':'present.mp4'},{'path':'missing.mp4'}]}],'media':{'portrait.png':base64.b64encode(raw.getvalue()).decode(),'present.mp4':'test'}}
   row=project_hub.metadata(server.DATA,p);self.assertEqual(row['videos'],1)

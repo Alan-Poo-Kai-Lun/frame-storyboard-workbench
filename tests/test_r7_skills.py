@@ -2,12 +2,12 @@ import copy,json,tempfile,unittest
 from pathlib import Path
 from types import SimpleNamespace
 from threading import RLock
-import writing_backend as writing
+from backend.services import writing_backend as writing
 
 class SkillBaselineChecks(unittest.TestCase):
  def setUp(self):
   self.temp=tempfile.TemporaryDirectory();self.s=SimpleNamespace(DATA=Path(self.temp.name),LOCK=RLock(),uid=lambda:'new-rule')
-  self.baseline=json.loads((Path(writing.__file__).parent/'presets/writing-skills-baseline.json').read_text('utf-8'))
+  self.baseline=json.loads((writing.runtime_paths.resource_dir()/'presets/writing-skills-baseline.json').read_text('utf-8'))
  def tearDown(self):self.temp.cleanup()
  def test_fresh_install_contains_all_complete_desktop_rules_and_original_ids(self):
   rows=writing.library(self.s)['items'];self.assertEqual(len(rows),7)

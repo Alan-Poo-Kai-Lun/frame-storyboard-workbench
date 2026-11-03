@@ -9,9 +9,9 @@ if not defined FRAME_UPDATE_PACKAGE (
 )
 where py >nul 2>nul
 if %errorlevel%==0 (
-  py -3 update_workbench.py "%FRAME_UPDATE_PACKAGE%"
+  py -3 -m backend.utils.update_workbench "%FRAME_UPDATE_PACKAGE%"
 ) else (
-  python update_workbench.py "%FRAME_UPDATE_PACKAGE%"
+  python -m backend.utils.update_workbench "%FRAME_UPDATE_PACKAGE%"
 )
 if errorlevel 1 (
   echo Update did not complete. Read the message above.

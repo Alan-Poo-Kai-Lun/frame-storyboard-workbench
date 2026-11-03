@@ -2,7 +2,7 @@ import copy,json,os,sys,tempfile,unittest
 from pathlib import Path
 from unittest.mock import patch
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
-import runtime_paths,update_check
+from backend.utils import runtime_paths;from backend.utils import update_check
 
 class UpdateChecks(unittest.TestCase):
  def setUp(self):runtime_paths._resolved=None
@@ -36,7 +36,7 @@ class UpdateChecks(unittest.TestCase):
    def __enter__(self):return self
    def __exit__(self,*args):pass
    def read(self,*args):return b'[]'
-  with patch('update_check.urlopen',return_value=Response()) as request:
+  with patch('backend.utils.update_check.urlopen',return_value=Response()) as request:
    update_check.check('v3.9-beta.1');req=request.call_args.args[0]
    self.assertEqual(req.full_url,update_check.API_URL);self.assertNotIn('Authorization',req.headers);self.assertIsNone(req.data)
 

@@ -1,6 +1,6 @@
 import base64,io,json,tempfile,unittest,zipfile
 from pathlib import Path
-import visual_library as library,reference_packs as packs
+from backend.presets import visual_library as library;from backend.presets import reference_packs as packs
 
 PNG=b'\x89PNG\r\n\x1a\nREFERENCE_TEST'
 IMAGE='data:image/png;base64,'+base64.b64encode(PNG).decode()

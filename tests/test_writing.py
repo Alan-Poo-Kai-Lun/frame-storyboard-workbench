@@ -2,7 +2,7 @@ import copy,json,tempfile,unittest
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
-import server,writing_backend as writing
+import server;from backend.services import writing_backend as writing
 class WritingChecks(unittest.TestCase):
  def setUp(self):
   self.temp=tempfile.TemporaryDirectory();self.old=(server.DATA,server.STATE,server.CONFIG);server.DATA=Path(self.temp.name);server.STATE=server.DATA/'project.json';server.CONFIG=server.DATA/'settings.json';self.p=server.blank_project();server.save(self.p)
@@ -17,7 +17,7 @@ class WritingChecks(unittest.TestCase):
   body={'projectId':self.p['projectId'],'story':'第一段：两人在赌场对峙。\n第二段：动手。','count':2,'duration':15,
         'outputLanguage':'zh','dialogueLanguage':'Mandarin','continuity':True,'guideFromPrev':False,'assetRoles':{}}
   # Input-history coverage must not launch a model worker during fixture cleanup.
-  with patch('task_backend.threading.Thread.start'):
+  with patch('backend.services.task_backend.threading.Thread.start'):
    row=writing.enqueue(server,body)
   got=writing.task_input(server,row['id'])
   self.assertEqual(got['story'],body['story']);self.assertEqual(got['count'],2);self.assertTrue(got['createdAt'])
@@ -33,7 +33,7 @@ class WritingChecks(unittest.TestCase):
  def test_validate_and_append_no_overwrite_or_double_apply(self):
   snap=self.snapshot();result=writing.validate(server,self.output(),snap);self.assertEqual(result['segments'][0]['dialogueLanguage'],'Mandarin')
   row={'id':'t','type':'story','status':'done','projectId':self.p['projectId'],'result':result};manager=SimpleNamespace(get=lambda i:row,patch=lambda i,**kw:row.update(kw));before=server.load_project();edits=[{'title':s['title'],'storyText':s['storyText']} for s in result['segments']]
-  with patch('task_backend.manager',return_value=manager):
+  with patch('backend.services.task_backend.manager',return_value=manager):
    out=writing.apply(server,{'id':'t','segments':edits});self.assertEqual(out['created'],2);self.assertEqual(out['project']['segments'][:len(before['segments'])],before['segments']);self.assertEqual(out['project']['media'],before['media'])
    with self.assertRaises(ValueError):writing.apply(server,{'id':'t','segments':edits})
   restored=server.readzip(server.export_pack(out['project'],force=True));self.assertEqual(restored['segments'][-1]['dialogueLanguage'],'Cantonese')
@@ -46,7 +46,7 @@ class WritingChecks(unittest.TestCase):
    if change=='reference':obj['segments'][0]['shots'][0]['action']='@Picture 99 走近'
    with self.assertRaises(ValueError):writing.validate(server,obj,snap)
   row={'id':'t','type':'story','status':'done','projectId':self.p['projectId'],'result':writing.validate(server,self.output(),snap)};p=server.load_project();p['segments'][0]['storyText']='新故事';server.save(p)
-  with patch('task_backend.manager',return_value=SimpleNamespace(get=lambda i:row)):
+  with patch('backend.services.task_backend.manager',return_value=SimpleNamespace(get=lambda i:row)):
    with self.assertRaises(ValueError):writing.apply(server,{'id':'t','segments':[]})
   self.assertEqual(server.load_project()['segments'][0]['storyText'],'新故事')
  def test_segment_language_overrides_project_and_shot_overrides_segment(self):
@@ -73,7 +73,7 @@ class WritingChecks(unittest.TestCase):
   snap=self.snapshot();snap['refs']=[{'number':7}];obj=self.output();obj['segments'][0]['story']='@Picture 7 走近';obj['segments'][0]['shots'][0]['action']='@Picture 7 走近'
   result=writing.validate(server,obj,snap);row={'id':'t','type':'story','status':'done','projectId':p['projectId'],'result':result}
   edits=[{'title':s['title'],'storyText':s['storyText']} for s in result['segments']]
-  with patch('task_backend.manager',return_value=SimpleNamespace(get=lambda i:row,patch=lambda *a,**k:None)):
+  with patch('backend.services.task_backend.manager',return_value=SimpleNamespace(get=lambda i:row,patch=lambda *a,**k:None)):
    out=writing.apply(server,{'id':'t','segments':edits})['project']
   self.assertEqual(out['assets'][0],p['assets'][0]);self.assertEqual(out['assets'][1]['pictureNumber'],8)
   self.assertEqual(out['assets'][1]['segmentId'],out['segments'][-2]['id']);self.assertIn('Picture 8',out['segments'][-2]['storyText'])
@@ -82,7 +82,7 @@ class WritingChecks(unittest.TestCase):
   snap=self.snapshot();obj=self.output();obj['segments'][1]['shots'][0]['end']=4
   raw=json.dumps(obj,ensure_ascii=False);saved=[]
   manager=SimpleNamespace(store_input=lambda ident,value:saved.append(copy.deepcopy(value)))
-  with patch.object(server,'ai_call',return_value=raw),patch('task_backend.manager',return_value=manager):
+  with patch.object(server,'ai_call',return_value=raw),patch('backend.services.task_backend.manager',return_value=manager):
    result=writing.analyze(server,{},snap,{'_taskId':'test'})
    self.assertEqual(len(result['segments']),2);self.assertEqual(result['segments'][1]['shots'][0]['end'],4);self.assertTrue(result['blockingIssues']);self.assertIn('第 2 段',result['warnings'][0]['message'])
   self.assertEqual(saved[0]['modelResponse'],raw)

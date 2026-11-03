@@ -47,7 +47,7 @@ class ProjectMediaChecks(unittest.TestCase):
  def test_layout_has_its_own_file(self):
   project=server.load_project();layout={'unifiedFlow':{'nodes':{'a:x':{'x':1,'y':2}},'mode':'canvas'}}
   before=server.STATE.stat().st_mtime_ns
-  import project_layout
+  from backend.project import project_layout
   project_layout.write(server.DATA,project['projectId'],layout)
   self.assertEqual(server.STATE.stat().st_mtime_ns,before)
   self.assertEqual(project_layout.all(server.DATA)[project['projectId']],layout)
@@ -69,7 +69,7 @@ class ProjectMediaChecks(unittest.TestCase):
           'segments':[{'id':'seg1','title':'片段 01','duration':15,'prompt':'','shots':[]}],
           'assets':[],'media':{'assets/old.png':PNG},'originalZip':''}
   server.STATE.write_text(json.dumps(legacy,ensure_ascii=False),'utf-8')
-  import project_media
+  from backend.project import project_media
   project_media.forget()
   loaded=server.load_project()
   self.assertEqual(loaded['media'],{'assets/old.png':PNG})
@@ -139,7 +139,7 @@ class StorageChecks(unittest.TestCase):
  def setUp(self):
   self.tmp=tempfile.TemporaryDirectory();self.old=(server.DATA,server.STATE,server.CONFIG)
   server.DATA=Path(self.tmp.name);server.STATE=server.DATA/'project.json';server.CONFIG=server.DATA/'settings.json'
-  import project_media
+  from backend.project import project_media
   self.media=project_media
 
  def tearDown(self):
@@ -184,7 +184,7 @@ class StorageChecks(unittest.TestCase):
   self.assertFalse(stale.exists())
 
  def test_layout_keeps_the_most_recently_used_projects(self):
-  import project_layout
+  from backend.project import project_layout
   for i in range(project_layout.LIMIT):project_layout.write(server.DATA,'p%03d'%i,{'x':i})
   project_layout.write(server.DATA,'p000',{'x':99})
   project_layout.write(server.DATA,'one-more',{'x':1})

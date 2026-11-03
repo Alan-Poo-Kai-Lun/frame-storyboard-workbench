@@ -1,6 +1,6 @@
 import copy,threading,unittest
 from types import SimpleNamespace
-import asset_analysis as aa
+from backend.project import asset_analysis as aa
 
 class BulkAssetChecks(unittest.TestCase):
  def setUp(self):

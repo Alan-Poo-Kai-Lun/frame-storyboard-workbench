@@ -1,6 +1,6 @@
 import copy, tempfile, unittest
 from pathlib import Path
-import appearance_presets as profiles
+from backend.presets import appearance_presets as profiles
 
 class AppearancePresetsChecks(unittest.TestCase):
  def setUp(self):

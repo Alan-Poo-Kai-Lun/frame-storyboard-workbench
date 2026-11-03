@@ -47,7 +47,7 @@ def bump(root, version, build, today=None):
     elif old_cache != new_cache and old_cache not in raw:
         raise ValueError('web/index.html 里找不到旧的缓存键 ' + old_cache + '，请手动核对')
     return {'version': version_name, 'build': build_name, 'release': release,
-            'cacheKey': new_cache, 'notes': 'docs/release-' + release + '.md'}
+            'cacheKey': new_cache, 'notes': 'docs/releases/release-' + release + '.md'}
 
 
 def main():

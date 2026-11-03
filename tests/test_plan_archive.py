@@ -1,7 +1,7 @@
 import copy,json,tempfile,unittest
 from pathlib import Path
 from unittest.mock import patch
-import server,task_backend,writing_backend as writing,agent_backend as agent,plan_store
+import server;from backend.services import task_backend;from backend.services import writing_backend as writing;from backend.services import agent_backend as agent;from backend.project import plan_store
 
 class PlanArchiveChecks(unittest.TestCase):
  def setUp(self):

@@ -2,7 +2,7 @@ import copy,json,sys,tempfile,threading,unittest
 from pathlib import Path
 from urllib.request import Request,urlopen
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
-import server,asset_analysis
+import server;from backend.project import asset_analysis
 
 class StartupChecks(unittest.TestCase):
  def setUp(self):

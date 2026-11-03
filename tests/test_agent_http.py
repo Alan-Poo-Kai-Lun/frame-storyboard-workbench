@@ -3,7 +3,7 @@ import copy,json,tempfile,threading,time,unittest
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from urllib.request import Request,urlopen
-import server,task_backend
+import server;from backend.services import task_backend
 
 class AgentHTTPChecks(unittest.TestCase):
  def test_http_tool_loop_and_explicit_apply(self):

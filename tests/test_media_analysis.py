@@ -1,7 +1,7 @@
 import base64,copy,io,json,tempfile,unittest,zipfile
 from pathlib import Path
 from unittest.mock import patch
-import server,media_analysis as media,agent_backend as agent,task_backend,plan_store,writing_backend as writing
+import server;from backend.project import media_analysis as media;from backend.services import agent_backend as agent;from backend.services import task_backend;from backend.project import plan_store;from backend.services import writing_backend as writing
 import test_generation as gen
 import test_plan_archive as archive
 

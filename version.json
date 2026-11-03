@@ -1,8 +1,8 @@
 {
-  "version": "V3.41.1",
+  "version": "V3.41.2",
   "build": "R15",
   "date": "2026-11-03",
-  "release": "v3.41.1-canvas-r15",
+  "release": "v3.41.2-canvas-r15",
   "obsolete_files": [
     "video_backend.py",
     "enhance_backend.py",

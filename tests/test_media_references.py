@@ -1,5 +1,5 @@
 import copy,io,json,unittest,zipfile
-import server,agent_backend as agent,writing_backend as writing
+import server;from backend.services import agent_backend as agent;from backend.services import writing_backend as writing
 import test_generation as gen
 
 def setUpModule():

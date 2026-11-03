@@ -31,7 +31,7 @@ def publish(repository,sha,folder):
   release=next((r for r in request(base+'/releases?per_page=100') if r.get('tag_name')==tag),None)
  if release and not release.get('draft'):
   print('Published version already exists; preserved unchanged: '+release['html_url']);return release['html_url']
- notes=(ROOT/'docs'/('release-'+tag+'.md')).read_text('utf-8')
+ notes=(ROOT/'docs/releases'/('release-'+tag+'.md')).read_text('utf-8')
  if not release:release=request(base+'/releases','POST',{'tag_name':tag,'target_commitish':sha,'name':'FRAME '+tag,'body':notes,'draft':True,'prerelease':'-beta.' in tag})
  elif release.get('target_commitish')!=sha:raise ValueError('Draft belongs to another commit. Bump the release version instead of replacing it.')
  for name in names:

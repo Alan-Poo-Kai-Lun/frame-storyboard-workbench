@@ -1,7 +1,7 @@
 import json,tempfile,threading,unittest
 from pathlib import Path
 from types import SimpleNamespace
-import editor_presets
+from backend.presets import editor_presets
 
 class EditorPresetChecks(unittest.TestCase):
  def setUp(self):

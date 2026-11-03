@@ -3,7 +3,7 @@ from pathlib import Path
 from unittest.mock import patch
 from types import SimpleNamespace
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-import planning_backend as planning
+from backend.services import planning_backend as planning
 class RepairChecks(unittest.TestCase):
  def test_model_warnings_are_repairable_without_export_errors(self):
   p={'projectId':'p','segments':[{'id':'s','shots':[{'action':'original'}],'planning':{'warnings':['海浪影响未明确','海浪影响未明确']}}]}

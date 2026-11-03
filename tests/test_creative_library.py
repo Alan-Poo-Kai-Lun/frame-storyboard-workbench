@@ -1,7 +1,7 @@
 import base64,copy,json,sys,tempfile,unittest,zipfile,io
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
-import creative_library as lib,server
+from backend.project import creative_library as lib;import server
 
 class CreativeLibraryChecks(unittest.TestCase):
  def setUp(self):

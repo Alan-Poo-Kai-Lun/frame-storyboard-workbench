@@ -1,7 +1,7 @@
 import copy,json,unittest
 from types import SimpleNamespace
 from unittest.mock import patch
-import server,writing_backend as writing
+import server;from backend.services import writing_backend as writing
 import test_generation as gen
 
 def setUpModule():
@@ -19,7 +19,7 @@ class R11PlanningChecks(unittest.TestCase):
  def enqueue(self,p,chosen,story='使用 @Picture 1 @Audio 1 @Video 1'):
   saved={}
   def add(kind,meta,cfg,snap):saved.update(copy.deepcopy(snap));return {'id':'qa'}
-  with patch.object(server,'load_project',return_value=p),patch.object(server,'settings',return_value={'ai':{'endpoint':'http://localhost','model':'mock'}}),patch.object(writing,'selected',return_value=[]),patch('task_backend.manager',return_value=SimpleNamespace(add=add)):
+  with patch.object(server,'load_project',return_value=p),patch.object(server,'settings',return_value={'ai':{'endpoint':'http://localhost','model':'mock'}}),patch.object(writing,'selected',return_value=[]),patch('backend.services.task_backend.manager',return_value=SimpleNamespace(add=add)):
    writing.enqueue(server,{'projectId':p['projectId'],'story':story,'count':1,'duration':2,'assetIds':chosen})
   return saved
  def raw(self):return {'segments':[{'title':'声音与视频','story':'@Picture 1 站立','language':'Mandarin','shots':[{'start':0,'end':2,'action':'@Picture 1 站立','camera':'固定','dialogue':'原对白','sound':'环境音','startState':'门口站立','endState':'仍在门口','references':[1]}]}]}

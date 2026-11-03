@@ -1,7 +1,7 @@
 import copy,unittest
 from unittest.mock import patch
-import continuity_review as cr
-import video_provider_contract as vp
+from backend.project import continuity_review as cr
+from backend.utils import video_provider_contract as vp
 
 class ReviewChecks(unittest.TestCase):
  def test_detects_posture_binding_speaker_load_and_never_mutates(self):

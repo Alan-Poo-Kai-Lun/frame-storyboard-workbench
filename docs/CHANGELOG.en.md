@@ -2,6 +2,14 @@
 
 [中文](../CHANGELOG.md) · [English guide](README.en.md)
 
+## V3.41.2 · R15 repository organization — 2026-11-03
+
+- Organize 33 backend modules into `backend/ai`, `services`, `project`, `presets` and `utils`, updating static and dynamic imports.
+- Archive historical notes under `docs/releases/` and move the Windows launcher source to `tools/windows_launcher.py`.
+- Keep `server.py`, batch entry points and general documentation at the root. Correct resource-root and bundled writing-skill paths.
+- Update the source updater, manifests, EXE hidden imports and CI paths. Project/director-package formats, APIs and user-data locations remain unchanged.
+- Updater backups include backend packages and documentation. Older updaters can accept the new ZIP; the new startup archives retired flat modules.
+
 ## V3.41.1 · Canvas R15 patch — 2026-11-03
 
 - Segment Agent plans can be previewed and applied only to the selected segment; project plans remain append-only.

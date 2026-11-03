@@ -2,7 +2,7 @@ import io,json,unittest
 from contextlib import contextmanager
 from types import SimpleNamespace
 from unittest.mock import patch
-import ai_runtime
+from backend.ai import ai_runtime
 
 class StreamCompletionChecks(unittest.TestCase):
  def test_task_stream_reads_chunks_and_completion(self):
@@ -25,7 +25,7 @@ class StreamCompletionChecks(unittest.TestCase):
     ai_runtime.LOCAL.run={'id':'stream-test'}
     manager=SimpleNamespace(cancelled=lambda ident:False)
     try:
-     with patch('task_backend.manager',return_value=manager),patch('task_backend.check_cancel'),patch.object(ai_runtime,'report'),patch.object(ai_runtime,'thinking_control',return_value=(False,'off')),patch.object(ai_runtime,'cancellable_response',response):
+     with patch('backend.services.task_backend.manager',return_value=manager),patch('backend.services.task_backend.check_cancel'),patch.object(ai_runtime,'report'),patch.object(ai_runtime,'thinking_control',return_value=(False,'off')),patch.object(ai_runtime,'cancellable_response',response):
       self.assertEqual(ai_runtime.call(SimpleNamespace(),{'provider':provider,'endpoint':'http://local-mock','model':'mock'},[{'role':'user','content':'hello'}],False),'你好')
     finally:ai_runtime.LOCAL.run=previous
 

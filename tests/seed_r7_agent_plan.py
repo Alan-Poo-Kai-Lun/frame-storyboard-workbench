@@ -2,7 +2,7 @@
 import copy,json,os,sys
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-import server,agent_backend as agent,writing_backend as writing,task_backend,plan_store
+import server;from backend.services import agent_backend as agent;from backend.services import writing_backend as writing;from backend.services import task_backend;from backend.project import plan_store
 from test_r7_agent_plan import TEXT
 assert os.environ.get('FRAME_DATA_DIR') and server.DATA.name.startswith('qa-') and str(server.DATA).startswith('D:\\Codex\\FRAME\\FRAME-Canvas-R7'),server.DATA
 assert not server.STATE.exists(),'Refusing to overwrite an existing QA project'

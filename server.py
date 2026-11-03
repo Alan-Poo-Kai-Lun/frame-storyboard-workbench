@@ -2,14 +2,14 @@
 """Local storyboard workbench. Python 3.10+, no third-party dependencies."""
 import base64,collections,copy,hashlib,io,json,math,mimetypes,os,re,secrets,threading,time,uuid,webbrowser,zipfile
 import sys
-import generation_backend
-import task_backend as tasks
-import studio_backend as studio
-import reverse_backend as reverse
-import planning_backend as planning
-import asset_analysis
-import prompt_review
-import theme_backdrops
+from backend.services import generation_backend
+from backend.services import task_backend as tasks
+from backend.services import studio_backend as studio
+from backend.services import reverse_backend as reverse
+from backend.services import planning_backend as planning
+from backend.project import asset_analysis
+from backend.ai import prompt_review
+from backend.presets import theme_backdrops
 from pathlib import Path,PurePosixPath
 from http.server import ThreadingHTTPServer as _ThreadingHTTPServer,BaseHTTPRequestHandler
 
@@ -20,7 +20,7 @@ class ThreadingHTTPServer(_ThreadingHTTPServer):
 from urllib.parse import parse_qs,urlparse
 from urllib.request import Request,urlopen
 from urllib.error import HTTPError
-import runtime_paths
+from backend.utils import runtime_paths
 runtime_paths.configure_temp()
 ROOT=runtime_paths.resource_dir()
 DATA=runtime_paths.data_dir(); DATA.mkdir(parents=True,exist_ok=True)
@@ -51,7 +51,7 @@ def asset_version():
  stamp=hashlib.sha256('|'.join(parts).encode()).hexdigest()[:12]
  return stamp
 def parse_shots(prompt,duration):
-    import h3_compiler
+    from backend.ai import h3_compiler
     prompt=h3_compiler.editable_text(prompt)
     pattern=r'\[(\d+(?:\.\d+)?)\s*s?\s*[–—\-~到]\s*(\d+(?:\.\d+)?)\s*s?\]'
     matches=list(re.finditer(pattern,prompt)); shots=[]
@@ -107,11 +107,11 @@ def _remember(p):
     # Cache an independent copy: callers keep mutating the object they were given,
     # and a read must never see a half-applied edit. Media strings are shared.
     snapshot=copy.deepcopy(p)
-    import project_layout
+    from backend.project import project_layout
     project_layout.apply(snapshot,DATA)
     _CACHE['stamp']=_state_stamp();_CACHE['project']=snapshot
 def write_layout(project_id,layout):
-    import project_layout
+    from backend.project import project_layout
     project_layout.write(DATA,project_id,layout)
 DIAG={'errors':collections.deque(maxlen=25),'slow':collections.deque(maxlen=15)}
 
@@ -169,7 +169,7 @@ def read_b64_range(path,start,end):
 
 def public_project(p):
     """Ship the project without its media bytes: the browser asks for them by path."""
-    import project_media
+    from backend.project import project_media
     media=p.get('media') if isinstance(p.get('media'),dict) else {}
     index=p.get('mediaIndex') if isinstance(p.get('mediaIndex'),dict) else {}
     if len(index)<len(media):
@@ -183,7 +183,7 @@ def load_project():
         stamp=_state_stamp()
         p=_CACHE['project'] if (_CACHE['project'] is not None and _CACHE['stamp']==stamp) else None
         if p is None:
-            import asset_lifecycle,project_media,project_layout
+            from backend.project import asset_lifecycle;from backend.project import project_media;from backend.project import project_layout
             payload=json.loads(STATE.read_text('utf-8'))
             # A project written before media was split out still carries the bytes inline.
             legacy=bool(payload.get('media'))
@@ -196,13 +196,13 @@ def load_project():
             elif repair_dialogue_languages(p) or legacy: save(p)
             _remember(p)
         # Plan archives live in their own folder and change without touching the project file.
-        import plan_store,handoff_archive
+        from backend.project import plan_store;from backend.project import handoff_archive
         handoff_archive.restore(sys.modules[__name__],p)
         archive=plan_store.records(sys.modules[__name__],p)
         if archive:p['planArchive']=archive
         else:p.pop('planArchive',None)
         # Read the small layout sidecar without invalidating the media cache.
-        import project_layout
+        from backend.project import project_layout
         return project_layout.apply(copy.deepcopy(p),DATA)
 def backup_project():
     if STATE.exists():
@@ -224,7 +224,7 @@ def create_project(example=False,title=''):
                 asset['confirmation']={'signature':asset_analysis.signature(asset,p['media']),'mode':'manual','confirmedAt':time.strftime('%Y-%m-%d %H:%M:%S'),'source':asset_analysis.source(asset)}
         elif title.strip():p['title']=title.strip()[:200]
         if not example:
-            import creative_library
+            from backend.project import creative_library
             layout=creative_library.default_layout(DATA);p['overviewLayout']={'canvas37':layout}
             if layout['mode']=='cards':
                 p['segments'][0]['shots']=[{'id':uid(),'start':0,'end':3,'action':'','camera':'','dialogue':'','sound':'','expression':'','image':'','locks':{}}]
@@ -233,7 +233,7 @@ def create_project(example=False,title=''):
 def import_project(p):
     """Read the portable FRAME JSON backup before replacing the current project."""
     if not isinstance(p,dict) or p.get('version')!=1:raise ValueError('项目备份格式无效')
-    import asset_lifecycle
+    from backend.project import asset_lifecycle
     p=asset_lifecycle.normalize(copy.deepcopy(p))
     repair_dialogue_languages(p)
     if not isinstance(p.get('title'),str) or not isinstance(p.get('script'),str) or not isinstance(p.get('aspect'),str):raise ValueError('项目基础字段无效')
@@ -532,7 +532,7 @@ def legacy_scoped_prompt(project, segment):
 def original_scoped_prompt(project, segment):
     legacy=legacy_scoped_prompt(project,segment)  # Retain missing/deleted-reference validation.
     if not (project.get('assetsManaged') or project.get('generationManaged') or segment.get('planning',{}).get('h3PromptVersion')==2):return legacy
-    import h3_compiler
+    from backend.ai import h3_compiler
     return h3_compiler.compile_prompt(sys.modules[__name__],project,segment)
 
 def scoped_prompt(project, segment):
@@ -736,7 +736,7 @@ def export_pack(p,force=False):
     files['extra/reference_inventory.json']=json.dumps(inventory,ensure_ascii=False,indent=2).encode()
     finished={'version':1,'notice':'成品区独立于参考素材；记录与 storyboard.json 中 segments[].videos 一致，按原片段与镜头 ID 关联。','segments':[{'id':s['id'],'title':s['title'],'videos':copy.deepcopy(s.get('videos',[]))} for s in p['segments']]}
     files['extra/finished_inventory.json']=json.dumps(finished,ensure_ascii=False,indent=2).encode()
-    import handoff_archive
+    from backend.project import handoff_archive
     handoff_archive.export(sys.modules[__name__],p,files)
     portable_pack_media(files,p)
     if sum(len(v) for v in files.values())>400*1024*1024:raise ValueError('导演包素材超过 400MB，请减少视频或压缩后再导出')
@@ -756,10 +756,10 @@ def request(url,body=None,key='',method=None,content_type='application/json',tim
 def ai_call(cfg,messages,json_mode=False):
     with COMPUTE_LOCK:return _ai_call(cfg,messages,json_mode)
 def ai_session(ident):
-    import ai_runtime
+    from backend.ai import ai_runtime
     return ai_runtime.session(sys.modules[__name__],ident)
 def _ai_call(cfg,messages,json_mode=False):
-    import ai_runtime
+    from backend.ai import ai_runtime
     return ai_runtime.call(sys.modules[__name__],cfg,messages,json_mode)
 def unload_model(cfg):
     with COMPUTE_LOCK:return _unload_model(cfg)
@@ -788,15 +788,15 @@ def merge_project_delta(current,body):
     return {**project,'media':media,'originalZip':original}
 
 def save(p,previous=None):
-    import project_store
+    from backend.project import project_store
     with LOCK:
-        import asset_lifecycle,project_media
+        from backend.project import asset_lifecycle;from backend.project import project_media
         if previous is None:
             cached=_CACHE['project']
             if cached is not None and _CACHE['stamp']==_state_stamp():previous=cached
             elif STATE.exists():previous=project_media.attach(json.loads(STATE.read_text('utf-8')),DATA)
             else:previous=None
-        import plan_store,handoff_archive
+        from backend.project import plan_store;from backend.project import handoff_archive
         handoff_archive.restore(sys.modules[__name__],p)
         archive=plan_store.records(sys.modules[__name__],p)
         if archive:p['planArchive']=archive
@@ -841,7 +841,7 @@ def unload_all_models(s):
 # One-line POST routes live in a table instead of a long if chain: adding a route
 # is a single entry, and every handler has the same signature.
 POST_ROUTES={
- '/api/ai-continuity':lambda s,b: __import__('ai_continuity').enqueue(s,b),
+ '/api/ai-continuity':lambda s,b: __import__('backend.ai.ai_continuity',fromlist=["*"]).enqueue(s,b),
  '/api/reverse-templates':lambda s,b: reverse.update_template(s,b),
  '/api/reverse-prompt':lambda s,b: reverse.enqueue(s,b),
  '/api/task-action':lambda s,b: tasks.manager(s).action(b),
@@ -927,7 +927,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not re.fullmatch(r'[a-f0-9]{64}\.(?:bin|png|jpg|webp|gif|mp4|webm)',name):raise ValueError('参考媒体路径无效')
                 if self.headers.get('Sec-Fetch-Site') not in [None,'same-origin','none']:raise ValueError('跨站请求已拒绝')
                 name=name.rsplit('.',1)[0]+'.bin'
-                import visual_library
+                from backend.presets import visual_library
                 with LOCK:
                     rows=visual_library._records(DATA)
                     row=next((r for r in rows if r.get('mediaFile')==name),None)
@@ -935,7 +935,7 @@ class Handler(BaseHTTPRequestHandler):
                     raw=(DATA/'reference-media'/name).read_bytes()
                 return self.respond(raw,mime=row['mime'],inline=True)
             if route=='/example-thumbnail':
-                import project_hub
+                from backend.project import project_hub
                 with LOCK:
                     example=readzip((ROOT/'presets/starter-project.mmxpack.zip').read_bytes());url=project_hub.thumbnail(DATA,example)
                     if not url:raise ValueError('示例封面不可用')
@@ -947,43 +947,43 @@ class Handler(BaseHTTPRequestHandler):
                 if path.is_symlink():raise ValueError('缩略图路径无效')
                 return self.respond(path.read_bytes(),mime='image/jpeg',inline=True)
             if route.startswith('/asset-library-media/'):
-                import creative_library
+                from backend.project import creative_library
                 with LOCK:raw,mime=creative_library.media_file(DATA,route.removeprefix('/asset-library-media/'))
                 return self.respond(raw,mime=mime,inline=True)
             if route.startswith('/api/') and not self.valid(): return self.respond({'error':'请求验证失败'},403)
             if route=='/api/asset-library-clipboard':
-                import library_clipboard
+                from backend.utils import library_clipboard
                 return self.respond(library_clipboard.copy_file(DATA,body.get('id')))
             if route=='/api/appearance-presets':
-                import appearance_presets
+                from backend.presets import appearance_presets
                 with LOCK:return self.respond(appearance_presets.listing(DATA))
             if route in ['/api/asset-library','/api/layout-presets']:
-                import creative_library
+                from backend.project import creative_library
                 with LOCK:return self.respond(creative_library.library(DATA) if route.endswith('asset-library') else creative_library.presets(DATA))
             if route in ['/api/projects','/api/projects-trash']:
-                import project_store
+                from backend.project import project_store
                 with LOCK:return self.respond(project_store.trash_listing(DATA,STATE) if route.endswith('trash') else project_store.listing(DATA,STATE))
             if route=='/api/project':
                 with LOCK:project=load_project()
                 return self.respond(project)
             if route=='/api/storage':
-                import project_media
+                from backend.project import project_media
                 with LOCK:return self.respond(project_media.storage_report(DATA,STATE))
             if route=='/api/settings': return self.respond(settings())
             if route=='/api/check-updates':
-                import update_check
+                from backend.utils import update_check
                 current=json.loads((ROOT/'version.json').read_text('utf-8')).get('release','v3.9-beta.1')
                 return self.respond(update_check.check(current))
             if route=='/api/visual-library-storage':
-                import visual_library
+                from backend.presets import visual_library
                 with LOCK:
                     rows=visual_library._records(DATA);used={r['mediaFile'] for r in rows if r.get('mediaFile')};size=sum((DATA/'reference-media'/name).stat().st_size for name in used if (DATA/'reference-media'/name).is_file())
                     return self.respond({'used':size,'limit':None})
             if route=='/api/visual-pack-export':
-                import reference_packs
+                from backend.presets import reference_packs
                 with LOCK:return self.respond(reference_packs.export(DATA),mime='application/zip')
             if route=='/api/visual-references':
-                import visual_library
+                from backend.presets import visual_library
                 with LOCK:return self.respond(visual_library.read(DATA,public=True))
             if route=='/api/reverse-templates':return self.respond(reverse.templates(sys.modules[__name__]))
             if route=='/api/tasks':return self.respond(tasks.manager(sys.modules[__name__]).public())
@@ -1016,25 +1016,25 @@ class Handler(BaseHTTPRequestHandler):
                 with LOCK: save(p)
                 return self.respond(p)
             if route=='/api/visual-pack-preview':
-                import reference_packs
+                from backend.presets import reference_packs
                 with LOCK:return self.respond(reference_packs.preview(DATA,raw))
             body=json.loads(raw or b'{}')
             handler=POST_ROUTES.get(route)
             if handler:return self.respond(handler(sys.modules[__name__],body))
             if route=='/api/asset-library-clipboard':
-                import library_clipboard
+                from backend.utils import library_clipboard
                 return self.respond(library_clipboard.copy_file(DATA,body.get('id')))
             if route=='/api/appearance-presets':
-                import appearance_presets
+                from backend.presets import appearance_presets
                 with LOCK:return self.respond(appearance_presets.update(DATA,body))
             if route in ['/api/asset-library','/api/asset-library-apply','/api/layout-presets']:
-                import creative_library
+                from backend.project import creative_library
                 with LOCK:
                     if route.endswith('apply'):return self.respond(creative_library.apply_asset(sys.modules[__name__],body))
                     if route.endswith('asset-library'):
                         result=creative_library.update_asset(DATA,body)
                         if body.get('action')=='category':
-                            import project_hub
+                            from backend.project import project_hub
                             project_hub.rename_category(sys.modules[__name__],body['name'],'未分类' if body.get('remove') else body.get('newName') or body['name'])
                         return self.respond(result)
                     return self.respond(creative_library.update_preset(DATA,body))
@@ -1047,7 +1047,7 @@ class Handler(BaseHTTPRequestHandler):
                     # instead of rewriting the whole project.
                     p['overviewLayout']=layout;write_layout(p['projectId'],layout);return self.respond({'ok':True})
             if route in ['/api/project-action','/api/project-download','/api/project-download-to']:
-                import project_hub
+                from backend.project import project_hub
                 with LOCK:
                     if route.endswith('project-action'):return self.respond(project_hub.action(sys.modules[__name__],body))
                     project=project_hub.read(DATA,STATE,body.get('projectId'))
@@ -1061,7 +1061,7 @@ class Handler(BaseHTTPRequestHandler):
                         return self.respond({'path':str(path),'size':len(raw)})
                     return self.respond(raw,mime='application/zip')
             if route in ['/api/project-open','/api/projects-recover','/api/projects-delete','/api/project-restore']:
-                import project_store
+                from backend.project import project_store
                 with LOCK:
                     if route.endswith('recover'):return self.respond(project_store.recover(DATA,STATE))
                     if route.endswith('delete'):
@@ -1071,13 +1071,13 @@ class Handler(BaseHTTPRequestHandler):
                     if route.endswith('restore'):return self.respond(project_store.restore_project(DATA,STATE,body.get('projectId'),body.get('currentProjectId')))
                     return self.respond(project_store.open_project(DATA,STATE,body.get('projectId'),body.get('currentProjectId'),save))
             if route in ['/api/visual-pack-apply','/api/visual-pack-cancel']:
-                import reference_packs
+                from backend.presets import reference_packs
                 with LOCK:
                     if route.endswith('cancel'):
                         reference_packs.cancel(DATA,body.get('token'));return self.respond({'ok':True})
                     return self.respond(reference_packs.apply(DATA,body))
             if route=='/api/visual-reference-media':
-                import visual_library
+                from backend.presets import visual_library
                 with LOCK:
                     row=next((r for r in visual_library._records(DATA) if r['id']==body.get('id')),None)
                     if not row or not row.get('mediaFile'):raise ValueError('该条目没有参考媒体')
@@ -1085,7 +1085,7 @@ class Handler(BaseHTTPRequestHandler):
                     if not path.is_file():raise ValueError('找不到参考媒体文件，请从原工作台 data 目录恢复')
                     return self.respond({'image':'data:'+row['mime']+';base64,'+base64.b64encode(path.read_bytes()).decode()})
             if route=='/api/visual-references':
-                import visual_library
+                from backend.presets import visual_library
                 with LOCK:return self.respond(visual_library.update(DATA,body,public=True))
             if route=='/api/repair-pack-images':
                 with LOCK:
@@ -1094,21 +1094,21 @@ class Handler(BaseHTTPRequestHandler):
                     count=restore_pack_images(p);save(p)
                 return self.respond({'project':p,'recovered':count})
             if route=='/api/editor-presets':
-                import editor_presets
+                from backend.presets import editor_presets
                 return self.respond(editor_presets.library(sys.modules[__name__],body))
             if route in ['/api/agent-threads','/api/agent-info','/api/agent-send','/api/agent-apply','/api/agent-undo']:
-                import agent_backend as agent
+                from backend.services import agent_backend as agent
                 action={'/api/agent-threads':agent.thread_action,'/api/agent-info':agent.info,'/api/agent-send':agent.enqueue,'/api/agent-apply':agent.apply,'/api/agent-undo':agent.undo}[route]
                 return self.respond(action(sys.modules[__name__],body))
             if route=='/api/plan-record':
-                import plan_store
+                from backend.project import plan_store
                 return self.respond(plan_store.endpoint(sys.modules[__name__],body))
             if route in ['/api/writing-rules','/api/story-plan','/api/story-restore','/api/story-apply']:
-                import writing_backend as writing
+                from backend.services import writing_backend as writing
                 action={'/api/writing-rules':writing.library,'/api/story-plan':writing.enqueue,'/api/story-restore':writing.restore,'/api/story-apply':writing.apply}[route]
                 return self.respond(action(sys.modules[__name__],body))
             if route in ['/api/prompt-translate','/api/prompt-translations','/api/prompt-translation-save','/api/prompt-export-language']:
-                import prompt_translation as translation
+                from backend.ai import prompt_translation as translation
                 action={'/api/prompt-translate':translation.enqueue,'/api/prompt-translations':translation.info,'/api/prompt-translation-save':translation.save_result,'/api/prompt-export-language':translation.choose}[route]
                 return self.respond(action(sys.modules[__name__],body))
             if route=='/api/compiled-prompt':
@@ -1133,7 +1133,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not p or p.get('projectId')!=body.get('projectId'):raise ValueError('项目已切换')
                 return self.respond(guide_settings(p))
             if route in ['/api/analyze-media','/api/media-analysis-status','/api/edit-media-analysis']:
-                import media_analysis
+                from backend.project import media_analysis
                 if route=='/api/analyze-media':return self.respond(media_analysis.enqueue(sys.modules[__name__],body))
                 if route=='/api/edit-media-analysis':return self.respond(media_analysis.update(sys.modules[__name__],body))
                 p=load_project()
@@ -1157,17 +1157,17 @@ class Handler(BaseHTTPRequestHandler):
                         draft=original.get('analysisDraft') if original else None
                         if draft and draft.get('signature')==asset_analysis.signature(a,body.get('media',{})):a['analysisDraft']=copy.deepcopy(draft)
                         else:a.pop('analysisDraft',None)
-                        import media_analysis
+                        from backend.project import media_analysis
                         analysis=media_analysis.current(original,body.get('media',{})) if original and original.get('path')==a.get('path') else None
                         if analysis:a['mediaAnalysis']=copy.deepcopy(analysis)
                         else:a.pop('mediaAnalysis',None)
                     save(body,previous=current)
                 return self.respond({'ok':True})
             if route=='/api/task-input':
-                import writing_backend
+                from backend.services import writing_backend
                 return self.respond(writing_backend.task_input(sys.modules[__name__],body.get('id','')))
             if route=='/api/storage-clean':
-                import project_media
+                from backend.project import project_media
                 with LOCK:return self.respond(project_media.purge_orphans(DATA,STATE))
             if route=='/api/test':
                 cfg=body; provider=cfg.get('provider')
@@ -1177,7 +1177,7 @@ class Handler(BaseHTTPRequestHandler):
 if __name__=='__main__':
     import argparse
     parser=argparse.ArgumentParser();parser.add_argument('--port',type=int,default=8845);parser.add_argument('--no-browser',action='store_true');args=parser.parse_args()
-    from update_workbench import retire_old_modules
+    from backend.utils.update_workbench import retire_old_modules
     try:
         archived=retire_old_modules(ROOT)
         if archived:print('旧生成模块已归档：'+archived,flush=True)

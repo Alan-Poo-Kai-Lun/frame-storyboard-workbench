@@ -1,6 +1,6 @@
 import json,tempfile,unittest
 from pathlib import Path
-import server,agent_backend as agent
+import server;from backend.services import agent_backend as agent
 
 class AgentTimestampChecks(unittest.TestCase):
  def setUp(self):

@@ -1,5 +1,5 @@
 import struct,unittest
-from library_clipboard import payload
+from backend.utils.library_clipboard import payload
 
 class ClipboardPayloadChecks(unittest.TestCase):
  def test_unicode_windows_file_drop_format(self):

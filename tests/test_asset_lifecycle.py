@@ -1,6 +1,6 @@
 import copy,tempfile,unittest
 from pathlib import Path
-import server,asset_lifecycle
+import server;from backend.project import asset_lifecycle
 
 class AssetLifecycleChecks(unittest.TestCase):
  def setUp(self):

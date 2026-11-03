@@ -1,5 +1,5 @@
 import copy,io,json,zipfile,unittest
-import server,agent_backend,creative_library
+import server;from backend.services import agent_backend;from backend.project import creative_library
 import test_plan_archive as archive_fixture
 
 class R15Checks(unittest.TestCase):
@@ -19,7 +19,7 @@ class R15Checks(unittest.TestCase):
   self.assertEqual(agent_backend.read_chats(server)[restored['projectId']]['thread'][0]['content'],'请保持服装')
   self.assertIn(row['id'],restored['planArchive'])
  def test_optional_handoff_excludes_selected_records_and_credentials(self):
-  import handoff_archive
+  from backend.project import handoff_archive
   self.assertEqual(handoff_archive.clean({'key':'SECRET','cfg':{'x':1},'safe':'ok'}),{'safe':'ok'})
   self.fixture.archived();p=server.load_project();p['notes']=[{'text':'private note'}];p['handoffOptions']={'notes':False,'agent':False,'planning':False}
   with zipfile.ZipFile(io.BytesIO(server.export_pack(p,force=True))) as z:

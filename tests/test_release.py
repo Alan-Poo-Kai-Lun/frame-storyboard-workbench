@@ -4,7 +4,7 @@ ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT));sys.path.i
 import server
 from check_release import inputs,linked_screenshots,stale_docs,stale_docs
 from build_release import build
-from update_workbench import archive_files,install
+from backend.utils.update_workbench import archive_files, install
 class ReleaseChecks(unittest.TestCase):
  def setUp(self):
   self.tmp=tempfile.TemporaryDirectory();self.path=Path(self.tmp.name);self.original=(server.DATA,server.STATE,server.CONFIG)

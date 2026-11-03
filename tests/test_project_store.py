@@ -1,6 +1,6 @@
 import copy,json,tempfile,unittest
 from pathlib import Path
-import server,project_store
+import server;from backend.project import project_store
 class ProjectStoreChecks(unittest.TestCase):
  def setUp(self):
   self.tmp=tempfile.TemporaryDirectory();self.data=Path(self.tmp.name);self.original=(server.DATA,server.STATE,server.CONFIG);server.DATA=self.data;server.STATE=self.data/'project.json';server.CONFIG=self.data/'settings.json'
@@ -61,7 +61,7 @@ class ProjectStoreChecks(unittest.TestCase):
   self.assertEqual(server.load_project()['projectId'],a['projectId']);self.assertEqual(len(project_store.listing(self.data,server.STATE)),1);self.assertEqual(project_store.trash_listing(self.data,server.STATE),[])
 
  def test_deleted_project_tasks_are_cancelled_without_touching_other_projects(self):
-  import threading,types,task_backend
+  import threading;import types;from backend.services import task_backend
   from unittest.mock import Mock,patch
   rows=[{'id':'a','projectId':'deleted','status':'waiting'},{'id':'b','projectId':'deleted','status':'running'},{'id':'c','projectId':'kept','status':'waiting'},{'id':'d','projectId':'deleted','status':'done'}]
   manager=types.SimpleNamespace(lock=threading.RLock(),rows=rows,write=Mock(),event=threading.Event())
