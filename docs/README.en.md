@@ -10,6 +10,56 @@ FRAME supports planning and handoff for AI short films, ads and storyboards: org
 
 **2026-11-03 · V3.41.3:** Release history is consolidated into CHANGELOG; future releases use three-part SemVer tags. [Details](CHANGELOG.en.md)
 
+## Feature tour
+
+These seven screenshots show the real workbench. Click an image to inspect the original. They were captured on different dates; some layouts differ from the current release. [Screenshot provenance and differences](assets/screenshots/README.md).
+
+### Writing skills: reusable creative rules
+
+Choose storyboard, script, action, comedy or cinematography rules. Read or edit the full rules and add custom skills. Project defaults and segment selections guide later AI planning and shot breakdowns without automatically rewriting existing shots.
+
+<p align="center"><img src="assets/screenshots/feature-writing-skills.png" alt="Writing skill categories, full rules and custom skills" width="600"></p>
+
+### Story planning: preview before applying
+
+Enter a story, choose output/dialogue languages, aspect ratio, visual tone, shot density, segment count and duration, and mention reference assets with @. Review the resulting segments and shots before applying them to the canvas.
+
+<p align="center"><img src="assets/screenshots/feature-story-planning.png" alt="Whole-story planning settings, reference mentions and story input" width="560"></p>
+
+This is an earlier vertical layout. The current desktop planner uses settings/story columns, shown in the workflow below.
+
+### Local models or API services
+
+Configure local Ollama or a compatible API, select text and vision models, and test the connection. Manual storyboard editing remains available without AI. The pictured endpoint and model name illustrate the fields; actual values must match the configured provider.
+
+<p align="center"><img src="assets/screenshots/feature-ai-connections.png" alt="Local Ollama and compatible API connection settings" width="620"></p>
+
+### Project Agent: discuss references and preview shot plans
+
+Mention assets and discuss story, style, action and continuity. Project Agent handles project-wide discussion; node Agent handles scoped changes. Preview a shot plan before applying it, or carry it into whole-story planning for further editing.
+
+<p align="center"><img src="assets/screenshots/feature-project-agent.png" alt="Project Agent discussing character and scene references with a storyboard preview" width="1100"></p>
+
+### Visual references: see camera choices
+
+Browse camera references by category, read descriptions, replace media, and apply camera choices to shots. Reference packs can be managed, imported and exported. The screenshot shows user-configured examples; the same images are not necessarily bundled with the application.
+
+<p align="center"><img src="assets/screenshots/feature-visual-references.png" alt="Eye-level, high-angle, low-angle and over-the-shoulder references" width="600"></p>
+
+### Shot editing and final prompts
+
+AI assists shot planning and prompt composition. Edit action, camera, dialogue, dialogue language, start/end times, positions, facing directions, poses and action outcomes on shot cards. Each segment connects its shots to a final prompt for viewing, copying or editing before external generation.
+
+<p align="center"><img src="assets/screenshots/feature-shot-prompts.png" alt="Shot action, camera, dialogue, spatial states, timing and final H3 prompt" width="1100"></p>
+
+The empty storyboard-image areas are placeholders. This shows planning and prompt composition, not generated image/video results. Text constraints do not guarantee continuity in model output.
+
+### Asset library: reusable references across projects
+
+Organize characters, scenes, props, audio/video and descriptions using categories, search and favorites. Drop media or paste images. Adding an asset to a project creates a copy while keeping the library original independent. This screenshot shows an empty library and its import controls.
+
+<p align="center"><img src="assets/screenshots/feature-asset-library.png" alt="Asset library media drop zone, pasted images, search and project reference scope" width="640"></p>
+
 ## Workflow
 
 ![Actual workbench: navigation and Agent, assets and shots, and inspector](assets/screenshots/workbench-overview.png)

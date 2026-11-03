@@ -10,6 +10,56 @@ FRAME 用于 AI 短视频、广告与故事分镜的前期规划和交接：整�
 
 **2026-11-03 · V3.41.3：** 完整版本历史统一归并到 CHANGELOG，后续采用三段 SemVer 标签。[详情](CHANGELOG.md)
 
+## 功能图解
+
+从写作规则到最终提示词，下面 7 张图均来自实际工作台。点击图片可查看原图。截图拍摄于不同日期，部分布局与当前版本不同；[截图来源与界面差异](docs/assets/screenshots/README.md)。
+
+### 写作技能：把创作要求变成可复用规则
+
+选择分镜、剧本、动作、喜剧或摄影规则，也可编辑完整规则并新增自定义技能。项目默认与片段选择帮助统一创作方向；规则供后续 AI 规划与拆镜使用，不会自动重写已有镜头。
+
+<p align="center"><img src="docs/assets/screenshots/feature-writing-skills.png" alt="写作技能库：分类、完整规则、自定义技能和应用选择" width="600"></p>
+
+### 整篇剧情规划：先看方案，再应用到画布
+
+输入整体故事，设置输出与对白语言、画幅、视觉影调、镜头密度、片段数量和时长，并通过 @ 引用素材。先生成可核对的片段与镜头草稿，再确认应用；已有项目内容按预览中的应用方式处理。
+
+<p align="center"><img src="docs/assets/screenshots/feature-story-planning.png" alt="整篇剧情规划：创作设置、素材引用与整体剧情输入" width="560"></p>
+
+图中为较早的纵向布局；当前桌面端已改为左侧设置、右侧剧情的分栏布局，见下方工作流程中的新版截图。
+
+### 本地或 API：使用你自己的模型服务
+
+可配置本地 Ollama 或兼容 API，分别设置文字与视觉模型，测试连接后使用。基础分镜可手动编辑，AI 辅助按需启用。截图中的地址和模型名仅为界面示例，实际填写应与服务提供方支持的模型一致。
+
+<p align="center"><img src="docs/assets/screenshots/feature-ai-connections.png" alt="AI 连接设置：本地 Ollama、兼容 API、模型与连接测试" width="620"></p>
+
+### 项目 Agent：围绕素材讨论、预览分镜方案
+
+在对话中 @ 素材，描述故事、风格、动作与衔接要求。项目 Agent 面向整体创作讨论，节点 Agent 用于局部调整；分镜方案先预览，确认后应用，也可带入整篇规划继续修改。
+
+<p align="center"><img src="docs/assets/screenshots/feature-project-agent.png" alt="项目 Agent 引用人物和场景讨论故事，并预览分镜方案" width="1100"></p>
+
+### 视觉参考库：让景别和运镜有直观参照
+
+按类别查找机位等视觉参考，查看说明、修改名称或替换参考媒体，并将相关机位用于镜头。支持管理与导入导出参考整合包。图中展示用户配置的参考示例，不代表安装包附带相同图片。
+
+<p align="center"><img src="docs/assets/screenshots/feature-visual-references.png" alt="视觉参考库：平视、俯视、仰视、越肩参考与应用机位" width="600"></p>
+
+### 逐镜编辑与最终提示词：把故事落实到时间线
+
+AI 辅助组织分镜与提示词，镜头卡片可继续编辑画面动作、摄影机、角色对白、对白语言、开始/结束时间，以及起止位置、朝向、姿态和动作结果。每段镜头后连接最终提示词，可查看、复制或编辑后交给外部生成工具。
+
+<p align="center"><img src="docs/assets/screenshots/feature-shot-prompts.png" alt="镜头卡片中的动作、摄影机、对白、起止空间状态与 H3 最终提示词" width="1100"></p>
+
+图中“尚未生成分镜图”是占位状态。这里展示的是分镜和提示词编排，不是已生成的图片或视频；文字约束也不保证模型输出必然连续。
+
+### 素材库：跨项目整理自己的创作参考
+
+保存人物、场景、道具、音视频与文字说明，通过分类、搜索和收藏查找。支持拖入媒体或粘贴图片；加入项目时复制素材，库内原件保持独立。图中为空库界面，展示导入与管理入口。
+
+<p align="center"><img src="docs/assets/screenshots/feature-asset-library.png" alt="素材库：拖入媒体、粘贴图片、分类搜索与加入项目用途" width="640"></p>
+
 ## 工作流程
 
 ![实际工作台：左侧片段导航与 Agent、中间素材和镜头、右侧属性面板](docs/assets/screenshots/workbench-overview.png)
