@@ -2,6 +2,12 @@
 
 [中文](../CHANGELOG.md) · [English guide](README.en.md)
 
+## V3.41.3 — 2026-11-03
+
+- Consolidate all 50 historical release documents into root `CHANGELOG.md`, preserving complete bodies and source checksums.
+- Remove the release-document directory and redirect documentation links to changelog anchors.
+- Read GitHub release notes from the matching changelog section; generate strict three-part SemVer tags without canvas/build suffixes. Existing tags remain unchanged.
+
 ## V3.41.2 · R15 repository organization — 2026-11-03
 
 - Organize 33 backend modules into `backend/ai`, `services`, `project`, `presets` and `utils`, updating static and dynamic imports.

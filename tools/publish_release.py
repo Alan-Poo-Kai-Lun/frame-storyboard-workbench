@@ -1,6 +1,7 @@
 """Publish verified artifacts in GitHub Actions. Never replace a published version."""
 import argparse,hashlib,json,os
 from pathlib import Path
+from release_notes import release_notes,release_tag
 from urllib.error import HTTPError
 from urllib.parse import quote
 from urllib.request import Request,urlopen
@@ -12,7 +13,7 @@ def publish(repository,sha,folder):
  if len(sha)!=40 or any(c not in '0123456789abcdef' for c in sha):raise ValueError('Expected a concrete commit SHA')
  token=os.environ.get('GITHUB_TOKEN','')
  if not token:raise ValueError('GITHUB_TOKEN is required in Actions; never pass it on the command line')
- version=json.loads((ROOT/'version.json').read_text('utf-8'));tag=version['release']
+ version=json.loads((ROOT/'version.json').read_text('utf-8'));tag=release_tag(version['release'])
  folder=Path(folder);names=['FRAME-Storyboard-Workbench-'+tag+'.zip','FRAME-Workbench-Windows-x64-'+tag+'.exe','SHA256SUMS.txt']
  for name in names:
   if not (folder/name).is_file():raise ValueError('Missing verified artifact: '+name)
@@ -31,7 +32,7 @@ def publish(repository,sha,folder):
   release=next((r for r in request(base+'/releases?per_page=100') if r.get('tag_name')==tag),None)
  if release and not release.get('draft'):
   print('Published version already exists; preserved unchanged: '+release['html_url']);return release['html_url']
- notes=(ROOT/'docs/releases'/('release-'+tag+'.md')).read_text('utf-8')
+ notes=release_notes(ROOT,tag)
  if not release:release=request(base+'/releases','POST',{'tag_name':tag,'target_commitish':sha,'name':'FRAME '+tag,'body':notes,'draft':True,'prerelease':'-beta.' in tag})
  elif release.get('target_commitish')!=sha:raise ValueError('Draft belongs to another commit. Bump the release version instead of replacing it.')
  for name in names:

@@ -26,7 +26,7 @@ def archive_files(path):
  return result
 
 def version_name(files):
- raw=files.get('README.md',b'').decode('utf-8',errors='replace');m=re.search(r'\bV(\d+\.\d+)\b',raw)
+ raw=files.get('README.md',b'').decode('utf-8',errors='replace');m=re.search(r'\bV(\d+\.\d+(?:\.\d+)?)\b',raw)
  return 'V'+m[1] if m else 'unknown'
 
 def install(package,target):

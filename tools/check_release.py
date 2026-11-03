@@ -55,7 +55,7 @@ def stale_docs(root,names):
  """Docs that still describe ports or data paths the code moved away from."""
  stale=[]
  for name in names:
-  if not name.endswith('.md') or name.startswith(('docs/release-','docs/releases/')):continue
+  if not name.endswith('.md') or name in ['CHANGELOG.md','docs/CHANGELOG.en.md'] or name.startswith(('docs/release-','docs/releases/')):continue
   raw=(root/name).read_text('utf-8')
   stale.extend(name+' -> '+label for pattern,label in STALE if pattern.search(raw))
  return stale

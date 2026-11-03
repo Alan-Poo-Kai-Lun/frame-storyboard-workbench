@@ -1,4 +1,4 @@
-> 当前发布：`v3.38-canvas-r11`。发布前执行 `python tools/check_release.py`、后端测试及 `python tools/test_browser.py`。浏览器回归使用隔离项目、生成的短视频与本地模拟模型，覆盖当前 React Flow；历史 JSDOM 旧画布测试保留作参考，不再当作当前界面的 CI。Windows 工作流构建和验证后发布 EXE、Python 运行源码 ZIP 及校验文件。
+> 当前发布：`v3.41.3`。发布前执行 `python tools/check_release.py`、后端测试和浏览器回归。源码与 EXE 的验证、发布状态以对应提交的 Actions 为准。
 
 # GitHub 版本与发布管理
 
@@ -67,6 +67,13 @@ NODE_PATH=/tmp/frame-ui-check/node_modules node tests/test_canvas_lifecycle.cjs
 
 ## Windows 与自动发布
 
-`.github/workflows/release-windows.yml` 在 main 的版本或构建文件更新后运行 Windows x64 构建、自检及 Beta 发布。仅该 job 使用 contents: write，PR 不发布。版本号取自 `version.json.release`，发布说明为 `docs/releases/release-<tag>.md`。已公开版本不会被覆盖；后续更新必须增加 release 标签。
+`.github/workflows/release-windows.yml` 在 main 的版本或构建文件更新后运行 Windows x64 构建、自检及 Beta 发布。仅该 job 使用 contents: write，PR 不发布。版本号取自 `version.json.release`，发布说明从根目录 `CHANGELOG.md` 的 `## [<tag>]` 小节提取。已公开版本不会被覆盖；后续更新必须增加 release 标签。
 
 构建依赖 PyInstaller 6.22.3，不加入源码安装包。发布 EXE、专用源码更新 ZIP 与 SHA256SUMS。若构建、自检或上传失败，查看 Actions；没有通过完整流程时不宣称已发布。
+
+
+## 版本编号与说明的唯一入口
+
+先在根目录 `CHANGELOG.md` 添加 `## [v4.0.0] - YYYY-MM-DD` 小节，再运行 `python tools/bump_version.py --version 4.0.0`。版本必须为三段数字，不再使用 `--build` 或 `canvas-rXX`。已有历史标签保持不变，更新检测继续兼容旧标签。不要重新创建独立 release Markdown 文件。
+
+Add the new section to root `CHANGELOG.md`, then run the version tool. New releases use strict three-part SemVer; historical tags remain unchanged. The publisher reads exactly the matching changelog section.
