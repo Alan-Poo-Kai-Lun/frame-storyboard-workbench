@@ -70,7 +70,7 @@ def endpoint(s,body):
   if record['type']=='agent' and not result.get('storyPlan') and action=='get':
    import agent_backend
    try:
-    source=agent_backend.story_source(result.get('storyPlanSource') or result,record['snapshot'].get('message',''))
+    source=agent_backend.scoped_story_source(result.get('storyPlanSource') or result,record['snapshot'])
     recovered=agent_backend.checked_story_plan(s,p,record['snapshot'],source,recover=True)
     result.update(storyPlan=recovered,storyPlanSource=source);result.pop('planError',None)
     record['result']=result;write(s,record)
@@ -82,7 +82,7 @@ def endpoint(s,body):
    snap=record['snapshot']
    if record['type']=='agent':
     import agent_backend
-    source=agent_backend.story_source(raw,snap.get('message',''))
+    source=agent_backend.scoped_story_source(raw,snap)
     plan=agent_backend.checked_story_plan(s,p,snap,source,recover=True)
     result['storyPlan']=plan;result['storyPlanSource']=source;result.pop('planError',None)
    else:plan=writing.recover(s,raw,snap);result=plan
@@ -92,7 +92,7 @@ def endpoint(s,body):
    if not isinstance(draft,list) or len(json.dumps(draft))>2_000_000:raise ValueError('预览草稿无效')
    record['draft']=copy.deepcopy(draft);record['guideSettings']=guide;write(s,record)
   if plan:
-   plan=writing.normalize_plan_structure(plan,infer=record['type']=='agent' and not record.get('draft'))
+   plan=writing.normalize_plan_structure(plan,infer=record['type']=='agent' and not record.get('draft') and record['snapshot'].get('target',{}).get('kind')!='segment')
    live=writing.refresh_plan_references(s,p,plan)
    if body.get('segments') is not None:
     candidate=writing.refresh_plan_references(s,p,{**plan,'segments':body['segments']});body={**body,'segments':candidate['segments']}
@@ -114,6 +114,14 @@ def endpoint(s,body):
    if not plan or not plan.get('segments'):raise ValueError('结果尚未解析，请先重新解析已有输出')
    source_changed=writing.signature(p)!=plan['signature']
    checked=writing.validate_edits(s,plan,body.get('segments',[]))
+   if record['type']=='agent' and record['snapshot'].get('target',{}).get('kind')=='segment':
+    if source_changed:raise ValueError('项目内容已变化，请重新对话；局部方案未覆盖当前片段')
+    import agent_backend
+    updated=agent_backend.apply_segment_plan(s,p,record['snapshot'],checked)
+    s.save(p);record['appliedAt']=time.time();record['appliedVia']='plan-preview';record.pop('draft',None);write(s,record)
+    import task_backend
+    task_backend.manager(s).patch(ident,appliedAt=record['appliedAt'],appliedVia='plan-preview')
+    return {'project':s.load_project(),'created':0,'updatedSegmentId':updated,'warnings':checked.get('warnings',[])}
    if source_changed:checked.setdefault('warnings',[]).append({'message':'项目来源已变化；已使用当前素材追加新片段，未覆盖已有节点'})
    aspect=checked.get('aspectRatio')
    if aspect and p.get('aspect')!=aspect:

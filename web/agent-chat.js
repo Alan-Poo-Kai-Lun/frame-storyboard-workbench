@@ -64,7 +64,7 @@
  if(!panel._threadDeleted&&row.appliedAt&&!row.undoneAt&&row.appliedVia!=='plan-preview')button('撤销此次修改',async()=>{if(!await saveDraft())return;await flush();const r=await api('agent-undo',{id:row.id});P=r.project;dirty=false;render();panel._last='';await refresh()});
  if(row.result.planError)wrap.append(textBlock(row.result.planError,'warning'));
  const textPlan=row.result.target?.kind==='project'&&/(?:片段\s*\d+|第\s*\d+\s*段)/.test(row.result.reply||'')&&/(?:镜头|Shot)\s*\d+/i.test(row.result.reply||'');
- if(row.result.storyPlan?.segments?.length||row.result.planError||textPlan)button('✨ 预览并应用分镜方案',()=>framePlanPreview(row.id,row.result.storyPlan),true);
+ if(row.result.storyPlan?.segments?.length||row.result.planError||textPlan)button(row.result.storyPlan?.segments?.length?'✨ 预览并应用分镜方案':'修复 / 重新解析分镜方案',()=>framePlanPreview(row.id,row.result.storyPlan),true);
  if(row.result.target?.kind==='project')button('将方案带入整篇规划',async()=>{window._wholeStoryDraft={story:row.result.reply,count:'2',duration:'15',sourceAgentTaskId:row.result.attachmentAvailable?row.id:undefined,sourceProjectId:owner,imageName:row.result.attachmentAvailable?(row.result.attachmentName||'方案附图'):''};await openStoryPlanner()});
  if(row.appliedAt)actions.append(textBlock(row.undoneAt?'已撤销':'已应用','muted'));wrap.prepend(actions);return wrap;
  }

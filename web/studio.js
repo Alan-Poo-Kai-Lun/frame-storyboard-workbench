@@ -70,6 +70,7 @@ function taskLocation(row){
  if(row.type==='reverse')return '提示词反推 · 独立任务结果';
  if(row.type==='continuity')return 'AI 连续性审查 · 项目任务';
  if(row.type==='story')return '整篇剧情 · 项目任务';
+ if(row.type==='agent'&&row.agentTarget?.kind==='project')return 'Agent · 项目对话';
  if(row.projectId!==P?.projectId)return '其他项目：'+(row.projectTitle||'未命名项目');
  const segment=P.segments.find(s=>s.id===row.segmentId),h=segment?.shots.find(h=>h.id===row.shotId);
  return segment?segment.title+(row.shotId?(h?' · 镜头 '+String(segment.shots.indexOf(h)+1).padStart(2,'0'):' · 原镜头已删除'):' · 片段任务'):'原片段已删除或未记录位置';

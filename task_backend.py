@@ -37,7 +37,7 @@ def progress(s,ident,**values):
  if not m:return
  with m.lock:
   row=next((r for r in m.rows if r['id']==ident),None)
-  if not row:return
+  if not row or row['status']=='cancelled':return
   row.update(values)
   if row.get('stageHistory'):row['stageHistory'][-1].update({k:v for k,v in values.items() if k in ['outputChars','thinkingChars','chunks','model','requestElapsedSeconds','generatedTokens','loadSeconds']})
   m.write()
@@ -50,7 +50,7 @@ def finish_stage(s,ident):
    entry=row['stageHistory'][-1];entry['endedMs']=int(time.time()*1000);entry['elapsedSeconds']=round((entry['endedMs']-entry['startedMs'])/1000,1);m.write()
 class Manager:
  def __init__(self,s):
-  self.s=s;self.lock=threading.RLock();self.event=threading.Event();self.path=s.DATA/'tasks.json';self.paused=False
+  self.s=s;self.lock=threading.RLock();self.event=threading.Event();self.cancelled_ids=set();self.path=s.DATA/'tasks.json';self.paused=False
   doc=json.loads(self.path.read_text('utf-8')) if self.path.exists() else {};self.rows=doc.get('tasks',[]);self.paused=bool(doc.get('paused',False))
   for row in self.rows:
    if row.get('snapshot') is not None:
@@ -80,10 +80,11 @@ class Manager:
  def get(self,ident):
   with self.lock:return copy.deepcopy(next((r for r in self.rows if r['id']==ident),None))
  def cancelled(self,ident):
-  with self.lock:return any(r['id']==ident and (r['status']=='cancelled' or r.get('cancelRequested')) for r in self.rows)
+  with self.lock:return ident in self.cancelled_ids or any(r['id']==ident and (r['status']=='cancelled' or r.get('cancelRequested')) for r in self.rows)
  def patch(self,ident,**values):
   with self.lock:
    row=next((r for r in self.rows if r['id']==ident),None)
+   if row and row['status']=='cancelled' and values.get('status')=='done':return
    if row and any(row.get(k)!=v for k,v in values.items()):row.update(values);self.write()
  def add(self,kind,payload,cfg=None,snapshot=None,ident=None):
   p=self.s.load_project()
@@ -144,9 +145,10 @@ class Manager:
    row=next((r for r in self.rows if r['id']==ident),None)
    if not row:raise ValueError('任务不存在')
    if action=='cancel':
+    if row['status'] in ['waiting','running']:self.cancelled_ids.add(ident)
     if row['status']=='waiting':
      row.update(status='cancelled',stage='已取消排队',finishedAt=now(),finishedMs=int(time.time()*1000))
-    elif row['status']=='running':row.update(cancelRequested=True,stage='正在停止跟踪；远端请求可能继续运行')
+    elif row['status']=='running':row.update(status='cancelled',cancelRequested=True,stage='已取消本地任务；正在中断请求，远端停止情况未知',finishedAt=now(),finishedMs=int(time.time()*1000))
    elif action=='delete':
     if row['status'] not in TERMINAL:raise ValueError('请先取消或等任务结束')
     self.rows.remove(row)

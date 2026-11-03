@@ -126,6 +126,58 @@ def media_context(p,a):
 def project_context(s,p):
  return {'projectId':p['projectId'],'title':p['title'],'aspect':p.get('aspect'),'intent':p.get('intent',{}),'segments':[{k:seg.get(k) for k in ['id','title','duration','storyText','dialogueLanguage','shots']} for seg in p['segments']],'assets':[dict({k:a.get(k) for k in ['id','name','description','kind','scope','segmentId','pictureNumber']},mediaType=s.generation_backend.media_type(a),available=bool(p.get('media',{}).get(a['path'])),referenceLabel=s.generation_backend.project_label(p,a),**media_context(p,a)) for a in s.generation_backend.project_assets(p)]}
 
+def recent_history(history):
+ """Bound inference context; the saved conversation itself remains untouched."""
+ out=[];remaining=18000
+ for item in reversed(history[-6:]):
+  text=str(item.get('content',''))[-min(6000,remaining):]
+  if not text:continue
+  out.append({'role':item['role'],'content':text});remaining-=len(text)
+  if remaining<=0:break
+ return list(reversed(out))
+
+def continuity_context(context,target):
+ """Send relevant text states on the first call; never inline shot media."""
+ rows=context['segments'];sid=target.get('segmentId')
+ fields=['id','start','end','action','camera','dialogue','dialogueLanguage','expression','professional','sound','startState','endState','assetIds','referenceNumbers','mediaAssetIds']
+ def shot(h):return {k:copy.deepcopy(h.get(k,'')) for k in fields}
+ def segment(v):return {**{k:v.get(k) for k in ['id','title','duration','storyText','dialogueLanguage']},'shots':[shot(h) for h in v.get('shots',[])]}
+ if target['kind']=='project':return {'segments':[segment(v) for v in rows]}
+ index=next((i for i,v in enumerate(rows) if v['id']==sid),None)
+ if index is None:return {}
+ current=rows[index];out={'currentSegment':segment(current)}
+ if index and rows[index-1].get('shots'):out['previousSegmentEnd']=shot(rows[index-1]['shots'][-1])
+ if index+1<len(rows) and rows[index+1].get('shots'):out['nextSegmentStart']=shot(rows[index+1]['shots'][0])
+ if target['kind']=='shot':
+  j=next((i for i,h in enumerate(current['shots']) if h['id']==target.get('shotId')),None)
+  if j is not None:
+   out['currentShot']=shot(current['shots'][j])
+   if j:out['previousShot']=shot(current['shots'][j-1])
+   if j+1<len(current['shots']):out['nextShot']=shot(current['shots'][j+1])
+ return out
+
+def apply_segment_plan(s,p,snap,plan):
+ """A scoped plan updates one existing segment after explicit confirmation."""
+ segment,_=resolve(p,snap['target'])
+ if len(plan['segments'])!=1:raise ValueError('片段方案只能应用到当前片段')
+ row=plan['segments'][0]
+ if row['duration']!=segment['duration']:raise ValueError('片段方案不能改变当前片段时长')
+ old=segment.get('shots',[]);shots=copy.deepcopy(row['shots'])
+ if snap.get('preserveDialogue',True) and [h.get('dialogue','') for h in old if h.get('dialogue','').strip()]!=[h.get('dialogue','') for h in shots if h.get('dialogue','').strip()]:raise ValueError('已开启保留对白，片段方案不能改写原台词')
+ end=0
+ for i,h in enumerate(shots):
+  if h['start']!=end or h['end']<=end:raise ValueError('片段镜头必须连续覆盖完整时长')
+  end=h['end']
+  if i<len(old):
+   for k in ['id','image','firstFrame','lastFrame','locks']:
+    if k in old[i]:h[k]=copy.deepcopy(old[i][k])
+ if end!=segment['duration']:raise ValueError('片段镜头未覆盖完整时长')
+ segment['promptHistory']=(segment.get('promptHistory',[])+[{'text':segment.get('prompt',''),'savedAt':time.strftime('%Y-%m-%d %H:%M:%S'),'reason':'应用片段 Agent 方案前'}])[-20:]
+ segment.update(title=row['title'],storyText=row['storyText'],shots=shots)
+ refs=[{'index':a.get('pictureNumber',p['assets'].index(a)+1),'name':a['name'],'kind':a.get('kind',''),'description':a.get('description','')} for a in s.scoped_assets(p,segment) if s.generation_backend.media_type(a)=='image']
+ segment['prompt']=s.rebuild({**segment,'defaultDialogueLanguage':segment.get('dialogueLanguage',p.get('dialogueLanguage','')),'assetReferences':refs})
+ return segment['id']
+
 def enqueue(s,body):
  import task_backend as tasks
  with s.LOCK:
@@ -225,24 +277,50 @@ def story_source(value,message=''):
  duration=float(requested[1]) if requested else max(durations)
  return {'duration':duration,'segments':rows,'textRecovered':True}
 
+def scoped_story_source(value,snap):
+ try:return story_source(value,snap.get('message',''))
+ except ValueError:
+  if snap['target']['kind']!='segment':raise
+  text=value.get('reply','') if isinstance(value,dict) else value
+  if isinstance(text,str):
+   try:text=json.loads(text).get('reply',text)
+   except (ValueError,AttributeError):pass
+  if not isinstance(text,str):raise ValueError('没有可解析的片段方案')
+  row=next(v for v in snap['context']['segments'] if v['id']==snap['target']['segmentId'])
+  text=re.sub(r'(?m)^(\s*)\*\*(?=镜头|Shot)',r'\1',text)
+  plan=story_source({'reply':'【片段1】\n'+text},snap.get('message',''))
+  plan['duration']=row['duration'];plan['segments'][0]['title']=row['title'];return plan
+
 def checked_story_plan(s,p,snap,value,recover=False):
- if snap['target']['kind']!='project':raise ValueError('只有项目对话可以创建片段方案')
+ if snap['target']['kind'] not in ['project','segment']:raise ValueError('当前节点不能创建片段方案，请选择片段或项目')
  if not isinstance(value,dict):raise ValueError('片段方案格式无效')
  rows=value.get('segments');duration=value.get('duration')
  if not isinstance(rows,list) or not 1<=len(rows)<=20:raise ValueError('片段方案需要 1–20 段')
  if isinstance(duration,bool) or not isinstance(duration,(int,float)) or not math.isfinite(duration) or not 1<=duration<=60:raise ValueError('片段方案每段时长需要 1–60 秒')
  for key in ['continuity','guideFromPrev']:
   if key in value and not isinstance(value[key],bool):raise ValueError('片段承接开关无效')
+ if snap['target']['kind']=='segment':
+  item,_=resolve(p,snap['target'])
+  if len(rows)!=1 or duration!=item['duration']:raise ValueError('片段对话只允许一个方案，且必须保持当前片段时长')
+  shots=rows[0].get('shots',[]);end=0
+  for shot in shots:
+   start,stop=shot.get('start'),shot.get('end')
+   if isinstance(start,bool) or isinstance(stop,bool) or not isinstance(start,(int,float)) or not isinstance(stop,(int,float)) or not math.isfinite(start) or not math.isfinite(stop) or abs(start-end)>.05 or stop<=start or stop>duration+.05:raise ValueError('当前片段镜头必须从 0 秒连续排列到 '+str(duration)+' 秒，不能重叠或跳时')
+   end=stop
+  if not shots or abs(end-duration)>.05:raise ValueError(f'当前片段要求 {duration} 秒，现有镜头只覆盖到 {end} 秒；请补全剩余镜头，不得缩短片段或拉伸已有镜头')
  refs=[]
  context_ids={a['id'] for a in snap['context']['assets']}
- for a in writing.project_assets(s,p):
+ for a in (s.scoped_assets(p,resolve(p,snap['target'])[0]) if snap['target']['kind']=='segment' else writing.project_assets(s,p)):
   if a['id'] not in context_ids:continue
   refs.append({'id':a['id'],'number':a.get('pictureNumber',p['assets'].index(a)+1),'name':a['name'],'kind':a.get('kind',''),'description':a.get('description',''),'role':'general','sourceHash':writing.digest({k:a.get(k) for k in ['id','path','description','kind']}),'mediaHash':writing.digest(p.get('media',{}).get(a.get('path'),''))})
  # New plans cannot silently bind the private discussion attachment or invent references.
  plan_snap={'inferAgentDuration':True,'schemaVersion':2,'count':len(rows),'duration':duration,'refs':refs,'signature':snap['signature'],'rules':snap.get('rules',[]),'story':snap['message'],'dialogueLanguage':('Malay' if __import__('re').search(r'马来(?:文|语)|\bMalay\b',snap['message'],__import__('re').I) else 'auto'),'continuity':value.get('continuity',True),'guideFromPrev':value.get('guideFromPrev',False)}
+ plan_snap['inferAgentDuration']=snap['target']['kind']!='segment'
  result=writing.recover(s,copy.deepcopy(value),plan_snap) if recover else writing.validate(s,copy.deepcopy(value),plan_snap)
  if value.get('textRecovered'):result.setdefault('warnings',[]).append({'message':'已从原文字方案本地整理，未调用模型；未明确提供的运镜、空间状态与素材绑定留空，请核对后应用'})
- return s.generation_backend.attach_plan_media(p,result,value,snap['message'])
+ result=s.generation_backend.attach_plan_media(p,result,value,snap['message'])
+ if snap['target']['kind']=='segment':result['applyTarget']=copy.deepcopy(snap['target'])
+ return result
 
 
 def analyze(s,cfg,snap,payload):
@@ -254,6 +332,7 @@ def analyze(s,cfg,snap,payload):
 可修改：project.title；segment.title/storyText/shots；shot.action/camera/expression/dialogue/sound/startState/endState；asset.name/description。不得输出命令、文件路径、网络请求或其他字段。定点对话只能修改目标对象。项目对话可提出创意方案，用户只要求讨论时不得生成修改。修改时间线要完整覆盖片段时长，从0开始连续，无重叠。Picture 编号使用项目稳定编号。保留人物、原对白、道具、镜头媒体和结局；图片不明处明确不确定，不能把素材说明当作已看图事实。写作技能仅辅助风格。用户给图提出方案时先回复方案，不自动创建片段。所有修改都只是草案，未应用。'''
  system+=' 素材清单包含图片、音频和视频。available=true 表示已有文件，严禁再要求用户上传同一现有文件。音视频 analysisStatus=metadata_only 时只提供文件信息与用户说明，不得声称听过或看过。saved_actual_analysis 包含已保存的实际音轨或抽样帧分析，可引用该结果但必须标明范围与不确定项；不包含音轨或声音识别。可以把已提供的音视频作为后续H3参考条件。storyPlan 镜头可加 mediaAssetIds 数组，值只能是素材清单中音频/视频的真实id；不要把音视频写入图片 references 数字数组。'
  system+=' 必须按用户指定的段数、每段时长和对白语言生成；duration 是每段秒数，绝不是整篇总秒数。收尾说明写入上一段 summary，不得单独生成无镜头片段。reply 中的统计必须与 storyPlan 完全一致。项目对话中，若用户请求完整新分镜方案，必须返回 storyPlan={"duration":15,"continuity":true,"guideFromPrev":false,"segments":[{"title":"标题","story":"剧情","summary":"摘要","language":"Mandarin","shots":[{"start":0,"end":15,"action":"画面动作","camera":"运镜","dialogue":"原台词","sound":"音效","startState":"起始空间状态","endState":"结束空间状态","references":[]}]}]}。每段共用 duration，必须连续覆盖 0–duration；references 使用真实 Picture 稳定编号，无素材时为空。只绑定实际涉及的素材。有素材但镜头不使用它时不得编造。storyPlan 仅为待确认创建的新片段，不放进 changes，不自动应用；用户仅聊天或信息不足时可省略。reply 用可读文字概述，不得混入 JSON、tool_calls 或 raw_json。'
+ system+=' 片段对话同样支持 storyPlan，但只能包含当前片段的一段方案，保持其时长；确认后只替换该片段的镜头，不新增其他片段。项目对话的新片段方案只追加，不覆盖已有片段。起止状态是衔接约束：参考 continuityContext 中前镜头/前片段结束与后镜头起始的位置、朝向、姿态、持物、动作结果及摄影机状态；未知处注明待确认。有完整上下文时直接回答，不要重复 read_project/list_assets。'
  system+=' 用户要求规划片段或分镜方案时，必须同时返回上述 storyPlan，不能只把镜头写在 reply。先给方案供核对、先预览表示暂不应用，不表示省略 storyPlan；预览入口需要此结构。每镜头提供 startState/endState，未明确的空间状态注明待确认。纯聊天、讨论原则或信息不足时不要创建分镜方案。'
  # Writing skills were already loaded into the snapshot but never stated in the
  # system prompt, so the model only saw them as inert data in the user payload.
@@ -261,24 +340,29 @@ def analyze(s,cfg,snap,payload):
  if rules:
   text='；'.join((str(item.get('name',''))+'：'+str(item.get('rules',''))[:1200]) for item in rules)[:6000]
   system+=' 【写作技能】本次对话启用了以下项目写作技能：'+text+'。它们只决定文字风格、结构与镜头表达方式，不得覆盖工具调用、素材编号与说明、段数与时长要求、输出 JSON 结构。'
- messages=[{'role':'system','content':system},{'role':'user','content':json.dumps({'request':snap['message'],'target':snap['target'],'rules':snap['rules'],'preserveDialogue':snap['preserveDialogue'],'history':snap['history'],'assetInventory':context['assets'],'mediaAnalysis':{'rule':'只可引用 assetInventory 中已保存的实际分析；未分析素材仅有文件信息。视频仅做视觉抽样分析。视频为带时间点抽样。'},'projectSummary':{'title':context['title'],'segments':[{'id':v['id'],'title':v['title'],'duration':v['duration']} for v in context['segments']]}},ensure_ascii=False)}]
+ messages=[{'role':'system','content':system},{'role':'user','content':json.dumps({'request':snap['message'],'target':snap['target'],'writingRuleNames':[r.get('name','') for r in snap['rules']],'preserveDialogue':snap['preserveDialogue'],'history':recent_history(snap['history']),'assetInventory':context['assets'],'mediaAnalysis':{'rule':'只可引用 assetInventory 中已保存的实际分析；未分析素材仅有文件信息。视频仅做视觉抽样分析。视频为带时间点抽样。'},'projectSummary':{'title':context['title'],'segments':[{'id':v['id'],'title':v['title'],'duration':v['duration']} for v in context['segments']]},'continuityContext':continuity_context(context,snap['target'])},ensure_ascii=False)}]
+ if snap['target']['kind']=='segment':
+  current=next(v for v in context['segments'] if v['id']==snap['target']['segmentId'])
+  messages.append({'role':'user','content':f'当前片段时长锁定为 {current["duration"]} 秒。规划镜头时 storyPlan.duration 必须为此值，segments 只能一段，镜头从 0 连续覆盖到 {current["duration"]} 秒。reply 只写简短摘要，详细内容全部写入 storyPlan，不能以一个 5 秒镜头代替整段。'})
  if snap.get('image'):
   image=snap['image'];user=messages[-1]
   if cfg.get('provider')=='ollama':user['images']=[image['b64']]
   else:user['content']=[{'type':'text','text':user['content']},{'type':'image_url','image_url':{'url':'data:'+image['mime']+';base64,'+image['b64']}}]
  # A bounded loop uses explicit JSON tool envelopes for both local and compatible APIs.
  for iteration in range(snap['maxCalls']):
-  tasks.check_cancel(s,ident);tasks.stage(s,ident,f'Agent 模型调用 {iteration+1}/{snap["maxCalls"]}')
-  if iteration==snap['maxCalls']-1:messages.append({'role':'user','content':'最后一次调用：请返回最终 reply 与 changes；若信息不足，请说明，不再调用工具。'})
+  tasks.check_cancel(s,ident);tasks.stage(s,ident,f'Agent 第 {iteration+1} 次模型调用（最多 {snap["maxCalls"]} 次）')
+  if iteration==snap['maxCalls']-1:messages.append({'role':'user','content':'最后一次调用：返回最终 JSON，reply 简短概述，changes 为数组。分镜规划必须把完整时间线放在 storyPlan，覆盖当前片段完整时长，不得只写在 reply；若信息不足明确说明，不再调用工具。'})
   raw=s.ai_call(cfg,messages,True);snap['modelResponse']=raw;tasks.manager(s).store_input(ident,snap)
   obj=json.loads(raw)
   if not isinstance(obj,dict):raise ValueError('Agent 输出格式无效，原项目未修改')
   if 'tool' in obj:
    tool=obj['tool'];args=obj.get('args',{})
-   if tool=='read_project':result=context
+   if tool=='read_project':result={**context,'segments':continuity_context(context,{'kind':'project'})['segments']}
    elif tool=='list_assets':result=context['assets']
    elif tool=='read_node':
     target=args.get('target',snap['target']);project={'projectId':pid,'title':context['title'],'segments':context['segments'],'assets':context['assets']};result=resolve(project,target)[0]
+    if target.get('kind')=='segment':result=continuity_context(context,target)['currentSegment']
+    elif target.get('kind')=='shot':result={k:v for k,v in result.items() if k not in ['image','firstFrame','lastFrame','video','media']}
    elif tool=='check_project':
     result=[]
     for seg in context['segments']:
@@ -299,12 +383,14 @@ def analyze(s,cfg,snap,payload):
    clean=checked_changes(s,p,snap,changes) if changes else []
    story_plan=None;plan_error=''
    source=obj.get('storyPlan')
-   if source is None and snap['target']['kind']=='project' and re.search(r'(?:片段\s*\d+|第\s*\d+\s*段)',reply):
-    try:source=story_source(obj,snap['message'])
+   if source is None and snap['target']['kind'] in ['project','segment'] and re.search(r'(?:片段\s*\d+|第\s*\d+\s*段|镜头\s*\d+|Shot\s*\d+)',reply,re.I):
+    try:source=scoped_story_source(obj,snap)
     except ValueError as error:plan_error='分镜方案尚不能解析：'+str(error)
    if source is not None:
     try:story_plan=checked_story_plan(s,p,snap,source,recover=True)
     except (ValueError,KeyError,TypeError,OverflowError) as error:plan_error='片段方案待完善：'+str(error)
+  if plan_error and snap['target']['kind']=='segment' and iteration<snap['maxCalls']-1:
+   messages.extend([{'role':'assistant','content':raw},{'role':'user','content':'方案未通过校验：'+plan_error+'。请根据原要求返回完整 storyPlan JSON；仅修复当前片段，覆盖锁定时长，reply 简短，不再读取工具。'}]);continue
   result={'reply':reply,'changes':clean,'signature':snap['signature'],'target':snap['target'],'scopeKey':key,'trace':trace,'calls':iteration+1,'attachmentName':snap.get('attachment',{}).get('name','') if snap.get('attachment') else '','threadId':key,'attachmentAvailable':bool(snap.get('attachment')),'addToLibrary':snap.get('addToLibrary',False)}
   if story_plan:result.update(storyPlan=story_plan)
   if source is not None:result['storyPlanSource']=copy.deepcopy(source)
@@ -339,11 +425,14 @@ def apply(s,body):
   p=s.load_project();result=row['result'];snap=manager.input(row)
   if not p or p['projectId']!=row['projectId'] or writing.signature(p)!=result['signature']:raise ValueError('项目内容已变化，请重新对话；旧建议仍可查看')
   changes=checked_changes(s,p,snap,[{'target':c['target'],'fields':c['fields']} for c in result['changes']]) if result['changes'] else []
-  created=0
+  created=0;updated=''
   if result.get('storyPlan'):
    if changes:raise ValueError('新建片段方案与已有节点修改请分别确认')
    plan=checked_story_plan(s,p,snap,result['storyPlanSource'])
-   created=writing.append_plan(s,p,plan,[{'title':v['title'],'storyText':v['storyText']} for v in plan['segments']],'agent:'+row['id'],snap)
+   if snap['target']['kind']=='segment':
+    updated=apply_segment_plan(s,p,snap,plan)
+   else:
+    created=writing.append_plan(s,p,plan,[{'title':v['title'],'storyText':v['storyText']} for v in plan['segments']],'agent:'+row['id'],snap)
   touched=set()
   for change in changes:
    item,seg=resolve(p,change['target']);item.update(copy.deepcopy(change['fields']))
@@ -360,11 +449,11 @@ def apply(s,body):
   if attachment and snap.get('addToLibrary'):
    asset,image_created=add_attachment(s,p,attachment)
    if image_created:added=asset['id'];path=asset['path']
-  if not changes and not added and not created:raise ValueError('此回复只有建议，没有可应用的修改')
+  if not changes and not added and not created and not updated:raise ValueError('此回复只有建议，没有可应用的修改')
   undo={'before':{k:copy.deepcopy(v) for k,v in s.load_project().items() if k not in ['media','originalZip','planArchive']},'addedPath':path if added else '', 'afterSignature':writing.signature(p)}
   # Undo lives in the private task input rather than exported project data.
   snap['undo']=undo;manager.store_input(row['id'],snap);s.save(p);manager.patch(row['id'],appliedAt=time.time(),agentAddedAsset=added);plan_store.put(s,{**row,'appliedAt':time.time()},snap)
-  return {'project':p,'created':created}
+  return {'project':p,'created':created,'updatedSegmentId':updated}
 
 def undo(s,body):
  import task_backend as tasks

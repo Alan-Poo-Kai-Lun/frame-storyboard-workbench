@@ -4,9 +4,11 @@
 
 FRAME 用于 AI 短视频、广告与故事分镜的前期规划和交接：整理人物、场景与音视频参考，规划片段，逐镜编辑动作、摄影机、对白和起止空间状态，再把提示词与导演包交给外部生成工具。
 
-**Windows · 本地工作台 · V3.41 / R15**　[English](docs/README.en.md) · [版本下载](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases) · [使用说明](docs/quick-start.md) · [更新日志](CHANGELOG.md)
+**Windows · 本地工作台 · V3.41.1 / R15**　[English](docs/README.en.md) · [版本下载](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases) · [使用说明](docs/quick-start.md) · [更新日志](CHANGELOG.md)
 
 > 仓库源码与已发布 EXE 分开确认，下载请认准 Releases 的具体标签。更新 GitHub 不会替换电脑上的程序。FRAME 本身不生成图片或视频；AI 功能使用你配置的模型服务，云端调用可能产生费用。
+
+**2026-11-03 · R15 补修 V3.41.1：** 修复片段 Agent 完整时长规划与局部应用、流式响应、任务取消及公共/本组素材切换后的编辑失效。[详情](CHANGELOG.md)
 
 ## 工作流程
 

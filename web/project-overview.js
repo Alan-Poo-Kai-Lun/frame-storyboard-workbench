@@ -65,7 +65,7 @@
  function transform(){dialog.dispatchEvent(new Event('canvasviewchange'));nodeInspector?.position();q('.overviewGraph').style.transform=`translate(${view.x}px,${view.y}px) scale(${view.z})`;q('[data-overview-zoom-label]').textContent=Math.round(view.z*100)+'%'}
  function zoom(factor,x,y){const box=q('.overviewMap').getBoundingClientRect();x??=box.width/2;y??=box.height/2;const z=Math.max(.15,Math.min(2.5,view.z*factor)),ratio=z/view.z;view={x:x-(x-view.x)*ratio,y:y-(y-view.y)*ratio,z};transform();saveView()}
  function fit(){if(!nodes.size)return;let left=Infinity,top=Infinity,right=-Infinity,bottom=-Infinity;for(const [id,node]of nodes){const p=positions.get(id);left=Math.min(left,p.x);top=Math.min(top,p.y);right=Math.max(right,p.x+node.offsetWidth);bottom=Math.max(bottom,p.y+node.offsetHeight)}if(cardPlan)for(const c of cardPlan.cards){left=Math.min(left,c.x);top=Math.min(top,c.y);right=Math.max(right,c.x+c.w);bottom=Math.max(bottom,c.y+c.h)}const dock=q('.canvasAssetDock');if(dock){const x=parseFloat(dock.style.left),y=parseFloat(dock.style.top);left=Math.min(left,x);top=Math.min(top,y);right=Math.max(right,x+parseFloat(dock.style.width));bottom=Math.max(bottom,y+parseFloat(dock.style.height))}const box=q('.overviewMap');const z=Math.max(.15,Math.min(1.15,(box.clientWidth-100)/(right-left),(box.clientHeight-130)/(bottom-top)));view={x:(box.clientWidth-(right-left)*z)/2-left*z,y:60+(box.clientHeight-120-(bottom-top)*z)/2-top*z,z};transform();saveView()}
- function refreshModel(){const model=graphData(P);data=new Map(model.list.map(d=>[d.id,d]));edges=model.links;if(canvasState().mode==='cards')for(const s of P.segments)for(const a of allScopedAssets(s)){const id='ca:'+s.id+':'+a.id;data.set(id,{...data.get('a:'+a.id),id,segment:s,hint:mediaAssetLabel(a,s)+' · '+(a.scope==='segment'?'本组':'公共')});}}
+ function refreshModel(){const previousAsset=data.get(selected)?.kind==='asset'?data.get(selected).item.id:null;const model=graphData(P);data=new Map(model.list.map(d=>[d.id,d]));edges=model.links;if(canvasState().mode==='cards')for(const s of P.segments)for(const a of allScopedAssets(s)){const id='ca:'+s.id+':'+a.id;data.set(id,{...data.get('a:'+a.id),id,segment:s,hint:mediaAssetLabel(a,s)+' · '+(a.scope==='segment'?'本组':'公共')});}if(previousAsset&&(window.frameFlowApp||!data.has(selected))&&data.has('a:'+previousAsset))selected='a:'+previousAsset;}
  function current(){if(P?.projectId!==owner){dialog.close();throw Error('项目已切换，请重新打开总览')}return P;}
  function highlight(){const near=new Set(edges.filter(e=>e.a===selected||e.b===selected).flatMap(e=>[e.a,e.b]));for(const [id,el]of nodes){el.classList.toggle('selected',id===selected);el.classList.toggle('related',id!==selected&&near.has(id));el.classList.toggle('dimmed',false);el.setAttribute('aria-pressed',String(id===selected));}draw();controls?.repaint();}
  async function jump(segmentId,panel='boardPanel',targetShot=''){current();const s=P.segments.find(s=>s.id===segmentId);if(!s)throw Error('片段已删除');if(!await saveDraft(false))return;segIndex=P.segments.indexOf(s);shotId=s.shots.find(h=>h.id===targetShot)?.id||s.shots[0]?.id||'';await select(targetShot?'h:'+s.id+':'+shotId:'s:'+s.id,true);}
@@ -84,8 +84,8 @@
  }
  async function performSaveDraft(refresh=true){
   if(editBusy){status('正在保存，请稍候');return false}
-  current();refreshModel();const d=data.get(selected);if(!d){status('选择项已删除，修改未应用。请重新载入。',true);return false}
-  if(!editDirty)return true;clearTimeout(draftTimer);
+  current();refreshModel();if(!editDirty)return true;const d=data.get(selected);if(!d){status('选择项已删除，修改未应用。请重新载入。',true);return false}
+  clearTimeout(draftTimer);
   if(frameOverviewEditor.fingerprint(d)!==sourceStamp){status('内容已在其他操作中更新，修改未覆盖。请重新载入后核对。',true);return false}
   const detail=q('.overviewDetail'),active=document.activeElement,editing=detail.contains(active)&&textField(active)?{field:active.dataset.canvasField,start:active.selectionStart,end:active.selectionEnd,direction:active.selectionDirection,top:active.scrollTop,left:active.scrollLeft}:null;
   const restoreEditing=()=>{if(!editing||![document.body,dialog,active].includes(document.activeElement))return;const input=[...detail.querySelectorAll('[data-canvas-field]')].find(el=>el.dataset.canvasField===editing.field);if(!input)return;input.focus({preventScroll:true});if(editing.start!==null)input.setSelectionRange(editing.start,editing.end,editing.direction);input.scrollTop=editing.top;input.scrollLeft=editing.left};
@@ -99,7 +99,7 @@
   return true;
  }
  async function select(id,force=false){
-  if(canvasState().mode==='cards'&&id.startsWith('a:')&&!nodes.has(id)){const a=data.get(id)?.item,sid=a?.scope==='segment'?a.segmentId:focus,alias='ca:'+sid+':'+id.slice(2);if(data.has(alias))id=alias}
+  if(!window.frameFlowApp&&canvasState().mode==='cards'&&id.startsWith('a:')&&!nodes.has(id)){const a=data.get(id)?.item,sid=a?.scope==='segment'?a.segmentId:focus,alias='ca:'+sid+':'+id.slice(2);if(data.has(alias))id=alias}
   current();if(editBusy)return;if(!force&&id===selected){floatingEditor?.reopen();return;}
   if(!force&&editDirty&&!await saveDraft(false))return;
   refreshModel();const d=data.get(id);if(!d)return;

@@ -1,8 +1,8 @@
 {
-  "version": "V3.41",
+  "version": "V3.41.1",
   "build": "R15",
-  "date": "2026-10-30",
-  "release": "v3.41-canvas-r15",
+  "date": "2026-11-03",
+  "release": "v3.41.1-canvas-r15",
   "obsolete_files": [
     "video_backend.py",
     "enhance_backend.py",
@@ -15,6 +15,5 @@
     "presets/system_prompt_edit.txt",
     "presets/system_prompt_t2i.txt",
     "demo/example.mmxpack.zip"
-  ],
-  "localPatch": "R15-workspace-20261030"
+  ]
 }

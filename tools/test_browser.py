@@ -20,12 +20,22 @@ def main():
     request=json.loads(self.rfile.read(int(self.headers['Content-Length'])))
     plan={'duration':15,'segments':[{'title':f'方案 {i+1}','story':'@Picture 1 站在门口','language':'Mandarin','shots':[{'start':0,'end':15,'action':'@Picture 1 站在门口','camera':'固定中景','dialogue':'原文对白','sound':'环境声','startState':'人物在门口','endState':'人物仍在门口','references':[1]}]} for i in range(2)]}
     system=request.get('messages',[{}])[0].get('content','')
+    try:agent_context=json.loads(request['messages'][1]['content'])
+    except (ValueError,KeyError,TypeError,IndexError):agent_context={}
+    if agent_context.get('target',{}).get('kind')=='segment':
+     duration=agent_context['continuityContext']['currentSegment']['duration'];plan['duration']=duration;plan['segments']=plan['segments'][:1];plan['segments'][0]['shots'][0]['end']=duration
     if '你是影视连续性监督' in system:
      snap=json.loads(request['messages'][1]['content']);rows=snap['segments'];states=[{'segment':i,'shot':j,'characters':'Picture 1','position':'门口','facing':'室内','posture':'站立','heldItems':'无','mainAction':h.get('action',''),'result':'停下','camera':h.get('camera',''),'uncertainties':'场景背面未知'} for i,r in enumerate(rows) for j,h in enumerate(r['shots'])]
      plan={'summary':'本地模拟 AI 审查：核对起始站位。','characters':[{'reference':'Picture 1','name':'人物','identity':'黑衣人物','wardrobe':'黑衣','equipment':'无','uncertainties':'未发图片'}],'scenes':[{'reference':'Picture 2','name':'大厅','landmarks':'门口','axis':'同侧','uncertainties':'背面未知'}],'states':states,'issues':[{'segment':0,'shot':0,'severity':'warning','category':'空间承接','evidence':rows[0]['shots'][0].get('startState',''),'reason':'缺少朝向','suggestion':'明确面向室内'}],'changes':[{'segment':0,'shot':0,'field':'startState','before':rows[0]['shots'][0].get('startState',''),'after':'@Picture 1 站在门口，面向室内','reason':'补全朝向'}]}
      raw=json.dumps({'choices':[{'message':{'content':json.dumps(plan,ensure_ascii=False)}}]}).encode();self.send_response(200);self.send_header('Content-Type','application/json');self.send_header('Content-Length',str(len(raw)));self.end_headers();self.wfile.write(raw);return
     whole='剧情分段导演' in request.get('messages',[{}])[0].get('content','')
-    raw=json.dumps({'choices':[{'message':{'content':json.dumps(plan if whole else {'reply':'本地测试方案，请预览确认。','changes':[],'storyPlan':plan},ensure_ascii=False)}}]}).encode()
+    content=json.dumps(plan if whole else {'reply':'本地测试方案，请预览确认。','changes':[],'storyPlan':plan},ensure_ascii=False)
+    if request.get('stream'):
+     self.send_response(200);self.send_header('Content-Type','text/event-stream');self.end_headers()
+     for start in range(0,len(content),32):
+      self.wfile.write(('data: '+json.dumps({'choices':[{'delta':{'content':content[start:start+32]}}]})+'\n\n').encode());self.wfile.flush()
+     self.wfile.write(b'data: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n');self.wfile.flush();return
+    raw=json.dumps({'choices':[{'message':{'content':content}}]}).encode()
     self.send_response(200);self.send_header('Content-Type','application/json');self.send_header('Content-Length',str(len(raw)));self.end_headers();self.wfile.write(raw)
   model=ThreadingHTTPServer(('127.0.0.1',0),Model);thread=threading.Thread(target=model.serve_forever,daemon=True);thread.start()
   with socket.socket() as sock:sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]

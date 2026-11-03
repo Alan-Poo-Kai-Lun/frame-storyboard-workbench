@@ -62,6 +62,6 @@ class AgentPlanRecoveryChecks(unittest.TestCase):
   self.assertIn('不能只把镜头写在 reply',call.call_args.args[1][0]['content'])
  def test_node_discussion_cannot_create_project_plan(self):
   snap={**self.snap,'target':{'kind':'segment','segmentId':self.p['segments'][0]['id']}}
-  with self.assertRaisesRegex(ValueError,'只有项目对话'):agent.checked_story_plan(server,self.p,snap,agent.story_source(TEXT),recover=True)
+  with self.assertRaisesRegex(ValueError,'片段对话只允许'):agent.checked_story_plan(server,self.p,snap,agent.story_source(TEXT),recover=True)
 
 if __name__=='__main__':unittest.main()

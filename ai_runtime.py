@@ -1,7 +1,8 @@
 """Task-scoped model lifetime and streamed, bounded inference."""
-import copy,json,threading,time
+import copy,json,threading,time,http.client,socket
+from urllib.parse import urlsplit
 from contextlib import contextmanager
-from urllib.request import Request,urlopen
+from urllib.request import Request,urlopen,getproxies,proxy_bypass
 from urllib.error import HTTPError
 LOCAL=threading.local()
 THINK_CACHE={}
@@ -30,6 +31,10 @@ def queued(s):
  except Exception:return False
 def release(s,run):
  cfg=run.get('loaded')
+ if run.get('id'):
+  import task_backend as tasks
+  if tasks.manager(s).cancelled(run['id']):
+   run['loaded']=None;return
  # 队列还有任务时保留模型，避免连续任务反复重载十余 GB 权重（实测每次 28-40 秒）
  if cfg and cfg.get('autoUnload',True) and not queued(s):
   report(s,run,activity='正在卸载 '+cfg['model'])
@@ -47,6 +52,63 @@ def session(s,ident):
     tasks.manager(s).patch(ident,cleanupError='模型卸载失败：'+str(e))
   finally:LOCAL.run=previous
 
+@contextmanager
+def cancellable_response(s,run,url,body,headers):
+ """Shutdown the task's own socket even while waiting for response headers."""
+ parsed=urlsplit(url)
+ proxy=getproxies().get(parsed.scheme) if parsed.hostname and not proxy_bypass(parsed.hostname) else None
+ if not run or proxy:
+  with urlopen(Request(url,data=json.dumps(body).encode(),headers=headers),timeout=300) as response:yield response
+  return
+ import task_backend as tasks
+ manager=run.get('manager') or tasks.manager(s)
+ parsed=urlsplit(url)
+ if parsed.scheme not in ['http','https'] or not parsed.hostname:raise ValueError('AI 服务地址必须为 HTTP 或 HTTPS')
+ conn=(http.client.HTTPSConnection if parsed.scheme=='https' else http.client.HTTPConnection)(parsed.hostname,parsed.port,timeout=10)
+ finished=threading.Event();active={}
+ def interrupt():
+  while not finished.wait(.1):
+   if not manager.cancelled(run['id']):continue
+   response=active.get('response')
+   sock=active.get('socket') or conn.sock or getattr(getattr(getattr(response,'fp',None),'raw',None),'_sock',None)
+   manager.patch(run['id'],stopTransport='disconnect_requested' if sock else 'connection_pending')
+   if sock:
+    try:sock.shutdown(socket.SHUT_RDWR)
+    except OSError:pass
+   conn.close()
+   if response:
+    try:response.close()
+    except OSError:pass
+   return
+ watcher=threading.Thread(target=interrupt,daemon=True);watcher.start()
+ try:
+  tasks.check_cancel(s,run['id']);conn.connect()
+  tasks.check_cancel(s,run['id']);active['socket']=conn.sock;conn.sock.settimeout(300)
+  conn.request('POST',parsed.path+('?' + parsed.query if parsed.query else ''),json.dumps(body).encode(),headers)
+  response=conn.getresponse();active['response']=response
+  tasks.check_cancel(s,run['id'])
+  if response.status>=400:raise ValueError(f'服务返回 HTTP {response.status}: '+response.read(2000).decode(errors='replace')[:400])
+  yield response
+ except Exception:
+  tasks.check_cancel(s,run['id']);raise
+ finally:
+  finished.set();conn.close();watcher.join(timeout=1)
+  if active.get('response'):active['response'].close()
+
+def run_request(run,operation):
+ if not run:return operation()
+ complete=threading.Event();result=[];errors=[];manager=run['manager']
+ def work():
+  try:result.append(operation())
+  except Exception as error:errors.append(error)
+  finally:complete.set()
+ threading.Thread(target=work,daemon=True,name='frame-ai-transport').start()
+ while not complete.wait(.1):
+  if manager.cancelled(run['id']):raise RuntimeError('任务已在本地取消；已请求断开连接，远端停止情况未知')
+ if manager.cancelled(run['id']):raise RuntimeError('任务已取消；迟到结果已丢弃')
+ if errors:raise errors[0]
+ return result[0] if result else None
+
 def thinking_control(s,cfg):
  if cfg.get('thinkingMode')=='off':return False,'请求关闭思考（需模型支持）'
  if cfg.get('thinkingMode')=='low':return 'low','请求低思考等级（需模型支持）'
@@ -62,6 +124,9 @@ def thinking_control(s,cfg):
  return control,'关闭思考' if control is False else '低思考等级' if control=='low' else '未检测到可调思考模式，沿用模型默认'
 def call(s,cfg,messages,json_mode):
  run=getattr(LOCAL,'run',None)
+ if run:
+  import task_backend as tasks
+  run['manager']=tasks.manager(s)
  if cfg.get('provider') not in ['ollama','openai']:raise ValueError('仅支持 Ollama 或 OpenAI Compatible')
  base=cfg.get('endpoint','').rstrip('/');key=cfg.get('key','');budget=limit(cfg);ollama=cfg['provider']=='ollama'
  if run:
@@ -83,6 +148,7 @@ def call(s,cfg,messages,json_mode):
  report(s,run,activity='请求已发送，等待模型加载 / 处理',outputChars=0,thinkingChars=0,chunks=0,model=cfg['model'],requestStartedMs=int(started*1000),lastChunkMs=None,firstTokenMs=None,outputLimit=budget,generatedTokens=None)
  def accept(obj):
   nonlocal chars,thinking,chunks,first,last_write,done
+  if run and run['manager'].cancelled(run['id']):raise RuntimeError('任务已取消；迟到输出已丢弃')
   if obj.get('error'):raise ValueError(str(obj['error']))
   reason='';content='';thought=''
   if ollama:
@@ -103,25 +169,28 @@ def call(s,cfg,messages,json_mode):
   if reason in ['length','max_tokens']:raise ValueError('达到输出长度上限，结果未应用；可在连接设置提高上限，或减少镜头与描述长度')
   if done:
    report(s,run,activity='模型输出完成',outputChars=chars,thinkingChars=thinking,chunks=chunks,lastChunkMs=int(time.time()*1000),firstTokenMs=int(first*1000) if first else None,generatedTokens=obj.get('eval_count'),loadSeconds=round(obj.get('load_duration',0)/1e9,2) if ollama else None)
- try:
-  headers={'Content-Type':'application/json'}
-  if key:headers['Authorization']='Bearer '+key
-  with urlopen(Request(base+('/api/chat' if ollama else '/chat/completions'),data=json.dumps(body).encode(),headers=headers),timeout=300) as response:
-   ctype=response.headers.get('Content-Type','').lower()
-   if not stream or ('application/json' in ctype and 'ndjson' not in ctype):
-    obj=json.loads(response.read());accept(obj);done=True
-   else:
-    for raw in response:
-     line=raw.decode('utf-8').strip()
-     if not line or line.startswith(':'):continue
-     if not ollama:
-      if not line.startswith('data:'):continue
-      line=line[5:].strip()
-      if line=='[DONE]':done=True;break
-     accept(json.loads(line))
-     if done:break
-   if not done:raise ValueError('AI 流式响应中断，未收到完成标记；结果未应用')
- except HTTPError as e:raise ValueError(f'服务返回 HTTP {e.code}: '+e.read().decode(errors='replace')[:400]) from e
+ def consume():
+  nonlocal done
+  try:
+   headers={'Content-Type':'application/json'}
+   if key:headers['Authorization']='Bearer '+key
+   with cancellable_response(s,run,base+('/api/chat' if ollama else '/chat/completions'),body,headers) as response:
+    ctype=response.headers.get('Content-Type','').lower()
+    if not stream or ('application/json' in ctype and 'ndjson' not in ctype):
+     obj=json.loads(response.read());accept(obj);done=True
+    else:
+     for raw in response:
+      line=raw.decode('utf-8').strip()
+      if not line or line.startswith(':'):continue
+      if not ollama:
+       if not line.startswith('data:'):continue
+       line=line[5:].strip()
+       if line=='[DONE]':done=True;break
+      accept(json.loads(line))
+      if done:break
+    if not done:raise ValueError('AI 流式响应中断，未收到完成标记；结果未应用')
+  except HTTPError as e:raise ValueError(f'服务返回 HTTP {e.code}: '+e.read().decode(errors='replace')[:400]) from e
+ try:run_request(run,consume)
  finally:
-  report(s,run,requestElapsedSeconds=round(time.time()-started,1))
+  if not run or not run['manager'].cancelled(run['id']):report(s,run,requestElapsedSeconds=round(time.time()-started,1))
  return ''.join(parts)

@@ -4,9 +4,11 @@
 
 FRAME supports planning and handoff for AI short films, ads and storyboards: organize references, plan segments, edit action/camera/dialogue/spatial states, then send prompts and director packages to external generation tools.
 
-**Windows · Local workbench · V3.41 / R15** · [中文](../README.md) · [Downloads](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases) · [Quick start](quick-start.en.md) · [Changelog](CHANGELOG.en.md)
+**Windows · Local workbench · V3.41.1 / R15** · [中文](../README.md) · [Downloads](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases) · [Quick start](quick-start.en.md) · [Changelog](CHANGELOG.en.md)
 
 > Repository source and published EXEs are separate: check the exact Release tag. Updating GitHub does not replace your installed program. FRAME does not generate images or videos. AI features use your configured service; cloud requests may incur charges.
+
+**2026-11-03 · R15 patch V3.41.1:** Fix segment duration and scoped plan application, streaming responses, cancellation, and editing after public/group asset scope changes. [Details](CHANGELOG.en.md)
 
 ## Workflow
 

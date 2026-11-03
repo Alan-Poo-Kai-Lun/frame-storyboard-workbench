@@ -79,6 +79,22 @@ jobs:
           FRAME_QA_TEST: r15-browser.cjs
           FRAME_QA_OUTPUT: dist/r15-browser-checks.json
         run: python tools/test_browser.py
+      - name: Scoped Agent plan apply regression
+        env:
+          NODE_PATH: ${{ runner.temp }}/frame-ui-check/node_modules
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/frame-browsers
+          FRAME_BROWSER: chromium
+          FRAME_QA_TEST: agent-duration-browser.cjs
+          FRAME_QA_OUTPUT: dist/agent-duration-browser.json
+        run: python tools/test_browser.py
+      - name: Asset scope editing and undo regression
+        env:
+          NODE_PATH: ${{ runner.temp }}/frame-ui-check/node_modules
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/frame-browsers
+          FRAME_BROWSER: chromium
+          FRAME_QA_TEST: asset-scope-browser.cjs
+          FRAME_QA_OUTPUT: dist/asset-scope-browser.json
+        run: python tools/test_browser.py
       - name: Build source updater ZIP
         run: python tools/build_release.py
       - name: Build single-file Windows EXE
