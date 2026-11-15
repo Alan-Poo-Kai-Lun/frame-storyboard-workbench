@@ -67,23 +67,23 @@ class PlanningRepairChecks(unittest.TestCase):
         p=self.apply();s=p['segments'][-1];text=server.scoped_prompt(p,s)
         sections=['subject_definitions:','summary:','retention_analysis:','detailed_description:','overall_soundscape:','non_diegetic_music:']
         self.assertEqual([text.index(k) for k in sections],sorted(text.index(k) for k in sections))
-        self.assertIn('<Subject 2> (S1) says, <d>[Mandarin] 你好</d>',text)
-        self.assertIn('Voice 旁白 (S2)',text);self.assertNotIn('<Subject 1> is',text)
-        self.assertIn('<Picture 1> provides general',text);self.assertNotIn('@Picture',text)
-        self.assertEqual(text.count('你好'),1);self.assertIn('Spatial end: 停步',text)
+        self.assertIn('<Subject 1> (S1) says, <d>[Mandarin] 你好</d>',text)
+        self.assertIn('Voice 旁白 (S2)',text);self.assertNotIn('<Subject 2> is',text)
+        self.assertNotIn('人物与产品综合海报',text);self.assertNotIn('@Picture',text)
+        self.assertEqual(text.count('你好'),1);self.assertIn('By the end of this shot: 停步',text)
         p2=server.readzip(server.export_pack(p,force=True));self.assertEqual(server.scoped_prompt(p2,p2['segments'][-1]),text)
     def test_scene_role_and_professional_parameters_survive_compilation(self):
         p=self.apply();s=p['segments'][-1]
         p['assets'][0]['kind']='场景';s['planning']['referenceRoles'].pop('poster');s['shots'][0]['professionalNote']='机位保持固定'
         text=h3_compiler.compile_prompt(server,p,s)
         self.assertIn('<Subject 1> is',text);self.assertIn('Professional: 机位保持固定',text)
-        s['planning']['referenceRoles']['poster']='general';self.assertNotIn('<Subject 1> is',h3_compiler.compile_prompt(server,p,s))
+        s['planning']['referenceRoles']['poster']='general';self.assertIn('<Subject 1> is',h3_compiler.compile_prompt(server,p,s))
     def test_base_modes_use_only_base_sections_and_real_endpoints(self):
         p=self.apply();s=p['segments'][-1]
         for mode,expected in [('t2v',None),('i2v','at 0.00 seconds'),('fl2v','<Picture 2>')]:
             p['generation']={'taskType':mode};s['generation']={'genImage':'assets/poster.png','startImage':'assets/poster.png','endImage':'assets/actor.png'}
             text=h3_compiler.compile_prompt(server,p,s)
-            self.assertTrue(text.startswith('integrated_multimodal_description:'));self.assertNotIn('subject_definitions:',text)
+            self.assertIn('integrated_multimodal_description:',text);self.assertNotIn('subject_definitions:',text)
             if expected:self.assertIn(expected,text)
         s['generation']={'endImage':'assets/actor.png'};text=h3_compiler.compile_prompt(server,p,s)
         self.assertIn('<Picture 1> (from [Shot 2]) aligns with the 6.00-second',text);self.assertNotIn('0.00-second mark',text)

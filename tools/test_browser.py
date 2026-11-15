@@ -27,6 +27,18 @@ def main():
     if '你是影视连续性监督' in system:
      snap=json.loads(request['messages'][1]['content']);rows=snap['segments'];states=[{'segment':i,'shot':j,'characters':'Picture 1','position':'门口','facing':'室内','posture':'站立','heldItems':'无','mainAction':h.get('action',''),'result':'停下','camera':h.get('camera',''),'uncertainties':'场景背面未知'} for i,r in enumerate(rows) for j,h in enumerate(r['shots'])]
      plan={'summary':'本地模拟 AI 审查：核对起始站位。','characters':[{'reference':'Picture 1','name':'人物','identity':'黑衣人物','wardrobe':'黑衣','equipment':'无','uncertainties':'未发图片'}],'scenes':[{'reference':'Picture 2','name':'大厅','landmarks':'门口','axis':'同侧','uncertainties':'背面未知'}],'states':states,'issues':[{'segment':0,'shot':0,'severity':'warning','category':'空间承接','evidence':rows[0]['shots'][0].get('startState',''),'reason':'缺少朝向','suggestion':'明确面向室内'}],'changes':[{'segment':0,'shot':0,'field':'startState','before':rows[0]['shots'][0].get('startState',''),'after':'@Picture 1 站在门口，面向室内','reason':'补全朝向'}]}
+     if snap.get('segmentId'):
+      for state in states:
+       state['startState']={k:'UNKNOWN' for k in ('position','facing','posture','heldItems','result')};state['endState']=dict(state['startState'])
+      for j,h in enumerate(rows[0]['shots']):
+       if 'Jangan' in h.get('dialogue','') and h.get('dialogueLanguage')=='Mandarin':
+        plan['changes'].append({'segment':0,'shot':j,'field':'dialogueLanguage','before':'Mandarin','after':'Malay','reason':'本地模拟：保持马来语台词，只修正语言标签'})
+        plan['issues'].append({'segment':0,'shot':j,'severity':'warning','category':'对白语言','evidence':h['dialogue'],'reason':'语言标签不一致','suggestion':'核对 Malay'})
+     raw=json.dumps({'choices':[{'message':{'content':json.dumps(plan,ensure_ascii=False)}}]}).encode();self.send_response(200);self.send_header('Content-Type','application/json');self.send_header('Content-Length',str(len(raw)));self.end_headers();self.wfile.write(raw);return
+    if 'FRAME_PROMPT_NODE:' in system:
+     snap=json.loads(request['messages'][1]['content'])
+     plan={'summary':'A calm safety reminder.','assets':[{'id':a['id'],'description':'Confirmed reference appearance.'} for a in snap['assets']],'shots':[{'id':h['id'],**{k:'The person holds the same position.' for k in ('action','camera','expression','startState','endState','sound')}} for h in snap['segment']['shots']],'checks':['Check adjacent state before rendering.'],'customPrompt':'Custom format\n'+'\n'.join(h.get('dialogue','') for h in snap['segment']['shots'])}
+     if snap['segment'].get('storyText')=='QA_REJECT_FIELD':plan['shots'][0]['camera']=['invalid camera array']
      raw=json.dumps({'choices':[{'message':{'content':json.dumps(plan,ensure_ascii=False)}}]}).encode();self.send_response(200);self.send_header('Content-Type','application/json');self.send_header('Content-Length',str(len(raw)));self.end_headers();self.wfile.write(raw);return
     whole='剧情分段导演' in request.get('messages',[{}])[0].get('content','')
     content=json.dumps(plan if whole else {'reply':'本地测试方案，请预览确认。','changes':[],'storyPlan':plan},ensure_ascii=False)

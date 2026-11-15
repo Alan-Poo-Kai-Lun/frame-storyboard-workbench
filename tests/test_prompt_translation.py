@@ -11,7 +11,7 @@ class TranslationChecks(unittest.TestCase):
  def result(self):
   source=server.original_scoped_prompt(self.p,self.s)
   def fake(cfg,messages,mode):
-   jobs=json.loads(messages[-1]['content'])['fragments'];return json.dumps({'zh':['中文'+x for x in jobs],'en':['Translated '+x for x in jobs]})
+   jobs=json.loads(messages[-1]['content'])['fragments'];return json.dumps({'zh':['中文'+x for x in jobs],'en':['Translated prose' for x in jobs]})
   with patch.object(server,'_ai_call',side_effect=fake):return tr.analyze(server,{'model':'test'},{'original':source},{})
  def test_tokens_dialogue_original_and_selected_export(self):
   before=copy.deepcopy(self.p);r=self.result();self.assertEqual(self.p,before)

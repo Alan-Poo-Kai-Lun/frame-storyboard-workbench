@@ -1,7 +1,7 @@
 /* Translation results are explicit copies; editing remains on the original prompt. */
-async function queuePromptTranslation(segmentId){
- if(typeof requireStartupAI==='function'&&!requireStartupAI('提示词双语翻译',()=>queuePromptTranslation(segmentId)))return;
- await flush();const result=await api('prompt-translate',{projectId:P.projectId,segmentId});toast('双语翻译已加入任务中心');openTaskCenter();return result;
+async function queuePromptTranslation(segmentId,h3English=false){
+ if(typeof requireStartupAI==='function'&&!requireStartupAI('提示词双语翻译',()=>queuePromptTranslation(segmentId,h3English)))return;
+ await flush();const result=await api('prompt-translate',{projectId:P.projectId,segmentId,h3English});toast('双语翻译已加入任务中心');openTaskCenter();return result;
 }
 async function openPromptTranslations(segmentId=seg()?.id){
  if(!P||!segmentId)throw Error('请先选择片段');await flush();const pid=P.projectId,body={projectId:pid,segmentId},data=await api('prompt-translations',body);if(P?.projectId!==pid||!P.segments?.some(s=>s.id===segmentId))return;
@@ -14,6 +14,6 @@ async function openPromptTranslations(segmentId=seg()?.id){
 }
 async function viewTranslationTask(id){
  const row=taskRows.find(r=>r.id===id);if(!row?.result)throw Error('翻译结果尚未完成');const result=row.result;
- modal('双语翻译预览',`<p class="notice">保存副本后可查看、复制或选择导演包导出语言。不会覆盖原文或自动替换镜头；请核对翻译含义。</p><label>中文副本<textarea rows="10" readonly data-user-content>${esc(result.zh)}</textarea></label><label>English copy<textarea rows="10" readonly data-user-content>${esc(result.en)}</textarea></label>`,[{label:'返回任务中心',action:openTaskCenter},{label:'保存双语副本',class:'primary',action:async()=>{if(P?.projectId!==row.projectId)throw Error('请先打开原项目');await flush();const r=await api('prompt-translation-save',{id,projectId:row.projectId,segmentId:row.segmentId});P=r.project;dirty=false;render();close();await openPromptTranslations(row.segmentId)}}]);taskCenterOpen=false;
+ modal('双语翻译预览',`<p class="notice">${result.h3English?'确认后，最终提示词查看、复制和导出统一使用英文副本；保留中文原始镜头与对白。':'保存副本后可查看、复制或选择导演包导出语言。不会覆盖原文或自动替换镜头。'}请核对翻译含义。</p><label>中文副本<textarea rows="10" readonly data-user-content>${esc(result.zh)}</textarea></label><label>English copy<textarea rows="10" readonly data-user-content>${esc(result.en)}</textarea></label>`,[{label:'返回任务中心',action:openTaskCenter},{label:result.h3English?'确认使用英文 H3':'保存双语副本',class:'primary',action:async()=>{if(P?.projectId!==row.projectId)throw Error('请先打开原项目');await flush();const r=await api('prompt-translation-save',{id,projectId:row.projectId,segmentId:row.segmentId});P=r.project;dirty=false;render();close();await openPromptTranslations(row.segmentId)}}]);taskCenterOpen=false;
 }
 (()=>{const button=document.createElement('button');button.id='bilingualPrompt';button.textContent='双语提示词';button.onclick=()=>safe(()=>openPromptTranslations());$('viewPrompt').after(button)})();

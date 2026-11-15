@@ -1,6 +1,35 @@
+## [v4.1.1] — 2026-11-10
+
+- Fixed full-width archive checkboxes squeezing plan titles into a vertical column.
+- Added bounded checkbox sizing, responsive archive rows and long-title browser checks.
+- Plan contents and applied project data are unchanged. Isolated manual-update build only.
+
+## [v4.1.0] — 2026-11-10
+
+- Isolated manual-update EXE and ZIP; no installed-app replacement or GitHub publication.
+- Independent editable storyboard mode, compact and single-row alignment with undo/redo.
+- Asset hover previews, durable planning-input history with director-package roundtrip.
+- Confirmed single/bulk plan-record cleanup, return-to-list navigation and content-fit cards.
+- Existing project/media data preserved; credentials are excluded from exports.
+
+## [v4.0.0] — 2026-11-10
+
+- Standalone manual-update release; project and director-package formats preserved.
+- Single-row horizontal alignment, unconstrained grouped nodes and floating navigation.
+- Linked-edge filter, asset dossier dialog and shared-data storyboard table.
+- Discussion mode without edits; completed-mention and conversation-scroll fixes.
+
 # Changelog
 
 [中文](../CHANGELOG.md) · [English guide](README.en.md)
+
+## [v3.41.4] - 2026-11-03
+
+### Local home-screen update
+
+- Refine the slate/cyan home screen, workflow entry points, project filters and responsive cards.
+- Show Chinese / EN directly in the header and read the running version from bootstrap metadata.
+- Preserve project data, director packages and editor behavior. This build is delivered locally, not published on GitHub.
 
 ## V3.41.3 — 2026-11-03
 
@@ -66,3 +95,4 @@ Local validation: 205 backend tests, 59 regression checks, 30 feature checks and
 - Document the workflow with user-supplied actual screenshots.
 
 For earlier release history, see the preserved [Chinese changelog](../CHANGELOG.md) and versioned documents under `docs/`.
+

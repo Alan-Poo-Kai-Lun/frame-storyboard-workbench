@@ -12,7 +12,7 @@ def records(s,p):
  for file in folder(s,p['projectId']).glob('*.json'):
   value=json.loads(file.read_text('utf-8'))
   if value.get('projectId')==p['projectId']:rows[value['id']]=value
- return rows
+ return {k:v for k,v in rows.items() if k not in (p.get('deletedPlanIds') or [])}
 def put(s,row,snapshot=None):
  if row.get('type') not in ['agent','story']:return
  with s.LOCK:
@@ -45,6 +45,26 @@ def endpoint(s,body):
   p=s.load_project()
   if not p or p['projectId']!=body.get('projectId'):raise ValueError('项目已切换')
   action=body.get('action','get');ident=body.get('id')
+  if action=='history-list':return {'items':copy.deepcopy((p.get('planningHistory') or []))}
+  if action=='history-save':
+   value=body.get('snapshot');rows=p.get('planningHistory') or [];p['planningHistory']=rows
+   if not isinstance(value,dict) or len(json.dumps(value))>2_000_000:raise ValueError('规划历史格式无效')
+   if not rows or rows[-1].get('snapshot')!=value:
+    rows.append({'id':s.uid(),'title':str(value.get('story','规划点子')).strip()[:60] or '规划点子','createdAt':time.time(),'snapshot':copy.deepcopy(value)})
+    s.save(p)
+   return {'items':copy.deepcopy(rows)}
+  if action=='history-rename':
+   row=next((r for r in (p.get('planningHistory') or []) if r['id']==ident),None)
+   if not row:raise ValueError('历史不存在')
+   row['title']=str(body.get('title','')).strip()[:120] or row['title'];s.save(p);return {'ok':True}
+  if action=='delete':
+   ids=body.get('ids',[]);known=records(s,p)
+   if not isinstance(ids,list) or not ids or any(v not in known for v in ids):raise ValueError('待删除方案无效')
+   p['deletedPlanIds']=list(set((p.get('deletedPlanIds') or [])+ids))
+   for key in ids:p.get('planArchive',{}).pop(key,None)
+   s.save(p)
+   return {'ok':True}
+  if ident in (p.get('deletedPlanIds') or []):raise ValueError('方案记录已清理；已应用片段保持不变')
   if action=='list':return {'items':[{'id':r['id'],'type':r['type'],'createdAt':r.get('createdAt'),'appliedAt':r.get('appliedAt'),'title':r.get('result',{}).get('reply','整篇规划')[:100]} for r in records(s,p).values() if r.get('type')=='story' or r.get('result',{}).get('storyPlan') or r.get('result',{}).get('planError')]}
   try:record=get(s,ident,p)
   except ValueError:

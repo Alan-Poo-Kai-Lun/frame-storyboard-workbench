@@ -29,4 +29,16 @@ class StreamCompletionChecks(unittest.TestCase):
       self.assertEqual(ai_runtime.call(SimpleNamespace(),{'provider':provider,'endpoint':'http://local-mock','model':'mock'},[{'role':'user','content':'hello'}],False),'你好')
     finally:ai_runtime.LOCAL.run=previous
 
+ def test_ollama_schema_is_sent_only_when_supplied(self):
+  bodies=[]
+  @contextmanager
+  def response(s,run,url,body,headers):
+   bodies.append(body);out=io.BytesIO(json.dumps({'message':{'content':'{}'},'done':True}).encode());out.headers={'Content-Type':'application/json'};yield out
+  schema={'type':'object','properties':{'summary':{'type':'string'}},'required':['summary']}
+  with patch.object(ai_runtime,'cancellable_response',response),patch.object(ai_runtime,'report'),patch.object(ai_runtime,'thinking_control',return_value=(False,'off')):
+   cfg={'provider':'ollama','endpoint':'http://mock','model':'mock','_jsonSchema':schema}
+   ai_runtime.call(SimpleNamespace(),cfg,[{'role':'user','content':'test'}],True)
+   ai_runtime.call(SimpleNamespace(),{k:v for k,v in cfg.items() if k!='_jsonSchema'},[{'role':'user','content':'test'}],True)
+  self.assertEqual(bodies[0]['format'],schema);self.assertEqual(bodies[1]['format'],'json')
+
 if __name__=='__main__':unittest.main()

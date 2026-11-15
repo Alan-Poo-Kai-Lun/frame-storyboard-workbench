@@ -17,6 +17,7 @@ def export(s,p,files):
  # Durable archives include model output, draft and application records, never request config.
  value={'version':1,'exportedAt':time.strftime('%Y-%m-%d %H:%M:%S'),'sourceProjectId':pid,
         'conversations':clean(chats) if options.get('agent',True) else {},'threads':clean(threads) if options.get('agent',True) else {},'plans':clean(records) if options.get('planning',True) else {},'reviews':clean(reviews) if options.get('planning',True) else {},
+        'ideaHistory':clean(p.get('planningHistory') or []) if options.get('planning',True) else [],
         'notes':copy.deepcopy(p.get('notes') or []) if options.get('notes',True) else [],
         'canvasNotes':copy.deepcopy(p.get('overviewLayout',{}).get('unifiedFlow',{}).get('notes',[])) if options.get('notes',True) else []}
  if len(json.dumps(value,ensure_ascii=False))>12_000_000:raise ValueError('交接记录超过 12MB，请先整理历史记录')
@@ -26,7 +27,7 @@ def export(s,p,files):
   side['notes']=[]
   for key in ['unifiedFlow','reactFlowA']:
    if isinstance(side.get('overviewLayout',{}).get(key),dict):side['overviewLayout'][key]['notes']=[]
- if options.get('planning') is False:side['storyPlans']=[]
+ if options.get('planning') is False:side['storyPlans']=[];side['planningHistory']=[]
  files['storyboard.json']=json.dumps(side,ensure_ascii=False,indent=2).encode('utf-8')
  lines=['# '+p.get('title','项目')+' · 创作交接','', '保留过程记录不保证模型再次生成相同结果。API 密钥及连接配置不包含在包中。','', '## 项目笔记']
  lines.extend(n.get('text','') for n in value['notes'] if isinstance(n,dict))

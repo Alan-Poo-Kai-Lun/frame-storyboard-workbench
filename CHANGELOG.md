@@ -1,3 +1,79 @@
+## [v4.1.7] — 2026-11-15
+
+- 恢复无需 AI 的原始最终提示词节点；成品区与可选优化节点分别连接其后。Seedance、H3、自定义优化默认折叠；保留旧输出和布局迁移备份。
+- 新保存的优化结果不自动替换原稿导出；可明确选择使用原稿或已保存 H3。已有项目沿用原导出选择。
+- 原稿查看不受旧优化结果过期影响。优化失败原文、字段错误可在节点弹窗查看和复制；重新打开恢复失败记录，已有保存内容不被清空。
+- 优化遵循保守改写：不新增运镜、动作、道具或数值；矛盾列为待核对，不擅自编造衔接。修正 Seedance 摘要中的稀疏图片编号映射，兼容纯 JSON 代码围栏。
+- 媒体缓存核对完整内容，避免同路径同长度且中段变化时错误复用；屏幕外媒体延迟生成预览，离开视口或隐藏页面时暂停播放器。
+- Independent manual-update EXE/ZIP. Restore source final prompt before optional collapsed adapters and results; recover rejected drafts; conservative conversion, exact media-cache identity and visible-only media previews. No installed-app overwrite or GitHub publication. Actual video quality is not guaranteed by automated tests.
+
+## [v4.1.6] — 2026-11-12
+
+- 优化中间 JSON 使用稳定素材 ID；Ollama 使用 JSON Schema 约束字段。校验错误定位到具体字段并保留失败原文。
+- Seedance、H3、自定义提示词与成品节点可独立折叠，保留尺寸和内容，可撤销。
+- Stable asset-ID intermediate references, Ollama structured output constraints, actionable validation errors and retained rejected drafts; collapsible prompt and result nodes.
+
+## [v4.1.5] — 2026-11-12
+
+- 修复提示词优化任务被错误标记为已移除模块，恢复任务中心查看、停止和重试入口。
+- 重新打开转换节点会恢复尚未保存的已完成 AI 结果，空结果不能保存。
+- Fix converter task classification and restore Task Center result actions; recover unsaved completed previews and reject blank saves.
+
+## [v4.1.4] — 2026-11-12
+
+- 画布 / 卡片模式以 Seedance 2.0、MiniMax H3 两个独立优化节点替代单一旧 H3 输出节点，并连接共享成品区；旧提示词仍保留。
+- 两个节点按需调用已配置文字模型，共读当前分镜与相邻片段边界状态。锁定原对白、时长与素材绑定，结果先预览、确认后保存，可撤销。
+- 各节点独立保留手动编辑及历史；上游或相邻状态变化后标记过期，禁止过期任务覆盖新编辑。已确认 H3 输出用于导演包，过期时要求重新确认。
+- 支持导入 SKILL.md 与 Markdown / TXT 引用说明，创建自定义格式节点。只读文字规则，不执行命令、脚本、下载或赋予工具权限；模板版本随项目固定。
+- 导演包附带转换结果、历史和自定义模板，保留原数据结构；不混入参考素材区。
+- English: Independent Seedance/H3 prompt adapters, adjacent-state context, immutable source dialogue/timing, confirmed output histories, stale-safe writes and text-only custom Skill adapters. Director-package round trips retain adapter data. No generation API integration or rendered-video continuity guarantee.
+
+## [v4.1.3] — 2026-11-12
+
+- H3 最终提示词新增当前片段 AI 语义／连续性审查，复用现有任务队列，读取相邻片段首尾状态；完整起止状态以并排卡片显示。
+- 建立人物身份、场景地标和逐镜状态表；检查语言、动作承接、视线轴线与信息图用途，选中建议后才应用，可撤销。审查期间来源变化则拒绝应用旧建议。
+- 新增片段级生成设置：精简生成说明、信息依据／叠加／后期／实体屏幕／帧锚点、保留范围与逐镜对白语言。完整素材档案保留。
+- 信息海报不再整段复制进视觉主体定义；人物与场景使用精简说明。保留等级依据定义用途，不将运镜变化一律视为丢失素材特征。
+- 马来语疑似被标为 Mandarin 时提示确认；不自动改台词，修正标签后再生成英文副本。
+- 修改后切回原文，旧英文副本保留但不继续作为当前输出；查看、复制和导出继续使用同一来源。
+- English: Current-segment model review with complete boundary states, selected and undoable edits, stale-source protection, concise per-segment generation briefs, explicit reference presentation and dialogue-language checks.
+- Independent EXE/ZIP for manual update. Installed app and GitHub are unchanged. Mock-model checks validate workflow, not actual model review quality or rendered video continuity.
+
+## [v4.1.2] — 2026-11-11
+
+- 修复 H3 Ref2VA 的 Subject 身份、Picture 来源与悬停素材映射；保留完整素材档案，生成时使用精简说明。
+- 修复无台词备注被朗读、单人物对白未绑定、首镜与后续时间格式；保留对白原文。
+- 新增按需生成英文 H3 副本，用户确认后查看、复制和导演包导出统一使用所选副本；源内容变化后拒绝使用过期译文。
+- 修复新格式提示词重新编辑时的镜头时间和字段还原；保留原有历史与媒体。
+- H3 prompt repair: source-linked Subject identities, retention entries, speaker and timing rules, protected dialogue, explicit English copies and consistent export.
+- Independent manual-update package; installed application and GitHub remain untouched. Actual video generation is not a validation guarantee.
+
+## [v4.1.1] — 2026-11-10
+
+- 修复已保存规划方案的勾选框继承全宽输入样式，导致标题竖排、按钮越界的问题。
+- 为方案列表设置明确的勾选框、标题、状态与操作列；窄窗口自动分行。
+- 补充长标题、多记录、桌面及窄窗口的实际浏览器回归检查。
+- 不修改方案内容及已应用片段，不覆盖现用程序，不更新 GitHub。
+
+## [v4.1.0] — 2026-11-10
+
+- 独立手动更新包，不覆盖现用程序；未提交或发布 GitHub。
+- 新增分镜模式，与画布、卡片模式共享真实项目数据，可直接编辑分镜。
+- 保留自动对齐与横向对齐两种布局，支持撤销、重做。
+- 最终提示词与规划素材增加悬停预览；提示词使用编译后的素材映射。
+- 规划输入历史保存剧情、设置和素材引用，支持改名、复制、恢复，随导演包导出。
+- 已保存方案支持确认后单项或批量清理；已应用片段及素材保留；预览关闭返回列表。
+- 卡片文字自适应高度，增加批量适应内容；超长字段限制最大高度并保留滚动。
+- 保持原导演包结构，新增字段向后兼容；不导出 AI 密钥与连接设置。
+
+## [v4.0.0] — 2026-11-10
+
+- 独立 V4 手动更新包，保留项目与导演包结构。
+- 素材、片段、镜头单行横向对齐；组内节点可自由移动。
+- 片段导航支持浮动、停靠和高度调整；连线可只显示选中关联。
+- 素材说明弹窗、共享数据分镜表；修复已完成 @ 引用仍弹出无匹配。
+- Agent 讨论模式单次调用、不产生修改；保留同一对话滚动位置。
+
 # 更新日志 / Changelog
 
 所有版本记录以本文件为准。历史独立说明已完整归并；原始文件名和校验摘要保留在对应段落中。相同版本的简要日志与详细说明同时保留，避免删减历史信息。
@@ -9,6 +85,16 @@
 All release history is consolidated here. New releases use three-part SemVer tags; historical tags remain unchanged. Original summaries and complete release notes are retained together.
 
 <a id="version-v3.41.3"></a>
+## [v3.41.4] - 2026-11-03
+
+<a id="version-v3.41.4"></a>
+
+### 首页优化（本地交付）
+
+- 首页采用深色蓝灰与青色高亮，整理工作流入口、项目筛选和自适应卡片。
+- 顶部直接显示中文 / EN 切换；版本读取实际运行程序的启动信息，移除旧 R14 固定标签。
+- 保留项目、素材、导演包与既有工作台数据逻辑；此构建仅本地交付，未发布 GitHub。
+
 ## [v3.41.3] - 2026-11-03
 
 - 将全部独立版本说明和补充历史记录归并到根目录 CHANGELOG，按版本倒序排列，保留正文与来源校验信息。
@@ -2586,3 +2672,4 @@ R7 数据位于 EXE 同目录的 `FRAME-Canvas-R7-Data`。首次启动且 R7 数
 Agent 通过本地模拟接口验证排队、规则传递、草稿保护、回复显示及完整分镜预览应用；旧文字方案用合成历史记录验证本地恢复，覆盖取消、编辑、确认追加、重开、清理任务后保留和防重复应用。本轮未调用用户实际 Ollama、Gemini、GPT 或 ComfyUI，无法据此保证真实模型响应速度或任意格式文字均能解析。超大工程仍使用 JSON 保存，首次加载和保存时间取决于工程大小。
 
 <!-- history-source-end -->
+

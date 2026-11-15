@@ -304,7 +304,7 @@ def readzip(blob):
         segment['videos']=record.get('videos',[])
         if record.get('planning'):segment['planning']=record['planning']
         if record.get('promptHistory'):segment['promptHistory']=record['promptHistory']
-        for key in ['promptTranslations','promptExportLanguage','dialogueLanguage','writingRuleIds']:
+        for key in ['promptNodes','promptOutputSource','promptTranslations','promptExportLanguage','dialogueLanguage','writingRuleIds']:
             if key in record:segment[key]=record[key]
         segment['guideFromPrev']=record.get('guideFromPrev',segment['continuity'])
         if 'continuity' in record:segment['continuity']=record['continuity']
@@ -313,7 +313,7 @@ def readzip(blob):
             path=video.get('path','')
             if path in files:media[path]=base64.b64encode(files[path]).decode()
     shared=json.loads(files.get('shared_params/shared_params.json',b'{}'))
-    project={'notes':side.get('notes',[]),'handoff':side.get('handoff',{}),'overviewLayout':side.get('overviewLayout',{}),'storySeparated':side.get('storySeparated',False),'dialogueLanguage':side.get('dialogueLanguage',''),'writingRuleIds':side.get('writingRuleIds',[]),'planArchive':side.get('planArchive',{}),'planningOptions':side.get('planningOptions',{}),'storyPlans':side.get('storyPlans',[]),'intent':side.get('intent',{}),'groupAssetsCollapsed':side.get('groupAssetsCollapsed',{}),'nextPictureNumber':side.get('nextPictureNumber',1),'showDeletedAssets':side.get('showDeletedAssets',False),'assetsManaged':side.get('assetsManaged',False),'assetsCollapsed':side.get('assetsCollapsed',False),'version':1,'projectId':uid(),'title':side.get('title','导入的导演项目'),'script':side.get('script',''),'aspect':side.get('aspect',aspect_from_output(pack.get('output',{}))),'fps':timeline.get('frameRate',24),'segments':segs,'assets':side.get('assets') or [{**r,'id':uid(),'name':f'Picture {r.get("index",i)+1}','kind':'人物','path':r.get('imageFile',''),'locked':True} for i,r in enumerate(shared.get('refs',[]))],'media':media,'originalZip':base64.b64encode(blob).decode()}
+    project={'promptTemplates':side.get('promptTemplates',[]),'notes':side.get('notes',[]),'handoff':side.get('handoff',{}),'overviewLayout':side.get('overviewLayout',{}),'storySeparated':side.get('storySeparated',False),'dialogueLanguage':side.get('dialogueLanguage',''),'writingRuleIds':side.get('writingRuleIds',[]),'planArchive':side.get('planArchive',{}),'planningHistory':side.get('planningHistory',[]),'deletedPlanIds':side.get('deletedPlanIds',[]),'planningOptions':side.get('planningOptions',{}),'storyPlans':side.get('storyPlans',[]),'intent':side.get('intent',{}),'groupAssetsCollapsed':side.get('groupAssetsCollapsed',{}),'nextPictureNumber':side.get('nextPictureNumber',1),'showDeletedAssets':side.get('showDeletedAssets',False),'assetsManaged':side.get('assetsManaged',False),'assetsCollapsed':side.get('assetsCollapsed',False),'version':1,'projectId':uid(),'title':side.get('title','导入的导演项目'),'script':side.get('script',''),'aspect':side.get('aspect',aspect_from_output(pack.get('output',{}))),'fps':timeline.get('frameRate',24),'segments':segs,'assets':side.get('assets') or [{**r,'id':uid(),'name':f'Picture {r.get("index",i)+1}','kind':'人物','path':r.get('imageFile',''),'locked':True} for i,r in enumerate(shared.get('refs',[]))],'media':media,'originalZip':base64.b64encode(blob).decode()}
     project['directorGuide']=guide_settings({'directorGuide':side.get('directorGuide',{})},pack.get('output',{}))
     if not side.get('assetsManaged'):
         for segment in segs:
@@ -536,6 +536,12 @@ def original_scoped_prompt(project, segment):
     return h3_compiler.compile_prompt(sys.modules[__name__],project,segment)
 
 def scoped_prompt(project, segment):
+    saved=segment.get('promptNodes',{}).get('h3',{})
+    if saved.get('prompt') and segment.get('promptOutputSource','h3')=='h3':
+        from backend.ai import prompt_nodes
+        _,_,current=prompt_nodes.source(sys.modules[__name__],project,segment,'h3')
+        if saved.get('sourceHash')!=current:raise ValueError('H3 优化结果已过期：分镜或相邻状态已变化，请重新优化并确认保存后导出')
+        return saved['prompt']
     source=original_scoped_prompt(project,segment);lang=segment.get('promptExportLanguage','original')
     if lang=='original':return source
     versions=segment.get('promptTranslations',{})
@@ -713,9 +719,9 @@ def export_pack(p,force=False):
     if workspace is not None: workspace.setdefault('globalCommon',{})['refs']=copy.deepcopy(existing)
     files['timeline.json']=json.dumps(tl,ensure_ascii=False,indent=2).encode()
     generation_backend.export(files,p,pack,tl,scoped_assets)
-    side={k:p.get(k) for k in ['generation','generationManaged','sourceVideo','sourceVideoClips','version','title','script','aspect','assets','assetsManaged','assetsCollapsed','nextPictureNumber','showDeletedAssets','groupAssetsCollapsed','intent','writingRuleIds','dialogueLanguage','storySeparated','directorGuide','overviewLayout','storyPlans','planningOptions','notes','handoff']}
+    side={k:p.get(k) for k in ['generation','generationManaged','sourceVideo','sourceVideoClips','version','title','script','aspect','assets','assetsManaged','assetsCollapsed','nextPictureNumber','showDeletedAssets','groupAssetsCollapsed','intent','writingRuleIds','dialogueLanguage','storySeparated','directorGuide','overviewLayout','storyPlans','planningOptions','planningHistory','deletedPlanIds','notes','handoff','promptTemplates']}
     side['directorGuide']=guide_settings(p,pack.get('output',{}))
-    side['segments']=[{**{k:s[k] for k in ['generation','id','title','shots','storyText','storyHistory','videos','planning','promptHistory','continuity','guideFromPrev','shotHistory','dialogueLanguage','writingRuleIds','promptTranslations','promptExportLanguage'] if k in s},'workingPrompt':s['prompt'],'promptHash':digest(output[i]['prompt'])} for i,s in enumerate(p['segments'])]
+    side['segments']=[{**{k:s[k] for k in ['generation','id','title','shots','storyText','storyHistory','videos','planning','promptHistory','continuity','guideFromPrev','shotHistory','dialogueLanguage','writingRuleIds','promptTranslations','promptExportLanguage','promptNodes','promptOutputSource'] if k in s},'workingPrompt':s['prompt'],'promptHash':digest(output[i]['prompt'])} for i,s in enumerate(p['segments'])]
     files['storyboard.json']=json.dumps(side,ensure_ascii=False,indent=2).encode()
     # Remove previously bundled manual clips; export only current segment records.
     for name in list(files):
@@ -841,6 +847,13 @@ def unload_all_models(s):
 # One-line POST routes live in a table instead of a long if chain: adding a route
 # is a single entry, and every handler has the same signature.
 POST_ROUTES={
+ '/api/prompt-output-source':lambda s,b: __import__('backend.ai.prompt_nodes',fromlist=['*']).choose_output(s,b),
+ '/api/prompt-node-info':lambda s,b: __import__('backend.ai.prompt_nodes',fromlist=['*']).info(s,b),
+ '/api/prompt-node-generate':lambda s,b: __import__('backend.ai.prompt_nodes',fromlist=['*']).enqueue(s,b),
+ '/api/prompt-node-save':lambda s,b: __import__('backend.ai.prompt_nodes',fromlist=['*']).save(s,b),
+ '/api/prompt-template-import':lambda s,b: __import__('backend.ai.prompt_nodes',fromlist=['*']).import_template(s,b),
+ '/api/h3-settings':lambda s,b: __import__('backend.ai.h3_workflow',fromlist=['*']).settings(s,b),
+ '/api/h3-review-apply':lambda s,b: __import__('backend.ai.h3_workflow',fromlist=['*']).apply_review(s,b),
  '/api/ai-continuity':lambda s,b: __import__('backend.ai.ai_continuity',fromlist=["*"]).enqueue(s,b),
  '/api/reverse-templates':lambda s,b: reverse.update_template(s,b),
  '/api/reverse-prompt':lambda s,b: reverse.enqueue(s,b),
@@ -1116,7 +1129,9 @@ class Handler(BaseHTTPRequestHandler):
                 if not p or p.get('projectId')!=body.get('projectId'):raise ValueError('项目已切换，请刷新')
                 segment=next((v for v in p['segments'] if v['id']==body.get('segmentId')),None)
                 if segment is None:raise ValueError('片段不存在')
-                return self.respond({'prompt':original_scoped_prompt(p,segment),'warnings':prompt_review.warnings(sys.modules[__name__],p,segment),'issues':prompt_review.quality(sys.modules[__name__],p,segment)})
+                from backend.ai import h3_compiler
+                output=original_scoped_prompt(p,segment) if body.get('source')=='original' else scoped_prompt(p,segment)
+                return self.respond({'prompt':output,'references':h3_compiler.reference_map(sys.modules[__name__],p,segment),'formatIssues':h3_compiler.diagnostics(p,segment,output),'warnings':prompt_review.warnings(sys.modules[__name__],p,segment),'issues':prompt_review.quality(sys.modules[__name__],p,segment)})
             if route=='/api/export-force':
                 with LOCK:
                     p=load_project()
@@ -1151,6 +1166,8 @@ class Handler(BaseHTTPRequestHandler):
                     if route=='/api/project-delta':
                         body=merge_project_delta(current,body)
                     if current and current.get('projectId')!=body.get('projectId'): return self.respond({'error':'当前项目已切换，请刷新页面，旧修改未覆盖新项目'},409)
+                    for key in ['planningHistory','deletedPlanIds']:
+                        if current and key in current:body[key]=copy.deepcopy(current[key])
                     # Background analysis drafts are server-owned: stale autosaves cannot erase them.
                     for a in body.get('assets',[]):
                         original=next((v for v in (current or {}).get('assets',[]) if v['id']==a['id']),None)

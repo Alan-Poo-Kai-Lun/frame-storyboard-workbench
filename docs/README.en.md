@@ -4,11 +4,11 @@
 
 FRAME supports planning and handoff for AI short films, ads and storyboards: organize references, plan segments, edit action/camera/dialogue/spatial states, then send prompts and director packages to external generation tools.
 
-**Windows · Local workbench · V3.41.3** · [中文](../README.md) · [Downloads](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases) · [Quick start](quick-start.en.md) · [Changelog](CHANGELOG.en.md)
+**Windows · Local workbench · V4.1.7** · [中文](../README.md) · [Downloads](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases) · [Quick start](quick-start.en.md) · [Changelog](CHANGELOG.en.md)
 
 > Repository source and published EXEs are separate: check the exact Release tag. Updating GitHub does not replace your installed program. FRAME does not generate images or videos. AI features use your configured service; cloud requests may incur charges.
 
-**2026-11-03 · V3.41.3:** Release history is consolidated into CHANGELOG; future releases use three-part SemVer tags. [Details](CHANGELOG.en.md)
+**2026-11-15 · V4.1.7:** Restore the original final prompt, optional collapsed adapters and independent results; recover rejected drafts and fix media caching. [Details](../CHANGELOG.md)
 
 ## Feature tour
 
@@ -139,7 +139,7 @@ Frontend builds refresh the local bundle, dependency notices and checksums. `typ
 
 R15 local delivery passed 205 backend tests, 59 regression checks, 30 feature checks and EXE self-tests. AI used a local mock and image clipboard construction used a stub. These checks do not establish real-model quality, rendered-video continuity or compatibility with every paste target. Check GitHub Actions and the exact Release separately for public build status.
 
-[Latest release notes](../CHANGELOG.md#version-v3.41.3) · [Release process](releasing.md) · [中文更新日志](../CHANGELOG.md)
+[Latest release notes](../CHANGELOG.md#version-v4.0.0) · [Release process](releasing.md) · [中文更新日志](../CHANGELOG.md)
 
 Public source does not imply an open-source license. See [LICENSE](../LICENSE) for usage and redistribution terms and [NOTICE](../NOTICE.md) for dependency provenance.
 

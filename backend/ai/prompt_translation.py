@@ -1,6 +1,6 @@
 """On-demand prompt translation. Structural tokens and spoken dialogue never reach the model."""
 import copy,json,re,time
-PROTECTED=re.compile(r'<d>[\s\S]*?</d>|</?[^>\n]+>|@?\b(?:Picture|Subject|Audio|Video)\s*\d+\b|\[[^\]\n]*\]|\b\d+(?:\.\d+)?\b',re.I)
+PROTECTED=re.compile(r'"[^"\n]*"|“[^”\n]*”|<d>[\s\S]*?</d>|</?[^>\n]+>|@?\b(?:Picture|Subject|Audio|Video)\s*\d+\b|\[[^\]\n]*\]|\b\d+(?:\.\d+)?\b',re.I)
 HEAD=re.compile(r'^\s*(?:[a-z_]+|Camera|Expression|Dialogue|Sound|Spatial start|Spatial end|Dialogue language|Professional):\s*$',re.I)
 
 def parts(text):
@@ -37,18 +37,22 @@ def analyze(s,cfg,snapshot,payload):
         if not isinstance(values,list) or len(values)!=len(jobs):raise ValueError('翻译片段不完整，原文未修改')
         for i,value in enumerate(values):
             if not isinstance(value,str) or not value.strip() or len(value)>max(2000,len(jobs[i])*12) or '\n' in value or '\r' in value or PROTECTED.search(value) or HEAD.match(value):raise ValueError('翻译改变了结构或包含无效内容，原文未修改')
+        if lang=='en' and any(re.search(r'[\u3400-\u9fff]',v) for v in values):raise ValueError('英文正文仍含中文，原文未修改，请重试')
         versions[lang]=''.join(values[c] if isinstance(c,int) else c for c in chunks)
-    return {'original':source,'sourceHash':s.digest(source),**versions,'createdAt':time.strftime('%Y-%m-%d %H:%M:%S'),'model':cfg['model']}
+    return {'original':source,'sourceHash':s.digest(source),**versions,'createdAt':time.strftime('%Y-%m-%d %H:%M:%S'),'model':cfg['model'],'h3English':bool(snapshot.get('h3English'))}
 
 def enqueue(s,body):
     with s.LOCK:
         p=s.load_project();seg=segment(p,body);source=s.original_scoped_prompt(p,seg)
+        if body.get('h3English'):
+            from backend.ai.h3_compiler import language_warnings
+            if language_warnings(p,seg):raise ValueError('对白语言可能标错，请先在生成设置确认镜头语言，再生成英文 H3；原台词未修改')
         if not source.strip():raise ValueError('请先准备最终提示词')
         if len(source)>20000:raise ValueError('提示词过长，请缩短本段描述后翻译')
         cfg=s.settings().get('ai',{})
         if not cfg.get('model'):raise ValueError('请先设置文字模型')
         from backend.services import task_backend
-        row=task_backend.manager(s).add('translation',{'projectId':p['projectId'],'segmentId':seg['id'],'title':'提示词双语翻译 · '+seg['title']},cfg,{'original':source})
+        row=task_backend.manager(s).add('translation',{'projectId':p['projectId'],'segmentId':seg['id'],'title':'提示词双语翻译 · '+seg['title']},cfg,{'original':source,'h3English':bool(body.get('h3English'))})
         return {'id':row['id']}
 
 def segment(p,body):
@@ -69,7 +73,7 @@ def save_result(s,body):
         if not row or row['type']!='translation' or row['status']!='done' or row['projectId']!=p['projectId'] or row['segmentId']!=seg['id']:raise ValueError('翻译任务不属于当前片段或尚未完成')
         result=row['result'];source=s.original_scoped_prompt(p,seg)
         if result['sourceHash']!=s.digest(source):raise ValueError('原文或素材已改变，请重新翻译；已有内容未覆盖')
-        seg['promptTranslations']=copy.deepcopy(result);seg['promptExportLanguage']='original';s.save(p);return {'project':p}
+        seg['promptTranslations']=copy.deepcopy(result);seg['promptExportLanguage']='en' if result.get('h3English') else 'original';s.save(p);return {'project':p}
 
 def choose(s,body):
     with s.LOCK:

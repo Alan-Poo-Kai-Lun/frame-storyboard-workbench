@@ -20,7 +20,7 @@ export function assetGroups(rows,sizes,scope) {
  return categories.map(([key,label])=>({key,label,rows:rows.filter(a=>{
   const c=assetCategory(a);return key==='other'?!['character','scene'].includes(c):c===key;
  })})).filter(g=>g.rows.length).map(g=>{
-  const columns=Math.min(2,g.rows.length);
+  const columns=Math.max(1,g.rows.length);
   const cellWidth=Math.max(185,...g.rows.map(a=>sizes['a:'+a.id]?.width||228));
   const cellHeight=Math.max(450,...g.rows.map(a=>sizes['a:'+a.id]?.height||450));
   return {...g,gid:'asset-group:'+scope+':'+g.key,columns,cellWidth,cellHeight,

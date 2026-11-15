@@ -192,3 +192,17 @@ class StorageChecks(unittest.TestCase):
   self.assertEqual(len(stored),project_layout.LIMIT)
   self.assertIn('p000',stored);self.assertEqual(stored['p000'],{'x':99})
   self.assertNotIn('p001',stored)
+
+class ExactMediaCacheChecks(unittest.TestCase):
+ def test_middle_only_change_does_not_reuse_digest(self):
+  from backend.project import project_media
+  with tempfile.TemporaryDirectory() as data:
+   left='A'*100+'B'*100+'C'*100;right='A'*100+'D'*100+'C'*100
+   for name in ('assets/same-path.mp4',):
+    first=project_media.detach({'media':{name:left}},data)
+    second=project_media.detach({'media':{name:right}},data)
+    self.assertNotEqual(first['mediaIndex'][name],second['mediaIndex'][name])
+    self.assertEqual(project_media.attach(second,data)['media'][name],right)
+   first=project_media.detach({'media':{},'originalZip':left},data)
+   second=project_media.detach({'media':{},'originalZip':right},data)
+   self.assertNotEqual(first['originalZipHash'],second['originalZipHash'])

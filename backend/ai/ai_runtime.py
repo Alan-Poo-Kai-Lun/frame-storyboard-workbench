@@ -140,7 +140,7 @@ def call(s,cfg,messages,json_mode):
   if control is not None:body['think']=control
   report(s,run,thinkingControl=label)
   body['keep_alive']='10m' if run else (0 if cfg.get('autoUnload',True) else '5m')
-  if json_mode:body['format']='json'
+  if json_mode:body['format']=cfg.get('_jsonSchema') or 'json'
  else:
   body.update(temperature=.5,max_tokens=budget)
   if json_mode:body['response_format']={'type':'json_object'}

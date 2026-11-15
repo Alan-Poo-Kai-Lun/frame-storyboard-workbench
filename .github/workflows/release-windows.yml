@@ -64,11 +64,29 @@ jobs:
           npm install --prefix "$env:RUNNER_TEMP/frame-ui-check" playwright@1.56.1 --ignore-scripts --no-audit --no-fund
           $env:PLAYWRIGHT_BROWSERS_PATH="$env:RUNNER_TEMP/frame-browsers"
           node "$env:RUNNER_TEMP/frame-ui-check/node_modules/playwright/cli.js" install chromium
-      - name: Current React Flow browser regression
+      - name: Original final prompt and recovery
         env:
           NODE_PATH: ${{ runner.temp }}/frame-ui-check/node_modules
           PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/frame-browsers
           FRAME_BROWSER: chromium
+          FRAME_QA_TEST: source-flow-browser.cjs
+          FRAME_QA_OUTPUT: dist/source-flow-browser.json
+        run: python tools/test_browser.py
+      - name: Visible media playback
+        env:
+          NODE_PATH: ${{ runner.temp }}/frame-ui-check/node_modules
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/frame-browsers
+          FRAME_BROWSER: chromium
+          FRAME_QA_TEST: visible-media-browser.cjs
+          FRAME_QA_OUTPUT: dist/visible-media-browser.json
+        run: python tools/test_browser.py
+      - name: Prompt adapter independence
+        env:
+          NODE_PATH: ${{ runner.temp }}/frame-ui-check/node_modules
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/frame-browsers
+          FRAME_BROWSER: chromium
+          FRAME_QA_TEST: prompt-nodes-browser.cjs
+          FRAME_QA_OUTPUT: dist/prompt-nodes-browser.json
         run: python tools/test_browser.py
       - name: R15 feature browser checks (mock AI only)
         env:

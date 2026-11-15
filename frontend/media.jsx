@@ -17,6 +17,7 @@ function CardPlayer({src,type,name,visual,onOpen,allowConcurrent=false}){
  async function fullscreen(){try{if(document.fullscreenElement===player.current)await document.exitFullscreen();else await player.current.requestFullscreen()}catch{setError('当前浏览器无法进入全屏')}}
 
  const key=type+':'+src,media=useRef(null),intent=useRef({time:playback.get(key)||0,wantPlay:false}),[live,setLive]=useState(false),[playing,setPlaying]=useState(false),[time,setTime]=useState(intent.current.time),[duration,setDuration]=useState(visual?.duration||0),[poster,setPoster]=useState(visual?.poster),[error,setError]=useState('');
+ useEffect(()=>{const stop=()=>{const el=media.current;if(el){el.pause();freeze(el)}};const visible=()=>{if(document.hidden)stop()};document.addEventListener('visibilitychange',visible);const observer=new IntersectionObserver(entries=>{if(!entries[0].isIntersecting)stop()});if(player.current)observer.observe(player.current);return()=>{observer.disconnect();document.removeEventListener('visibilitychange',visible)}},[src]);
  useEffect(()=>{if(visual?.duration)setDuration(visual.duration);if(visual?.poster)setPoster(visual.poster)},[visual]);
  useEffect(()=>{const el=media.current;if(live&&el){if(intent.current.wantPlay)play(el);else{el.preload='auto';el.load()}}return()=>{if(el){remember(key,el.currentTime);el.pause();el.removeAttribute('src');el.load()}}},[src,live]);
  function sync(v){setTime(v.currentTime);intent.current.time=v.currentTime;remember(key,v.currentTime);if(Number.isFinite(v.duration))setDuration(v.duration)}
@@ -34,11 +35,12 @@ function CardPlayer({src,type,name,visual,onOpen,allowConcurrent=false}){
  </div>
 }
 export function MediaPreview({src,type,name,onOpen,large=false,interactive=false,allowConcurrent=false}){
- const key=type+':'+src,[visual,setVisual]=useState(()=>cache.get(key));
- useEffect(()=>{setVisual(cache.get(key));if(!src||type==='image'||cache.has(key))return;const controller=new AbortController();visualQueue=visualQueue.catch(()=>{}).then(async()=>{await new Promise(r=>setTimeout(r,20));if(controller.signal.aborted)return;const value=await(type==='video'?videoPoster(src,controller.signal):audioWave(src,controller.signal));if(!controller.signal.aborted)setVisual(retain(key,{...value,...(cache.get(key)?.poster&&playback.get(key)>0?{poster:cache.get(key).poster}:{})}))});return()=>controller.abort()},[src,type]);
+ const key=type+':'+src,[visual,setVisual]=useState(()=>cache.get(key)),root=useRef(null),[visible,setVisible]=useState(large);
+ useEffect(()=>{const observer=new IntersectionObserver(entries=>setVisible(entries[0].isIntersecting),{rootMargin:'200px'});if(root.current)observer.observe(root.current);return()=>observer.disconnect()},[src]);
+ useEffect(()=>{setVisual(cache.get(key));if(!src||type==='image'||cache.has(key)||!visible)return;const controller=new AbortController();visualQueue=visualQueue.catch(()=>{}).then(async()=>{await new Promise(r=>setTimeout(r,20));if(controller.signal.aborted)return;const value=await(type==='video'?videoPoster(src,controller.signal):audioWave(src,controller.signal));if(!controller.signal.aborted)setVisual(retain(key,{...value,...(cache.get(key)?.poster&&playback.get(key)>0?{poster:cache.get(key).poster}:{})}))});return()=>controller.abort()},[src,type,visible]);
  if(!src)return <div className="rfa-media-missing">文件缺失<br/><small>请选择文件替换，编号与引用保留</small></div>;
  if(type==='image'&&large)return <ImageViewer src={src} name={name}/>;
  if(type==='image')return <img draggable="false" loading="lazy" src={src} alt={name} onDoubleClick={onOpen}/>;
- if(large||interactive)return <CardPlayer key={key} src={src} type={type} name={name} visual={visual} onOpen={large?null:onOpen} allowConcurrent={allowConcurrent}/>;
- return <div className={'flow-media-preview '+type}>{type==='video'?(visual?.poster?<img className="flow-video-poster" draggable="false" src={visual.poster} alt={name+' 视频封面'}/>:<div className="flow-media-symbol">▶ 视频参考</div>):<Wave visual={visual} name={name}/>}<button className="flow-media-open nodrag nopan" onClick={onOpen}>⤢ 预览{visual?.duration?' · '+visual.duration.toFixed(1)+'s':''}</button></div>
+ if(large||interactive)return <div ref={root} className="flow-visible-media"><CardPlayer key={key} src={src} type={type} name={name} visual={visual} onOpen={large?null:onOpen} allowConcurrent={allowConcurrent}/></div>;
+ return <div ref={root} className={'flow-media-preview '+type}>{type==='video'?(visual?.poster?<img className="flow-video-poster" draggable="false" src={visual.poster} alt={name+' 视频封面'}/>:<div className="flow-media-symbol">▶ 视频参考</div>):<Wave visual={visual} name={name}/>}<button className="flow-media-open nodrag nopan" onClick={onOpen}>⤢ 预览{visual?.duration?' · '+visual.duration.toFixed(1)+'s':''}</button></div>
 }

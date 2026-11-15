@@ -3,13 +3,19 @@ window.frameR15=(()=>{
  let libraryContext=null,selectedLibrary='',libraryRows=[];
  const readFile=file=>new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(Error('文件读取失败'));r.readAsDataURL(file)});
  function syntax(text){return esc(text).replace(/^([a-z_]+:)/gm,'<span class="syntax-definitions">$1</span>').replace(/&lt;\/?(?:Picture|Subject|Audio|Video)\s+\d+&gt;/g,'<span class="syntax-reference">$&</span>').replace(/(\[Shot[^\]\n]*\]|\[\d[^\]\n]*s\])/g,'<span class="syntax-time">$1</span>')}
- async function openPrompt(sid){
+ async function openPrompt(sid,original=false){
   await flush();const pid=P.projectId,s=P.segments.find(s=>s.id===sid);if(!s)throw Error('片段已删除');
-  const expected=s.prompt||'',text=await frameFlowHost.compiledPrompt(sid);
-  modal('H3 FINAL PROMPT · '+s.title,`<div class="r15PromptTools"><button id="r15PromptRead">阅读</button><button id="r15PromptEdit">编辑</button><button id="r15PromptCopy">复制纯文本</button></div><pre id="r15PromptPreview" class="r15PromptPreview">${syntax(text)}</pre><textarea id="r15PromptText" rows="20" hidden>${esc(text)}</textarea><p id="r15PromptError" role="alert"></p>`,[{label:'取消',action:close},{label:'保存修改',class:'primary',action:async()=>{try{if(P.projectId!==pid||!P.segments.includes(s))throw Error('项目或片段已变化');if($('r15PromptText').value===text){close();return}await frameFlowHost.edit('p:'+sid,{prompt:$('r15PromptText').value},{prompt:expected});close();toast('最终提示词已保存，可撤销')}catch(e){$('r15PromptError').textContent=e.message}}}]);
+  const expected=s.prompt||'',compiled=await api('compiled-prompt',{projectId:pid,segmentId:sid,...(original?{source:'original'}:{})}),text=compiled.prompt;
+  modal((original?'原始最终提示词 · ':'H3 FINAL PROMPT · ')+s.title,`<p>${original?'当前分镜直接组装的原稿，无需 AI；保存编辑会更新对应分镜，可撤销。优化结果另存。':'当前导出提示词'}</p><div class="r15PromptTools"><button id="r15PromptRead">阅读</button><button id="r15PromptEdit">编辑</button><button id="r15PromptCopy">复制纯文本</button><button id="h3Settings">生成设置</button><button id="h3Review">AI 语义／连续性审查</button><button id="h3English">生成英文 H3（保留对白）</button>${original?'<button id="sourceExport">使用原稿导出</button>':''}</div><pre id="r15PromptPreview" class="r15PromptPreview">${syntax(text)}</pre><textarea id="r15PromptText" rows="20" hidden>${esc(text)}</textarea><p id="r15PromptError" role="alert"></p>`,[{label:'取消',action:close},{label:'保存修改',class:'primary',action:async()=>{try{if(P.projectId!==pid||!P.segments.includes(s))throw Error('项目或片段已变化');if($('r15PromptText').value===text){close();return}await frameFlowHost.edit('p:'+sid,{prompt:$('r15PromptText').value},{prompt:expected});close();toast('最终提示词已保存，可撤销')}catch(e){$('r15PromptError').textContent=e.message}}}]);
   $('modal').classList.add('r15PromptDialog');$('modal').addEventListener('close',()=>$('modal').classList.remove('r15PromptDialog'),{once:true});
+  window.frameV41?.references($('r15PromptPreview'),compiled.references);
+  $('r15PromptError').textContent=(compiled.formatIssues||[]).join('\n');
+  $('h3Settings').onclick=()=>safe(()=>openH3Settings(sid));
+  $('h3Review').onclick=()=>safe(()=>reviewH3Segment(sid));
+  if($('sourceExport'))$('sourceExport').onclick=()=>safe(async()=>{await flush();frameUndo.push('选择原稿导出');try{const r=await api('prompt-output-source',{projectId:pid,segmentId:sid,source:'original'});P=r.project;dirty=false;frameUndo.commit();render();frameCardFlow.app?.refresh();$('r15PromptError').textContent='本片段已选择原稿导出；优化结果保留，可撤销。'}catch(e){frameUndo.drop();throw e}});
+  $('h3English').onclick=()=>safe(()=>queuePromptTranslation(sid,true));
   $('r15PromptEdit').onclick=()=>{$('r15PromptText').hidden=false;$('r15PromptPreview').hidden=true};
-  $('r15PromptRead').onclick=()=>{$('r15PromptPreview').innerHTML=syntax($('r15PromptText').value);$('r15PromptPreview').hidden=false;$('r15PromptText').hidden=true};
+  $('r15PromptRead').onclick=()=>{$('r15PromptPreview').innerHTML=syntax($('r15PromptText').value);window.frameV41?.references($('r15PromptPreview'),compiled.references);$('r15PromptPreview').hidden=false;$('r15PromptText').hidden=true};
   $('r15PromptCopy').onclick=()=>safe(async()=>{await navigator.clipboard.writeText($('r15PromptText').value);toast('已复制纯文本')});
  }
  async function assetAction(id,action){await flush();const a=P.assets.find(a=>a.id===id&&!a.deleted);if(!a)throw Error('素材已删除');if(action==='analyze')return analyzeAssets(id);await openReversePanel();$('reverseSource').value='asset:'+a.id;$('reverseSource').dispatchEvent(new Event('change',{bubbles:true}));}
@@ -39,3 +45,26 @@ window.frameR15=(()=>{
  const originalExport=$('export').onclick;$('export').onclick=()=>safe(async()=>{if(!P)throw Error('先打开项目');const pid=P.projectId,options=P.handoffOptions||{};modal('导演包 · 交接内容',`<p>工程与生成所需素材照常导出。可选附带以下过程记录；不包含 API 密钥。</p>${[['notes','项目笔记与画布笔记'],['agent','Agent 聊天与应用状态'],['planning','剧情规划、草稿与审查报告']].map(([k,title])=>`<label class="checkrow"><input type="checkbox" data-r15-export="${k}" ${options[k]!==false?'checked':''}>${title}</label>`).join('')}<p>同时提供 Markdown 阅读版与 JSON 结构化记录。再次生成不保证与原结果相同。</p>`,[{label:'取消',action:close},{label:'继续导出检查',class:'primary',action:async()=>{if(P.projectId!==pid)throw Error('项目已切换');P.handoffOptions=Object.fromEntries([...document.querySelectorAll('[data-r15-export]')].map(c=>[c.dataset.r15Export,c.checked]));changed();await flush();close();await originalExport()}}])});
  return {syntax,openPrompt,assetAction,plannerLayout,library,libraryCards,libraryEdit,libraryCandidates,resolveLibraryInput,refreshLibraryMentions};
 })();
+
+// These settings are per segment. Full material dossiers and raw dialogue stay untouched.
+async function applyH3Edit(label,action){
+ await flush();frameUndo.push(label);try{const r=await action();P=r.project;dirty=false;frameUndo.commit();render();frameCardFlow.app?.refresh();return r}catch(e){frameUndo.drop();throw e}
+}
+async function openH3Settings(sid,returnTo){
+ await flush();const pid=P.projectId,data=await api('h3-settings',{projectId:pid,segmentId:sid});
+ const options=(value,items)=>Object.entries(items).map(([k,label])=>`<option value="${k}" ${value===k?'selected':''}>${label}</option>`).join('');
+ const modes={reference:'人物／场景／物件外观参考',information:'只作信息依据，不在画面生成',overlay:'画面叠加图层',post:'后期添加，不由视频模型生成',screen:'实体屏幕内容（需确认屏幕位置）',frame:'真实帧／构图锚点'},retention={fully_preserved:'完整保留所定义特征',partially_preserved:'部分保留（有明确变化）',attribute_transfer:'特征转移',weak_reference:'宽泛参考'};
+ modal('H3 生成设置',`<p class="notice">完整素材档案保留不动。这里只设置本片段的精简生成说明、呈现方式与对白语言；不会翻译台词或自动添加实体屏幕。</p><label>本段默认对白语言<input id="h3Language" list="dialogueLanguages" value="${esc(data.dialogueLanguage)}"></label><label class="checkrow"><input type="checkbox" id="h3AllLanguages">同时将所有镜头语言改为上面的语言（覆盖逐镜设置）</label><details><summary>逐镜语言（空白继承本段设置）</summary>${data.shots.map(h=>`<label>${h.start}–${h.end} 秒<input data-h3-shot-language="${esc(h.id)}" list="dialogueLanguages" value="${esc(h.dialogueLanguage)}"></label>`).join('')}</details>${data.assets.map(a=>`<article data-h3-asset="${esc(a.id)}"><h3>${esc(a.name)}</h3><label>呈现方式<select data-h3-presentation>${options(a.presentation,modes)}</select></label><label>本段生成说明<textarea rows="3" maxlength="1500" data-h3-brief>${esc(a.generationDescription)}</textarea></label><label>保留范围<select data-h3-retention>${options(a.retention,retention)}</select></label><small>保留等级只针对说明中定义的特征；不是整张参考图的构图。</small></article>`).join('')}<p id="h3SettingsError" role="alert"></p>`,[{label:'返回最终提示词',action:()=>returnTo?returnTo():frameR15.openPrompt(sid)},{label:'保存生成设置',class:'primary',action:async()=>{try{
+ const usage={};document.querySelectorAll('[data-h3-asset]').forEach(e=>usage[e.dataset.h3Asset]={presentation:e.querySelector('[data-h3-presentation]').value,generationDescription:e.querySelector('[data-h3-brief]').value,retention:e.querySelector('[data-h3-retention]').value});
+ const language=$('h3Language').value,all=$('h3AllLanguages').checked,shotLanguages=[...document.querySelectorAll('[data-h3-shot-language]')].map(e=>({id:e.dataset.h3ShotLanguage,language:all?language:e.value}));
+ await applyH3Edit('修改 H3 生成设置',()=>api('h3-settings',{action:'save',projectId:pid,segmentId:sid,sourceHash:data.sourceHash,referenceUsage:usage,dialogueLanguage:language,shotLanguages}));await (returnTo?returnTo():frameR15.openPrompt(sid));toast('生成设置已保存，可撤销；旧英文副本需要重新生成')
+ }catch(e){$('h3SettingsError').textContent=e.message}}}]);
+}
+async function reviewH3Segment(sid,returnTo){
+ await flush();const pid=P.projectId;
+ if(typeof requireStartupAI==='function'&&!requireStartupAI('AI 语义／连续性审查',()=>reviewH3Segment(sid,returnTo)))return;
+ openAIContinuityReview({projectId:pid,segmentId:sid,onClose:()=>P?.projectId===pid?(returnTo?returnTo():frameR15.openPrompt(sid)):null,onApply:async(changes,result,taskId)=>{
+  if(P?.projectId!==pid)throw Error('项目已切换');
+  await applyH3Edit('应用 AI 语义审查',()=>api('h3-review-apply',{projectId:pid,segmentId:sid,id:taskId,changes}));toast('已应用勾选建议；可撤销，原台词与时长保留')
+ }});
+}

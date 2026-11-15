@@ -39,3 +39,8 @@ Windows EXE 使用 PyInstaller 打包 Python、Tkinter/Tcl/Tk 和 Pillow。它�
 ## V3.37 分发调整
 
 已移除隔空手势功能及其 MediaPipe 运行库、WASM 和模型；新版不包含摄像头识别依赖。此前发布物的许可声明不受本次调整影响。
+
+
+## Prompt adapter rules
+
+Third-party guide provenance and the bundled Seedance MIT notice: `presets/prompt-formats/SOURCES.md` and `presets/prompt-formats/seedance/LICENSE`. Skill text is data only and never executed.

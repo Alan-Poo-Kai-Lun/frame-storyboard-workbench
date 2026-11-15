@@ -16,7 +16,6 @@ from pathlib import Path
 FOLDER = 'media'
 TRASH = '.trash'
 TRASH_KEEP_DAYS = 7
-SAMPLE = 64
 _REFERENCE = re.compile(r'[0-9a-f]{64}')
 _sigs = {}
 
@@ -28,8 +27,13 @@ def folder(data):
 
 
 def _signature(value):
-    """Cheap identity for a base64 blob: length plus both ends."""
-    return (len(value), value[:SAMPLE], value[-SAMPLE:])
+    """Exact immutable content, not a lossy length/ends sample.
+
+    Retaining the string retains a reference, not another decoded media copy.
+    Equal unchanged blobs reuse their digest; edits anywhere invalidate it.
+    Existing base64-text hashes stay compatible with stored media indexes.
+    """
+    return value
 
 
 def attach(payload, data):

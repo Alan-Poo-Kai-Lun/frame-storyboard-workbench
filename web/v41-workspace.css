@@ -1,0 +1,24 @@
+.rfa-auto-content .rfa-card{height:auto!important;min-height:0!important;overflow:visible}
+.rfa-auto-content .rfa-media{height:180px!important;min-height:120px!important;max-height:220px;flex:none!important}
+.rfa-auto-content .rfa-media img,.rfa-auto-content .rfa-media video{width:100%;height:100%;object-fit:contain}
+.rfa-auto-content .rfa-inline-fields{flex:none!important;overflow:visible!important}
+.rfa-auto-content textarea{max-height:420px;overflow:auto;resize:vertical}
+.v41-storyboard{flex:1;overflow:auto;padding:20px;min-height:0}
+.v41-storyboard table{width:100%;border-collapse:collapse;table-layout:fixed}
+.v41-storyboard th,.v41-storyboard td{border:1px solid var(--border,#354550);padding:10px;vertical-align:top}
+.v41-storyboard td:first-child{width:90px}.v41-storyboard img{width:100%;max-height:180px;object-fit:contain}
+.v41-storyboard textarea{width:100%;box-sizing:border-box;min-height:60px;max-height:420px}
+.v41-history-tools{display:flex;gap:10px;align-items:center;margin:8px 0}.v41-history article{padding:16px;border-bottom:1px solid #42505c}.v41-history small{display:block;margin:8px 0}
+.syntax-reference[role=button]{cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}
+/* Explicit checkbox sizing prevents the global full-width input rule from consuming the row. */
+.savedPlanList{min-width:0;width:100%;box-sizing:border-box}
+.savedPlanList article{display:grid;grid-template-columns:18px minmax(0,1fr) auto auto auto;align-items:center;gap:12px;min-width:0;box-sizing:border-box}
+.savedPlanList input[type=checkbox]{display:block;width:18px;min-width:18px;max-width:18px;height:18px;min-height:18px;padding:0;margin:0;box-sizing:border-box;cursor:pointer}
+.savedPlanList strong{min-width:0;overflow-wrap:anywhere;word-break:normal;white-space:normal;line-height:1.6}
+.savedPlanList article>span,.savedPlanList article>button{white-space:nowrap;min-width:max-content}
+@media(max-width:800px){.savedPlanList article{grid-template-columns:18px minmax(0,1fr) auto;gap:10px}.savedPlanList article>strong{grid-column:2/-1}.savedPlanList article>span{grid-column:2}.savedPlanList article>button:last-child{grid-column:3}}
+.v41-close-guard{position:absolute;z-index:50;inset:25% 20% auto;background:var(--panel,#1c2b34);border:1px solid #5acac0;border-radius:12px;padding:24px;box-shadow:0 20px 100px #000b}.v41-close-guard button{margin:8px}
+
+.rfa-auto-content .rfa-shot-fields{overflow:visible;flex:none}.rfa-auto-content .rfa-asset>.rfa-media{height:180px!important}
+
+.v41-storyboard table{min-width:1400px}.v41-storyboard textarea{font-size:14px;line-height:1.6}

@@ -1,6 +1,23 @@
 /* UI localization only. Never translates project values, prompts or editable content. */
 (()=>{
  const pairs=`
+⛶ 全屏|⛶ Full screen
+⛶ 退出全屏|⛶ Exit full screen
+从想法开始|Start with an idea
+画布制作|Canvas editing
+整理素材与镜头|Organize assets and shots
+分镜视频|Finished videos
+导入并对比成片|Import and compare outputs
+创建更多分镜|Create another storyboard
+开始新故事，或拖入已有工程|Start a story or drop an existing project
+项目和素材保存在本机数据目录；AI 按需连接。|Projects and assets stay in your local data folder. Connect AI when needed.
+创作指南 · AI 与 H3|Creative guide · AI and H3
+筛选项目|Filter projects
+全部项目|All projects
+待制作|In progress
+成片|Outputs
+在对应片段或镜头的成品区导入视频|Import videos in the output area of a segment or shot
+
 导演包已保存到|Director pack saved to
 导出到指定目录失败，改用浏览器下载|Could not save to the export folder; using browser download
 已强制导出；未解决问题已附在包内。|Force-exported; unresolved issues are included in the pack.

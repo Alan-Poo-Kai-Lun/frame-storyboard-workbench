@@ -6,7 +6,7 @@
  async function activate(){if(activating)return;activating=true;try{
   dialog=document.getElementById('overviewDialog');if(!dialog?.open)return;
   if(!window.frameFlowApp)throw Error('本地画布组件未载入，请重新解压完整程序包');
-  if(!root?.isConnected){root=document.createElement('div');root.id='frameFlowRoot';root.className='rfa-root';root.setAttribute('aria-label','统一画布');dialog.querySelector('.overviewMap').append(root);nav=document.createElement('div');nav.className='rfa-nav-host';dialog.querySelector('.frameDockSlot.left').prepend(nav);app=frameFlowApp.mount(root,nav,window.frameFlowHost)}
+  if(!root?.isConnected){root=document.createElement('div');root.id='frameFlowRoot';root.className='rfa-root';root.setAttribute('aria-label','统一画布');dialog.querySelector('.overviewMap').append(root);nav=document.createElement('div');nav.className='rfa-nav-host';dialog.querySelector('.frameDockSlot.left').prepend(nav);app=frameFlowApp.mount(root,nav,window.frameFlowHost);window.frameV4?.navigation(nav,dialog)}
   active=true;dialog.dataset.cardflow='true';dialog.dataset.flowLeftClosed||='false';root.hidden=false;nav.hidden=false;
   if(!root._dockReady){root._dockReady=true;await dialog.querySelector('.unifiedEditorPanel')?._dock?.set('right')}
   dialog._frameDocking?.layout();app.refresh();app.resume();
@@ -29,17 +29,21 @@
   text:(v,s)=>frameOverviewEditor.scopedText(String(v||''),s),media:a=>mediaSource(typeof a==='string'?a:a?.path)||'',mediaType:a=>assetMediaType(a),number:a=>assetNumber(a),scoped:s=>allScopedAssets(s),imageScoped:s=>availableAssets(s),
   fieldValue:(id,key)=>frameOverviewEditor.fieldValue(B().descriptor(id),key),mode:s=>segmentMode(s),modes:()=>GENERATION_MODES.slice(0,4),imageInputs:s=>[...new Map([...allScopedAssets(s).filter(a=>assetMediaType(a)==='image').map(a=>[a.path,a.name]),...s.shots.flatMap(h=>['image','firstFrame','lastFrame'].filter(k=>h[k]).map(k=>[h[k],'镜头图片 · '+k]))])],descriptor:id=>B().descriptor(id),currentSegment:()=>B().currentSegment(),select:id=>B().select(id,true),edit:(id,fields,expected)=>B().editFields(id,fields,expected),
   markdown:text=>frameFlowApp.markdown(text),
-  openPrompt:segmentId=>window.frameR15.openPrompt(segmentId),
+  openPrompt:segmentId=>window.frameR15.openPrompt(segmentId,true),
+  promptNode:(segmentId,key)=>key==='original'?window.frameR15.openPrompt(segmentId,true):window.framePromptNodes.open(segmentId,key),
+  promptNodeInfo:async(segmentId,key)=>key==='original'?{name:'原始最终提示词',state:{prompt:(await api('compiled-prompt',{projectId:P.projectId,segmentId,source:'original'})).prompt}}:api('prompt-node-info',{projectId:P.projectId,segmentId,nodeId:key}),
+  importPromptSkill:segmentId=>window.framePromptNodes.importSkill(segmentId),
+  assetDescription:id=>prepared(()=>openAssetDossier(id)),
   assetAction:(id,action)=>window.frameR15.assetAction(id,action),
   compiledPrompt:async segmentId=>{await B().flush();return (await api('compiled-prompt',{projectId:P.projectId,segmentId})).prompt||''},
-  copyPrompt:async(segmentId,text)=>{try{const value=text??await window.frameFlowHost.compiledPrompt(segmentId);await navigator.clipboard.writeText(value);toast('已复制最终提示词')}catch(error){toast(error.message);throw error}},
+  copyPrompt:async(segmentId,text)=>{try{const value=await window.frameFlowHost.compiledPrompt(segmentId);await navigator.clipboard.writeText(value);toast('已复制最终提示词')}catch(error){toast(error.message);throw error}},
   bindAsset:async(assetId,segmentId,shotId)=>prepared(async()=>{await frameFlowOperations.bindAsset(assetId,segmentId,shotId);await B().resync('h:'+segmentId+':'+shotId)}),
   command:async(id,cmd)=>{await B().command(id,cmd);emit()},upload:async(files,target)=>{await B().uploadFiles(files,target);emit()},
   uploadResults:async(files,target)=>{await B().uploadResults(files,target);emit()},
   agent:async id=>prepared(()=>frameAgent.open(B().descriptor(id||'project'))),aiSplit,
   projectAgent:()=>{const p=dialog.querySelector('.frameAgentProject');p?._dock?.open();if(p?.querySelector('[data-agent-fold]')?.textContent==='展开')p.querySelector('[data-agent-fold]').click();dialog._frameDocking?.layout()},
   settings:()=>B().settings(),ai:()=>settingsModal(),generation:()=>openGenerationSettings(),setTheme:t=>setTheme(t),notice:m=>toast(m),fullscreen:()=>document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen(),
-  modeLabel:mode=>{const label={canvas:'画布模式',cards:'卡片模式',free:'画布模式'}[mode]||'画布模式';const el=dialog?.querySelector('[data-flow-mode-label]');if(el)el.textContent=label+' ▾';dialog.dataset.unifiedMode=mode;for(const b of dialog.querySelectorAll('[data-flow-mode]'))b.setAttribute('aria-pressed',String(b.dataset.flowMode===mode))},
+  modeLabel:mode=>{const label={canvas:'画布模式',cards:'卡片模式',storyboard:'分镜模式',free:'画布模式'}[mode]||'画布模式';const el=dialog?.querySelector('[data-flow-mode-label]');if(el)el.textContent=label+' ▾';dialog.dataset.unifiedMode=mode;for(const b of dialog.querySelectorAll('[data-flow-mode]'))b.setAttribute('aria-pressed',String(b.dataset.flowMode===mode))},
   confirm:scope=>B().confirm(scope),reverse:()=>B().reverse(),order:(id,delta)=>B().orderAsset(id,delta),preview,
   copy:async ids=>prepared(()=>frameFlowOperations.write(frameFlowOperations.capture(ids))),
   capture:ids=>frameFlowOperations.capture(ids),decode:text=>frameFlowOperations.decode(text),readClipboard:()=>frameFlowOperations.read(),
@@ -54,7 +58,7 @@
   geometryFrame=0;if(!active||!app)return;const settings=dialog?.querySelector('.canvasSettings');if(!settings)return;
   for(const old of settings.querySelectorAll('[data-asset-size]')){old.closest('label').hidden=true;const previous=old.closest('label').previousElementSibling;if(previous?.tagName==='P'&&/素材节点|当前素材/.test(previous.textContent))previous.hidden=true}
   let panel=settings.querySelector('[data-flow-geometry]');
-  if(!panel){panel=document.createElement('section');panel.dataset.flowGeometry='';panel.className='flow-node-geometry';panel.innerHTML='<h3>当前节点尺寸</h3><p data-geometry-title></p>'+['width','height'].map((key,i)=>'<label>'+ (i?'高度':'宽度') +' <output data-geometry-output="'+key+'"></output><input type="range" aria-label="节点'+(i?'高度':'宽度')+'滑块" data-flow-size="'+key+'"><input type="number" aria-label="节点'+(i?'高度':'宽度')+'" data-flow-size="'+key+'" step="1"></label>').join('');settings.prepend(panel);
+  if(!panel){panel=document.createElement('section');panel.dataset.flowGeometry='';panel.className='flow-node-geometry';panel.innerHTML='<h3>当前节点尺寸</h3><p data-geometry-title></p>'+['width','height'].map((key,i)=>'<label>'+ (i?'高度':'宽度') +' <output data-geometry-output="'+key+'"></output><input type="range" aria-label="节点'+(i?'高度':'宽度')+'滑块" data-flow-size="'+key+'"><input type="number" aria-label="节点'+(i?'高度':'宽度')+'" data-flow-size="'+key+'" step="1"></label>').join('');settings.prepend(panel);const fit=document.createElement('button');fit.textContent='适应选中节点内容';fit.type='button';fit.onclick=()=>app.fitContent();panel.append(fit);
    for(const input of panel.querySelectorAll('[data-flow-size]')){input.onfocus=()=>{const g=app.nodeSizes();if(g&&!g.anchor.disabled)app.startResize(g.anchor.id)};input.onpointerdown=input.onfocus;input.oninput=()=>{const g=app.nodeSizes(),value=input.valueAsNumber;if(g&&!g.anchor.disabled&&Number.isFinite(value)&&value>=g.anchor[input.dataset.flowSize==='width'?'minWidth':'minHeight'])app.setNodeSizes({[input.dataset.flowSize]:value})};input.onchange=()=>app.endResize();input.onblur=()=>app.endResize();input.onpointerup=()=>app.endResize()}
   }
   const group=app.nodeSizes(),n=group?.anchor;

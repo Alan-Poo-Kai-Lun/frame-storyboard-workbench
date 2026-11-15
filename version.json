@@ -1,7 +1,7 @@
 {
-  "version": "V3.41.3",
-  "date": "2026-11-03",
-  "release": "v3.41.3",
+  "version": "V4.1.7",
+  "date": "2026-11-15",
+  "release": "v4.1.7",
   "obsolete_files": [
     "video_backend.py",
     "enhance_backend.py",

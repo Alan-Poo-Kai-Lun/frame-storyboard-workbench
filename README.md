@@ -4,11 +4,11 @@
 
 FRAME 用于 AI 短视频、广告与故事分镜的前期规划和交接：整理人物、场景与音视频参考，规划片段，逐镜编辑动作、摄影机、对白和起止空间状态，再把提示词与导演包交给外部生成工具。
 
-**Windows · 本地工作台 · V3.41.3**　[English](docs/README.en.md) · [版本下载](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases) · [使用说明](docs/quick-start.md) · [更新日志](CHANGELOG.md)
+**Windows · 本地工作台 · V4.1.7**　[English](docs/README.en.md) · [版本下载](https://github.com/Alan-Poo-Kai-Lun/frame-storyboard-workbench/releases) · [使用说明](docs/quick-start.md) · [更新日志](CHANGELOG.md)
 
 > 仓库源码与已发布 EXE 分开确认，下载请认准 Releases 的具体标签。更新 GitHub 不会替换电脑上的程序。FRAME 本身不生成图片或视频；AI 功能使用你配置的模型服务，云端调用可能产生费用。
 
-**2026-11-03 · V3.41.3：** 完整版本历史统一归并到 CHANGELOG，后续采用三段 SemVer 标签。[详情](CHANGELOG.md)
+**2026-11-15 · V4.1.7：** 恢复原始最终提示词；优化节点默认折叠，成品区独立连接原稿；修复优化失败结果恢复与媒体缓存。[详情](CHANGELOG.md)
 
 ## 功能图解
 
@@ -139,7 +139,7 @@ python -m unittest discover -s tests -v
 
 R15 本地交付记录：205 项后端测试、59 项回归检查、30 项专项检查与 EXE 自检通过。AI 使用本地模拟模型，图片剪贴板使用替身验证；不等于真实模型质量、视频连续性或所有外部粘贴目标已验证。GitHub Actions 和公开 EXE 状态请分别查看对应运行与 Release 标签。
 
-[最新版本说明](CHANGELOG.md#version-v3.41.3) · [English changelog](docs/CHANGELOG.en.md) · [发布流程](docs/releasing.md)
+[最新版本说明](CHANGELOG.md#v410--2026-11-10) · [English changelog](docs/CHANGELOG.en.md) · [发布流程](docs/releasing.md)
 
 源码公开不等于开放许可。使用与分发条款以 [LICENSE](LICENSE) 为准，依赖与来源见 [NOTICE](NOTICE.md)。
 
@@ -157,3 +157,10 @@ server.py                      # main entry point
 Start-Windows.bat
 Update-Windows.bat
 ```
+
+
+### V4.1.4：双模型提示词节点 / Dual prompt adapters
+
+每片段提供 Seedance 2.0 与 MiniMax H3 独立优化节点，读取当前分镜及相邻边界状态。点击 AI 优化后预览，再确认保存。原分镜与对白不改动；两节点分别保留历史。上游变化后提示重新优化。可导入纯文字 Skill 创建自定义格式节点，无脚本或额外网络权限。
+
+Independent model-specific output drafts with adjacent-state context, explicit confirmation, histories and text-only custom Skill rules. No paid calls occur automatically. Actual video generation and tail-frame extraction remain external. Source links and revisions are in `presets/prompt-formats/SOURCES.md`.
